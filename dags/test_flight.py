@@ -48,17 +48,16 @@ def fetch_flight_data():
     return pd.DataFrame(flight_list)
 
 # S3에 파일 업로드
-def upload_to_s3():
+def upload_to_s3(data):
     s3_conn = get_s3_connection()
     s3_client = boto3.client(
         's3',
         aws_access_key_id=s3_conn.login,
-        aws_secret_access_key=s3_conn.password,
-        region_name=s3_conn.extra_dejson.get('region_name')
+        aws_secret_access_key=s3_conn.password
     )
 
-    bucket_name = 'your-bucket-name'
-    s3_client.upload_file('/tmp/flight_data.json', bucket_name, 'flight_data/flight_data.json')
+    bucket_name = 'team-hori-2-bucket'
+    s3_client.put_object(Body=data.to_csv(), Bucket=bucket_name, Key="flight/test_flight.csv")
 
 # DAG 정의
 default_args = {
@@ -67,7 +66,7 @@ default_args = {
 }
 
 with DAG(
-    dag_id='fetch_and_upload_flight_data',
+    dag_id='test_flight',
     default_args=default_args,
     schedule_interval='@daily',
     catchup=False
@@ -81,6 +80,7 @@ with DAG(
     upload_data_task = PythonOperator(
         task_id='upload_to_s3',
         python_callable=upload_to_s3
+        op_args=[fetch_data_task.output]
     )
 
     fetch_data_task >> upload_data_task
