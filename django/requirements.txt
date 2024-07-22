@@ -6,7 +6,9 @@ idna==3.7
 importlib-resources==5.4.0
 numpy==1.19.5
 pandas==1.1.5
-psycopg==3.0.18
+psycopg2-binary
+boto3
+django-redshift-backend
 python-dateutil==2.9.0.post0
 python-dotenv==0.20.0
 pytz==2024.1
