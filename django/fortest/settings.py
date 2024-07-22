@@ -14,12 +14,6 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
-REDSHIFT_CLUSTER_ID = 'team-hori-2-redshift-cluster'
-REDSHIFT_DATABASE = 'dev'
-REDSHIFT_USER = 'awsuser'
-REDSHIFT_REGION = 'ap-northeast-2'
-REDSHIFT_HOST = 'team-hori-2-redshift-cluster.cvkht4jvd430.ap-northeast-2.redshift.amazonaws.com'
-
 load_dotenv()
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -86,15 +80,8 @@ WSGI_APPLICATION = 'fortest.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': REDSHIFT_DATABASE,
-        'USER': REDSHIFT_USER,
-        'PASSWORD': '',  # Password will be obtained through IAM credentials
-        'HOST': REDSHIFT_HOST,
-        'PORT': '5439',
-        'OPTIONS': {
-            'sslmode': 'require',
-        }
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     }
 }
 
