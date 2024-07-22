@@ -1,0 +1,82 @@
+[2024-07-22T07:23:02.242+0000] {processor.py:161} INFO - Started process (PID=223) to work on /opt/airflow/dags/test_flight.py
+[2024-07-22T07:23:02.279+0000] {processor.py:830} INFO - Processing file /opt/airflow/dags/test_flight.py for tasks to queue
+[2024-07-22T07:23:05.415+0000] {logging_mixin.py:188} INFO - [2024-07-22T07:23:04.291+0000] {dagbag.py:545} INFO - Filling up the DagBag from /opt/airflow/dags/test_flight.py
+[2024-07-22T07:23:08.604+0000] {logging_mixin.py:188} INFO - [2024-07-22T07:23:08.188+0000] {dagbag.py:355} ERROR - Failed to import: /opt/airflow/dags/test_flight.py
+Traceback (most recent call last):
+  File "/home/airflow/.local/lib/python3.12/site-packages/airflow/models/dagbag.py", line 351, in parse
+    loader.exec_module(new_module)
+  File "<frozen importlib._bootstrap_external>", line 991, in exec_module
+  File "<frozen importlib._bootstrap_external>", line 1129, in get_code
+  File "<frozen importlib._bootstrap_external>", line 1059, in source_to_code
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "/opt/airflow/dags/test_flight.py", line 82
+    python_callable=upload_to_s3
+                    
+SyntaxError: invalid syntax. Perhaps you forgot a comma?
+[2024-07-22T07:23:08.732+0000] {processor.py:842} WARNING - No viable dags retrieved from /opt/airflow/dags/test_flight.py
+[2024-07-22T07:23:17.484+0000] {processor.py:183} INFO - Processing /opt/airflow/dags/test_flight.py took 16.811 seconds
+[2024-07-22T07:23:51.399+0000] {processor.py:161} INFO - Started process (PID=229) to work on /opt/airflow/dags/test_flight.py
+[2024-07-22T07:23:51.433+0000] {processor.py:830} INFO - Processing file /opt/airflow/dags/test_flight.py for tasks to queue
+[2024-07-22T07:23:51.549+0000] {logging_mixin.py:188} INFO - [2024-07-22T07:23:51.545+0000] {dagbag.py:545} INFO - Filling up the DagBag from /opt/airflow/dags/test_flight.py
+[2024-07-22T07:23:52.417+0000] {logging_mixin.py:188} INFO - [2024-07-22T07:23:51.715+0000] {dagbag.py:355} ERROR - Failed to import: /opt/airflow/dags/test_flight.py
+Traceback (most recent call last):
+  File "/home/airflow/.local/lib/python3.12/site-packages/airflow/models/dagbag.py", line 351, in parse
+    loader.exec_module(new_module)
+  File "<frozen importlib._bootstrap_external>", line 991, in exec_module
+  File "<frozen importlib._bootstrap_external>", line 1129, in get_code
+  File "<frozen importlib._bootstrap_external>", line 1059, in source_to_code
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "/opt/airflow/dags/test_flight.py", line 82
+    python_callable=upload_to_s3
+                    
+SyntaxError: invalid syntax. Perhaps you forgot a comma?
+[2024-07-22T07:23:52.459+0000] {processor.py:842} WARNING - No viable dags retrieved from /opt/airflow/dags/test_flight.py
+[2024-07-22T07:23:54.009+0000] {processor.py:183} INFO - Processing /opt/airflow/dags/test_flight.py took 3.184 seconds
+[2024-07-22T07:24:31.192+0000] {processor.py:161} INFO - Started process (PID=242) to work on /opt/airflow/dags/test_flight.py
+[2024-07-22T07:24:31.222+0000] {processor.py:830} INFO - Processing file /opt/airflow/dags/test_flight.py for tasks to queue
+[2024-07-22T07:24:31.897+0000] {logging_mixin.py:188} INFO - [2024-07-22T07:24:31.777+0000] {dagbag.py:545} INFO - Filling up the DagBag from /opt/airflow/dags/test_flight.py
+[2024-07-22T07:25:02.654+0000] {logging_mixin.py:188} INFO - [2024-07-22T07:25:02.583+0000] {timeout.py:68} ERROR - Process timed out, PID: 242
+[2024-07-22T07:25:34.859+0000] {processor.py:161} INFO - Started process (PID=257) to work on /opt/airflow/dags/test_flight.py
+[2024-07-22T07:25:34.940+0000] {processor.py:830} INFO - Processing file /opt/airflow/dags/test_flight.py for tasks to queue
+[2024-07-22T07:25:35.659+0000] {logging_mixin.py:188} INFO - [2024-07-22T07:25:35.488+0000] {dagbag.py:545} INFO - Filling up the DagBag from /opt/airflow/dags/test_flight.py
+[2024-07-22T07:26:06.420+0000] {logging_mixin.py:188} INFO - [2024-07-22T07:26:06.404+0000] {timeout.py:68} ERROR - Process timed out, PID: 257
+[2024-07-22T07:26:35.795+0000] {processor.py:161} INFO - Started process (PID=271) to work on /opt/airflow/dags/test_flight.py
+[2024-07-22T07:26:35.826+0000] {processor.py:830} INFO - Processing file /opt/airflow/dags/test_flight.py for tasks to queue
+[2024-07-22T07:26:35.889+0000] {logging_mixin.py:188} INFO - [2024-07-22T07:26:35.887+0000] {dagbag.py:545} INFO - Filling up the DagBag from /opt/airflow/dags/test_flight.py
+[2024-07-22T07:27:56.633+0000] {processor.py:161} INFO - Started process (PID=285) to work on /opt/airflow/dags/test_flight.py
+[2024-07-22T07:27:56.641+0000] {processor.py:830} INFO - Processing file /opt/airflow/dags/test_flight.py for tasks to queue
+[2024-07-22T07:27:56.714+0000] {logging_mixin.py:188} INFO - [2024-07-22T07:27:56.701+0000] {dagbag.py:545} INFO - Filling up the DagBag from /opt/airflow/dags/test_flight.py
+[2024-07-22T07:29:16.608+0000] {processor.py:161} INFO - Started process (PID=305) to work on /opt/airflow/dags/test_flight.py
+[2024-07-22T07:29:16.636+0000] {processor.py:830} INFO - Processing file /opt/airflow/dags/test_flight.py for tasks to queue
+[2024-07-22T07:29:16.858+0000] {logging_mixin.py:188} INFO - [2024-07-22T07:29:16.828+0000] {dagbag.py:545} INFO - Filling up the DagBag from /opt/airflow/dags/test_flight.py
+[2024-07-22T07:38:23.655+0000] {processor.py:161} INFO - Started process (PID=79) to work on /opt/airflow/dags/test_flight.py
+[2024-07-22T07:38:23.731+0000] {processor.py:830} INFO - Processing file /opt/airflow/dags/test_flight.py for tasks to queue
+[2024-07-22T07:38:23.921+0000] {logging_mixin.py:188} INFO - [2024-07-22T07:38:23.888+0000] {dagbag.py:545} INFO - Filling up the DagBag from /opt/airflow/dags/test_flight.py
+[2024-07-22T07:38:43.681+0000] {processor.py:840} INFO - DAG(s) 'test_flight' retrieved from /opt/airflow/dags/test_flight.py
+[2024-07-22T07:38:46.961+0000] {logging_mixin.py:188} INFO - [2024-07-22T07:38:46.960+0000] {dag.py:3089} INFO - Sync 1 DAGs
+[2024-07-22T07:38:47.170+0000] {logging_mixin.py:188} INFO - [2024-07-22T07:38:47.170+0000] {dag.py:3947} INFO - Setting next_dagrun for test_flight to 2024-07-21 00:00:00+00:00, run_after=2024-07-22 00:00:00+00:00
+[2024-07-22T07:38:47.511+0000] {processor.py:183} INFO - Processing /opt/airflow/dags/test_flight.py took 23.997 seconds
+[2024-07-22T07:39:18.566+0000] {processor.py:161} INFO - Started process (PID=95) to work on /opt/airflow/dags/test_flight.py
+[2024-07-22T07:39:18.571+0000] {processor.py:830} INFO - Processing file /opt/airflow/dags/test_flight.py for tasks to queue
+[2024-07-22T07:39:18.575+0000] {logging_mixin.py:188} INFO - [2024-07-22T07:39:18.575+0000] {dagbag.py:545} INFO - Filling up the DagBag from /opt/airflow/dags/test_flight.py
+[2024-07-22T07:39:32.149+0000] {processor.py:840} INFO - DAG(s) 'test_flight' retrieved from /opt/airflow/dags/test_flight.py
+[2024-07-22T07:39:32.910+0000] {logging_mixin.py:188} INFO - [2024-07-22T07:39:32.907+0000] {dag.py:3089} INFO - Sync 1 DAGs
+[2024-07-22T07:39:33.178+0000] {logging_mixin.py:188} INFO - [2024-07-22T07:39:33.178+0000] {dag.py:3947} INFO - Setting next_dagrun for test_flight to 2024-07-21 00:00:00+00:00, run_after=2024-07-22 00:00:00+00:00
+[2024-07-22T07:39:33.594+0000] {processor.py:183} INFO - Processing /opt/airflow/dags/test_flight.py took 15.045 seconds
+[2024-07-22T07:40:04.502+0000] {processor.py:161} INFO - Started process (PID=110) to work on /opt/airflow/dags/test_flight.py
+[2024-07-22T07:40:04.505+0000] {processor.py:830} INFO - Processing file /opt/airflow/dags/test_flight.py for tasks to queue
+[2024-07-22T07:40:04.552+0000] {logging_mixin.py:188} INFO - [2024-07-22T07:40:04.547+0000] {dagbag.py:545} INFO - Filling up the DagBag from /opt/airflow/dags/test_flight.py
+[2024-07-22T07:40:28.329+0000] {processor.py:840} INFO - DAG(s) 'test_flight' retrieved from /opt/airflow/dags/test_flight.py
+[2024-07-22T07:40:29.185+0000] {logging_mixin.py:188} INFO - [2024-07-22T07:40:29.184+0000] {dag.py:3089} INFO - Sync 1 DAGs
+[2024-07-22T07:40:29.461+0000] {logging_mixin.py:188} INFO - [2024-07-22T07:40:29.461+0000] {dag.py:3947} INFO - Setting next_dagrun for test_flight to 2024-07-21 00:00:00+00:00, run_after=2024-07-22 00:00:00+00:00
+[2024-07-22T07:40:29.751+0000] {processor.py:183} INFO - Processing /opt/airflow/dags/test_flight.py took 25.349 seconds
+[2024-07-22T07:41:01.123+0000] {processor.py:161} INFO - Started process (PID=118) to work on /opt/airflow/dags/test_flight.py
+[2024-07-22T07:41:01.213+0000] {processor.py:830} INFO - Processing file /opt/airflow/dags/test_flight.py for tasks to queue
+[2024-07-22T07:41:01.281+0000] {logging_mixin.py:188} INFO - [2024-07-22T07:41:01.256+0000] {dagbag.py:545} INFO - Filling up the DagBag from /opt/airflow/dags/test_flight.py
+[2024-07-22T07:41:28.708+0000] {processor.py:840} INFO - DAG(s) 'test_flight' retrieved from /opt/airflow/dags/test_flight.py
+[2024-07-22T07:41:29.227+0000] {logging_mixin.py:188} INFO - [2024-07-22T07:41:29.226+0000] {dag.py:3089} INFO - Sync 1 DAGs
+[2024-07-22T07:41:30.173+0000] {logging_mixin.py:188} INFO - [2024-07-22T07:41:30.172+0000] {dag.py:3947} INFO - Setting next_dagrun for test_flight to 2024-07-21 00:00:00+00:00, run_after=2024-07-22 00:00:00+00:00
+[2024-07-22T07:41:30.533+0000] {processor.py:183} INFO - Processing /opt/airflow/dags/test_flight.py took 29.651 seconds
+[2024-07-22T07:42:05.056+0000] {processor.py:161} INFO - Started process (PID=130) to work on /opt/airflow/dags/test_flight.py
+[2024-07-22T07:42:05.148+0000] {processor.py:830} INFO - Processing file /opt/airflow/dags/test_flight.py for tasks to queue
+[2024-07-22T07:42:05.350+0000] {logging_mixin.py:188} INFO - [2024-07-22T07:42:05.311+0000] {dagbag.py:545} INFO - Filling up the DagBag from /opt/airflow/dags/test_flight.py
