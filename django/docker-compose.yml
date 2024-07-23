@@ -1,12 +1,6 @@
+version: '3.8'
+
 services:
-  db:
-    image: postgres
-    volumes:
-      - ./data/db:/var/lib/postgresql/data
-    environment:
-      - POSTGRES_DB=postgres
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
   web:
     build: .
     command: python manage.py runserver 0.0.0.0:8000
@@ -15,8 +9,15 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - POSTGRES_NAME=postgres
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-    depends_on:
-      - db
+      DJANGO_SETTINGS_MODULE: 'your_project_name.settings'
+      DATABASE_NAME: 'team_hori_db'
+      DATABASE_USER: 'postgres'
+      DATABASE_PASSWORD: 'ZbEwxdE3tENdaspoUUs3'
+      DATABASE_HOST: 'team-hori-2.ch4xfyi6stod.ap-northeast-2.rds.amazonaws.com'
+      DATABASE_PORT: '5432'
+      DATABASE_OPTIONS: '-c timezone=UTC'
+    restart: always
+
+networks:
+  default:
+    driver: bridge

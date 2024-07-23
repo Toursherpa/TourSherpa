@@ -1,17 +1,16 @@
-backports.zoneinfo==0.2.1
-certifi==2024.7.4
-charset-normalizer==2.0.12
-Django==2.0.7
-idna==3.7
-importlib-resources==5.4.0
-numpy==1.19.5
-pandas==1.1.5
-psycopg==3.0.18
-python-dateutil==2.9.0.post0
-python-dotenv==0.20.0
-pytz==2024.1
-requests==2.27.1
-six==1.16.0
-typing-extensions==4.1.1
-urllib3==1.26.19
-zipp==3.6.0
+certifi>=2024.7.4
+charset-normalizer>=2.0.12
+Django>=3.2.15  # LTS 버전으로 업데이트
+idna>=3.7
+importlib-resources>=5.4.0
+numpy>=1.23.3  # 최신 호환 버전
+pandas>=1.5.0  # 최신 호환 버전
+psycopg2>=2.9.3  # psycopg 대신 psycopg2 사용 권장
+python-dateutil>=2.9.0
+python-dotenv>=0.20.0
+pytz>=2024.1
+requests>=2.27.1
+six>=1.16.0
+typing-extensions>=4.1.1
+urllib3>=1.26.19
+zipp>=3.6.0
