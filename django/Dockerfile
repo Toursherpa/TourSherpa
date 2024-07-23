@@ -11,6 +11,7 @@ RUN apt-get update && apt-get install -y \
     libffi-dev \
     libpq-dev \
     python3-dev\
+    postgresql-client\
     zlib1g-dev
 
 # Set the working directory in the container
