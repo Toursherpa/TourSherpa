@@ -10,14 +10,9 @@ services:
       - "8000:8000"
     environment:
       DJANGO_SETTINGS_MODULE: 'fortest.settings'
-      DATABASE_NAME: 'team_hori_db'
-      DATABASE_USER: 'postgres'
-      DATABASE_PASSWORD: 'ZbEwxdE3tENdaspoUUs3'
-      DATABASE_HOST: 'team-hori-2.ch4xfyi6stod.ap-northeast-2.rds.amazonaws.com'
-      DATABASE_PORT: '5432'
-      DATABASE_OPTIONS: '-c timezone=UTC'
-    restart: always
+      DATABASE_NAME: dev
+      DATABASE_USER: awsuser
+      DATABASE_PASSWORD: nDihmJJRWfG5krrOKXQTRoUJ1xsIKHsbuCUxUytJ
+      DATABASE_HOST: team-hori-2.cvkht4jvd430.ap-northeast-2.redshift.amazonaws.com
+      DATABASE_PORT: 5439
 
-networks:
-  default:
-    driver: bridge

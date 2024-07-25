@@ -1,30 +1,27 @@
-# Use the latest official Python image
-FROM python:3.11-slim
+FROM python:3.11
 
-
-
-# Update system packages and install dependencies
+# 필수 시스템 라이브러리 설치
 RUN apt-get update && apt-get install -y \
     build-essential \
-    gcc \
-    g++ \
-    libffi-dev \
+    python3-dev \
     libpq-dev \
-    python3-dev\
-    postgresql-client\
-    zlib1g-dev
+    tzdata \
+    libffi-dev\
+  && rm -rf /var/lib/apt/lists/*
 
-# Set the working directory in the container
+# 작업 디렉토리 설정
 WORKDIR /app/src
-COPY requirements.txt .
+# Python 라이브러리 업데이트
+RUN pip install --upgrade pip
 
-# Wheel 패키지 설치
-RUN pip install --upgrade pip wheel setuptools
-# Install any needed packages specified in requirements.txt
-RUN pip install --no-cache-dir -v -r requirements.txt
+# 의존성 파일 복사
+COPY requirements.txt /app/src
 
-# Copy the rest of the application code into the container
-COPY . .
+# 의존성 설치
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Command to run on container start
+# 애플리케이션 코드 복사
+COPY . /app/src
+
+# 애플리케이션 실행
 CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
