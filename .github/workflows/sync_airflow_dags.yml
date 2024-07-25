@@ -6,7 +6,7 @@ on:
       - main
       - develop
     paths:
-      - 'dags/**'
+      - 'airflow/dags/**'
 
 jobs:
   update-dags:
@@ -18,7 +18,7 @@ jobs:
 
       - name: Determine user-specific path
         id: get_user_path
-        run: echo "::set-output name=path::/c/Users/${{ github.actor }}/TourSherpa/dags"
+        run: echo "::set-output name=path::/c/Users/${{ github.actor }}/TourSherpa/airflow/dags"
 
       - name: Update Docker Airflow DAGs
         run: |
