@@ -260,6 +260,20 @@ services:
       - -c
       - airflow
 
+  airflow-git-sync:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      GIT_SYNC_REPO: "https://github.com/201810773/TourSherpa.git"
+      GIT_SYNC_BRANCH: "develop"
+      GIT_SYNC_DEST: "/opt/airflow/dags"  # Airflow DAGs 디렉토리 경로
+    volumes:
+      - ${AIRFLOW_PROJ_DIR:-.}/dags:/opt/airflow/dags  # Airflow DAGs 디렉토리 마운트
+    depends_on:
+      - airflow-webserver  # Airflow 웹서버가 준비되면 실행됨
+    restart: always
+
   # You can enable flower by adding "--profile flower" option e.g. docker-compose --profile flower up
   # or by explicitly targeted on the command line e.g. docker-compose up flower.
   # See: https://docs.docker.com/compose/profiles/
