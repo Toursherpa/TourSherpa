@@ -75,23 +75,16 @@ TEMPLATES = [
 WSGI_APPLICATION = 'fortest.wsgi.application'
 
 
-# Database
-# https://docs.djangoproject.com/en/2.0/ref/settings/#databases
-
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'team_hori_db',
-        'USER': 'postgres',  # RDS 데이터베이스 사용자 이름
-        'PASSWORD': 'ZbEwxdE3tENdaspoUUs3',  # 선택한 비밀번호
-        'HOST': 'team-hori-2.ch4xfyi6stod.ap-northeast-2.rds.amazonaws.com',  # RDS 엔드포인트
-        'PORT': '5432',  # RDS 포트
-        'OPTIONS': {
-            'options': '-c timezone=UTC',
-        },
+        'ENGINE': 'django_redshift_backend',
+        'NAME': 'dev',
+        'USER': 'awsuser',
+        'PASSWORD': 'nDihmJJRWfG5krrOKXQTRoUJ1xsIKHsbuCUxUytJ',
+        'HOST': 'team-hori-2.cvkht4jvd430.ap-northeast-2.redshift.amazonaws.com',
+        'PORT': '5439',
     }
 }
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Password validation
 # https://docs.djangoproject.com/en/2.0/ref/settings/#auth-password-validators
