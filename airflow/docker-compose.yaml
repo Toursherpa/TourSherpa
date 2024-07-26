@@ -65,8 +65,8 @@ services:
       test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
       interval: 30s
       timeout: 10s
-      retries: 10  # 재시도 횟수 증가
-      start_period: 60s  # 시작 대기 시간 증가
+      retries: 5
+      start_period: 30s
     restart: always
     depends_on:
       <<: *airflow-common-depends-on
@@ -75,11 +75,11 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.75'  # 증가된 CPU 제한
-          memory: 1024M  # 증가된 메모리 제한
+          cpus: '0.5'
+          memory: 512M
         reservations:
-          cpus: '0.5'  # 증가된 CPU 예약
-          memory: 512M  # 증가된 메모리 예약
+          cpus: '0.25'
+          memory: 256M
 
   airflow-scheduler:
     <<: *airflow-common
@@ -88,8 +88,8 @@ services:
       test: ["CMD", "curl", "--fail", "http://localhost:8974/health"]
       interval: 30s
       timeout: 10s
-      retries: 10  # 재시도 횟수 증가
-      start_period: 60s  # 시작 대기 시간 증가
+      retries: 5
+      start_period: 30s
     restart: always
     depends_on:
       <<: *airflow-common-depends-on
@@ -105,8 +105,8 @@ services:
         - 'celery --app airflow.providers.celery.executors.celery_executor.app inspect ping -d "celery@$${HOSTNAME}" || celery --app airflow.executors.celery_executor.app inspect ping -d "celery@$${HOSTNAME}"'
       interval: 30s
       timeout: 10s
-      retries: 10  # 재시도 횟수 증가
-      start_period: 60s  # 시작 대기 시간 증가
+      retries: 5
+      start_period: 30s
     environment:
       <<: *airflow-common-env
       DUMB_INIT_SETSID: "0"
@@ -119,11 +119,11 @@ services:
       replicas: 3
       resources:
         limits:
-          cpus: '0.75'  # 증가된 CPU 제한
-          memory: 1024M  # 증가된 메모리 제한
+          cpus: '0.5'
+          memory: 512M
         reservations:
-          cpus: '0.5'  # 증가된 CPU 예약
-          memory: 512M  # 증가된 메모리 예약
+          cpus: '0.25'
+          memory: 256M
 
   airflow-triggerer:
     <<: *airflow-common
@@ -132,8 +132,8 @@ services:
       test: ["CMD-SHELL", 'airflow jobs check --job-type TriggererJob --hostname "$${HOSTNAME}"']
       interval: 30s
       timeout: 10s
-      retries: 10  # 재시도 횟수 증가
-      start_period: 60s  # 시작 대기 시간 증가
+      retries: 5
+      start_period: 30s
     restart: always
     depends_on:
       <<: *airflow-common-depends-on
@@ -188,8 +188,8 @@ services:
           echo "   https://airflow.apache.org/docs/apache-airflow/stable/howto/docker-compose/index.html#before-you-begin"
           echo
         fi
-        mkdir -p /opt/airflow/logs /opt/airflow/dags /opt/airflow/plugins
-        chown -R "${AIRFLOW_UID}:0" /opt/airflow/{logs,dags,plugins}
+        mkdir -p /sources/logs /sources/dags /sources/plugins
+        chown -R "${AIRFLOW_UID}:0" /sources/{logs,dags,plugins}
         exec /entrypoint airflow version
     environment:
       <<: *airflow-common-env
@@ -200,7 +200,7 @@ services:
       _PIP_ADDITIONAL_REQUIREMENTS: ''
     user: "0:0"
     volumes:
-      - ${AIRFLOW_PROJ_DIR:-.}:/opt/airflow
+      - ${AIRFLOW_PROJ_DIR:-.}:/sources
 
   airflow-cli:
     <<: *airflow-common
