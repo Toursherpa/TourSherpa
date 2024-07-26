@@ -75,16 +75,16 @@ TEMPLATES = [
 WSGI_APPLICATION = 'fortest.wsgi.application'
 
 
-# Database
-# https://docs.djangoproject.com/en/2.0/ref/settings/#databases
-
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        'ENGINE': 'django_redshift_backend',
+        'NAME': 'dev',
+        'USER': 'awsuser',
+        'PASSWORD': 'nDihmJJRWfG5krrOKXQTRoUJ1xsIKHsbuCUxUytJ',
+        'HOST': 'team-hori-2.cvkht4jvd430.ap-northeast-2.redshift.amazonaws.com',
+        'PORT': '5439',
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/2.0/ref/settings/#auth-password-validators

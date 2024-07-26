@@ -1,12 +1,6 @@
+version: '3.8'
+
 services:
-  db:
-    image: postgres
-    volumes:
-      - ./data/db:/var/lib/postgresql/data
-    environment:
-      - POSTGRES_DB=postgres
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
   web:
     build: .
     command: python manage.py runserver 0.0.0.0:8000
@@ -15,8 +9,10 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - POSTGRES_NAME=postgres
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-    depends_on:
-      - db
+      DJANGO_SETTINGS_MODULE: 'fortest.settings'
+      DATABASE_NAME: dev
+      DATABASE_USER: awsuser
+      DATABASE_PASSWORD: nDihmJJRWfG5krrOKXQTRoUJ1xsIKHsbuCUxUytJ
+      DATABASE_HOST: team-hori-2.cvkht4jvd430.ap-northeast-2.redshift.amazonaws.com
+      DATABASE_PORT: 5439
+
