@@ -8,7 +8,7 @@ import pandas as pd
 import requests
 import pytz
 
-countrys=['AE', 'AT', 'AU', 'AZ', 'BE', 'BN', 'BR', 'CA', 'CH', 'CL', 'CN', 'CZ', 'DE', 'ES', 'ET', 'FI', 'FR', 'GB', 'HR', 'HU', 'ID', 'IN', 'IT', 'JP', 'KG', 'KH', 'KZ', 'LK', 'LU', 'MN', 'MX', 'MY', 'NL', 'NO', 'NP', 'NZ', 'PE', 'PH', 'PL', 'QA', 'SA', 'SE', 'SG', 'TH', 'TR', 'TM', 'TW', 'US', 'UZ', 'VN']
+countrys=['AT', 'AU', 'BR', 'CA', 'CN', 'DE', 'ES', 'FR', 'GB', 'ID', 'IN', 'IT', 'JP', 'MY', 'NL', 'TW', 'US']
 categories = [
     "expos",
     "concerts",
@@ -49,7 +49,8 @@ def fetch_and_upload_data():
         for category in categories:
             fetch_data = fetch_data_setting(country, category)
             df = pd.DataFrame(fetch_data["results"])
-            combined_df = pd.concat([combined_df, df], ignore_index=True)
+            if not df.empty:
+                combined_df = pd.concat([combined_df, df], ignore_index=True)
         if not combined_df.empty:
             combined_df = combined_df.sort_values(by=['rank', 'predicted_event_spend'], ascending=[False, False])
             combined_df.to_csv(f'/tmp/{country}_TravelEvent_data.csv', index=False, encoding='utf-8-sig')
@@ -80,7 +81,7 @@ dag = DAG(
     'update_JP_TravelEvents_Dags',
     default_args=default_args,
     description='A DAG to update parking data every days and save it to S3',
-    schedule_interval='* */2 * * *',
+    schedule_interval='* */5 * * *',
     catchup=False,
 )
 
