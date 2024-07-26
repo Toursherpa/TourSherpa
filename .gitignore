@@ -7,5 +7,3 @@ webserver_config.py
 *.sh
 *.out
 *.cfg
-airflow/.env
-/airflow/logs
