@@ -1,0 +1,98 @@
+[2024-07-24T04:57:34.804+0000] {local_task_job_runner.py:120} INFO - ::group::Pre task execution logs
+[2024-07-24T04:57:34.814+0000] {taskinstance.py:2076} INFO - Dependencies all met for dep_context=non-requeueable deps ti=<TaskInstance: s3_file_import_dag.get_s3_data manual__2024-07-24T04:57:34.180750+00:00 [queued]>
+[2024-07-24T04:57:34.819+0000] {taskinstance.py:2076} INFO - Dependencies all met for dep_context=requeueable deps ti=<TaskInstance: s3_file_import_dag.get_s3_data manual__2024-07-24T04:57:34.180750+00:00 [queued]>
+[2024-07-24T04:57:34.820+0000] {taskinstance.py:2306} INFO - Starting attempt 1 of 2
+[2024-07-24T04:57:34.826+0000] {taskinstance.py:2330} INFO - Executing <Task(PythonOperator): get_s3_data> on 2024-07-24 04:57:34.180750+00:00
+[2024-07-24T04:57:34.829+0000] {warnings.py:112} WARNING - /home/***/.local/lib/python3.12/site-packages/***/task/task_runner/standard_task_runner.py:62: DeprecationWarning: This process (pid=115) is multi-threaded, use of fork() may lead to deadlocks in the child.
+  pid = os.fork()
+
+[2024-07-24T04:57:34.830+0000] {standard_task_runner.py:64} INFO - Started process 116 to run task
+[2024-07-24T04:57:34.830+0000] {standard_task_runner.py:90} INFO - Running: ['***', 'tasks', 'run', 's3_file_import_dag', 'get_s3_data', 'manual__2024-07-24T04:57:34.180750+00:00', '--job-id', '11', '--raw', '--subdir', 'DAGS_FOLDER/accommodations.py', '--cfg-path', '/tmp/tmpm41w0s6i']
+[2024-07-24T04:57:34.831+0000] {standard_task_runner.py:91} INFO - Job 11: Subtask get_s3_data
+[2024-07-24T04:57:34.854+0000] {task_command.py:426} INFO - Running <TaskInstance: s3_file_import_dag.get_s3_data manual__2024-07-24T04:57:34.180750+00:00 [running]> on host 7f96a5b4d944
+[2024-07-24T04:57:34.900+0000] {taskinstance.py:2648} INFO - Exporting env vars: AIRFLOW_CTX_DAG_EMAIL='your.email@example.com' AIRFLOW_CTX_DAG_OWNER='***' AIRFLOW_CTX_DAG_ID='s3_file_import_dag' AIRFLOW_CTX_TASK_ID='get_s3_data' AIRFLOW_CTX_EXECUTION_DATE='2024-07-24T04:57:34.180750+00:00' AIRFLOW_CTX_TRY_NUMBER='1' AIRFLOW_CTX_DAG_RUN_ID='manual__2024-07-24T04:57:34.180750+00:00'
+[2024-07-24T04:57:34.900+0000] {taskinstance.py:430} INFO - ::endgroup::
+[2024-07-24T04:57:34.918+0000] {base.py:84} INFO - Using connection ID 'aws_default' for task execution.
+[2024-07-24T04:57:37.080+0000] {taskinstance.py:441} INFO - ::group::Post task execution logs
+[2024-07-24T04:57:37.080+0000] {taskinstance.py:2905} ERROR - Task failed with exception
+Traceback (most recent call last):
+  File "/home/airflow/.local/lib/python3.12/site-packages/airflow/models/taskinstance.py", line 465, in _execute_task
+    result = _execute_callable(context=context, **execute_callable_kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/airflow/.local/lib/python3.12/site-packages/airflow/models/taskinstance.py", line 432, in _execute_callable
+    return execute_callable(context=context, **execute_callable_kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/airflow/.local/lib/python3.12/site-packages/airflow/models/baseoperator.py", line 401, in wrapper
+    return func(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/airflow/.local/lib/python3.12/site-packages/airflow/operators/python.py", line 235, in execute
+    return_value = self.execute_callable()
+                   ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/airflow/.local/lib/python3.12/site-packages/airflow/operators/python.py", line 252, in execute_callable
+    return self.python_callable(*self.op_args, **self.op_kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/airflow/dags/accommodations.py", line 13, in get_s3_data
+    content = hook.read_key(key, bucket_name)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/airflow/.local/lib/python3.12/site-packages/airflow/providers/amazon/aws/hooks/s3.py", line 156, in wrapper
+    return func(*bound_args.args, **bound_args.kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/airflow/.local/lib/python3.12/site-packages/airflow/providers/amazon/aws/hooks/s3.py", line 130, in wrapper
+    return func(*bound_args.args, **bound_args.kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/airflow/.local/lib/python3.12/site-packages/airflow/providers/amazon/aws/hooks/s3.py", line 979, in read_key
+    obj = self.get_key(key, bucket_name)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/airflow/.local/lib/python3.12/site-packages/airflow/providers/amazon/aws/hooks/s3.py", line 156, in wrapper
+    return func(*bound_args.args, **bound_args.kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/airflow/.local/lib/python3.12/site-packages/airflow/providers/amazon/aws/hooks/s3.py", line 130, in wrapper
+    return func(*bound_args.args, **bound_args.kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/airflow/.local/lib/python3.12/site-packages/airflow/providers/amazon/aws/hooks/s3.py", line 963, in get_key
+    obj.load(**sanitize_extra_args())
+  File "/home/airflow/.local/lib/python3.12/site-packages/boto3/resources/factory.py", line 565, in do_action
+    response = action(self, *args, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/airflow/.local/lib/python3.12/site-packages/boto3/resources/action.py", line 88, in __call__
+    response = getattr(parent.meta.client, operation_name)(*args, **params)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/airflow/.local/lib/python3.12/site-packages/botocore/client.py", line 565, in _api_call
+    return self._make_api_call(operation_name, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/airflow/.local/lib/python3.12/site-packages/botocore/client.py", line 1001, in _make_api_call
+    http, parsed_response = self._make_request(
+                            ^^^^^^^^^^^^^^^^^^^
+  File "/home/airflow/.local/lib/python3.12/site-packages/botocore/client.py", line 1027, in _make_request
+    return self._endpoint.make_request(operation_model, request_dict)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/airflow/.local/lib/python3.12/site-packages/botocore/endpoint.py", line 119, in make_request
+    return self._send_request(request_dict, operation_model)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/airflow/.local/lib/python3.12/site-packages/botocore/endpoint.py", line 198, in _send_request
+    request = self.create_request(request_dict, operation_model)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/airflow/.local/lib/python3.12/site-packages/botocore/endpoint.py", line 134, in create_request
+    self._event_emitter.emit(
+  File "/home/airflow/.local/lib/python3.12/site-packages/botocore/hooks.py", line 412, in emit
+    return self._emitter.emit(aliased_event_name, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/airflow/.local/lib/python3.12/site-packages/botocore/hooks.py", line 256, in emit
+    return self._emit(event_name, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/airflow/.local/lib/python3.12/site-packages/botocore/hooks.py", line 239, in _emit
+    response = handler(**kwargs)
+               ^^^^^^^^^^^^^^^^^
+  File "/home/airflow/.local/lib/python3.12/site-packages/botocore/signers.py", line 105, in handler
+    return self.sign(operation_name, request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/airflow/.local/lib/python3.12/site-packages/botocore/signers.py", line 199, in sign
+    auth.add_auth(request)
+  File "/home/airflow/.local/lib/python3.12/site-packages/botocore/auth.py", line 418, in add_auth
+    raise NoCredentialsError()
+botocore.exceptions.NoCredentialsError: Unable to locate credentials
+[2024-07-24T04:57:37.089+0000] {taskinstance.py:1206} INFO - Marking task as UP_FOR_RETRY. dag_id=s3_file_import_dag, task_id=get_s3_data, run_id=manual__2024-07-24T04:57:34.180750+00:00, execution_date=20240724T045734, start_date=20240724T045734, end_date=20240724T045737
+[2024-07-24T04:57:37.097+0000] {standard_task_runner.py:110} ERROR - Failed to execute job 11 for task get_s3_data (Unable to locate credentials; 116)
+[2024-07-24T04:57:37.127+0000] {local_task_job_runner.py:243} INFO - Task exited with return code 1
+[2024-07-24T04:57:37.160+0000] {taskinstance.py:3503} INFO - 0 downstream tasks scheduled from follow-on schedule check
+[2024-07-24T04:57:37.161+0000] {local_task_job_runner.py:222} INFO - ::endgroup::
