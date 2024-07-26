@@ -1,0 +1,23 @@
+[2024-07-24T07:20:32.694+0000] {local_task_job_runner.py:120} INFO - ::group::Pre task execution logs
+[2024-07-24T07:20:32.716+0000] {taskinstance.py:2076} INFO - Dependencies all met for dep_context=non-requeueable deps ti=<TaskInstance: s3_to_google_places_local.process_locations manual__2024-07-24T07:20:32.181574+00:00 [queued]>
+[2024-07-24T07:20:32.726+0000] {taskinstance.py:2076} INFO - Dependencies all met for dep_context=requeueable deps ti=<TaskInstance: s3_to_google_places_local.process_locations manual__2024-07-24T07:20:32.181574+00:00 [queued]>
+[2024-07-24T07:20:32.727+0000] {taskinstance.py:2306} INFO - Starting attempt 1 of 2
+[2024-07-24T07:20:32.734+0000] {taskinstance.py:2330} INFO - Executing <Task(PythonOperator): process_locations> on 2024-07-24 07:20:32.181574+00:00
+[2024-07-24T07:20:32.738+0000] {warnings.py:112} WARNING - /home/***/.local/lib/python3.12/site-packages/***/task/task_runner/standard_task_runner.py:62: DeprecationWarning: This process (pid=202) is multi-threaded, use of fork() may lead to deadlocks in the child.
+  pid = os.fork()
+
+[2024-07-24T07:20:32.739+0000] {standard_task_runner.py:64} INFO - Started process 204 to run task
+[2024-07-24T07:20:32.739+0000] {standard_task_runner.py:90} INFO - Running: ['***', 'tasks', 'run', 's3_to_google_places_local', 'process_locations', 'manual__2024-07-24T07:20:32.181574+00:00', '--job-id', '90', '--raw', '--subdir', 'DAGS_FOLDER/accommodations.py', '--cfg-path', '/tmp/tmp7r8a57il']
+[2024-07-24T07:20:32.740+0000] {standard_task_runner.py:91} INFO - Job 90: Subtask process_locations
+[2024-07-24T07:20:32.786+0000] {task_command.py:426} INFO - Running <TaskInstance: s3_to_google_places_local.process_locations manual__2024-07-24T07:20:32.181574+00:00 [running]> on host d482e8613c9b
+[2024-07-24T07:20:32.907+0000] {taskinstance.py:2648} INFO - Exporting env vars: AIRFLOW_CTX_DAG_EMAIL='your.email@example.com' AIRFLOW_CTX_DAG_OWNER='***' AIRFLOW_CTX_DAG_ID='s3_to_google_places_local' AIRFLOW_CTX_TASK_ID='process_locations' AIRFLOW_CTX_EXECUTION_DATE='2024-07-24T07:20:32.181574+00:00' AIRFLOW_CTX_TRY_NUMBER='1' AIRFLOW_CTX_DAG_RUN_ID='manual__2024-07-24T07:20:32.181574+00:00'
+[2024-07-24T07:20:32.909+0000] {taskinstance.py:430} INFO - ::endgroup::
+[2024-07-24T07:20:32.933+0000] {base.py:84} INFO - Using connection ID 'aws_default' for task execution.
+[2024-07-24T07:20:32.933+0000] {connection_wrapper.py:388} INFO - AWS Connection (conn_id='aws_default', conn_type='aws') credentials retrieved from login and password.
+[2024-07-24T07:20:35.575+0000] {logging_mixin.py:188} INFO - File saved locally at /opt/***/dags/AE_Accommodations_2024-07-24.csv
+[2024-07-24T07:20:35.580+0000] {python.py:237} INFO - Done. Returned value was: None
+[2024-07-24T07:20:35.580+0000] {taskinstance.py:441} INFO - ::group::Post task execution logs
+[2024-07-24T07:20:35.597+0000] {taskinstance.py:1206} INFO - Marking task as SUCCESS. dag_id=s3_to_google_places_local, task_id=process_locations, run_id=manual__2024-07-24T07:20:32.181574+00:00, execution_date=20240724T072032, start_date=20240724T072032, end_date=20240724T072035
+[2024-07-24T07:20:35.639+0000] {local_task_job_runner.py:243} INFO - Task exited with return code 0
+[2024-07-24T07:20:35.683+0000] {taskinstance.py:3503} INFO - 0 downstream tasks scheduled from follow-on schedule check
+[2024-07-24T07:20:35.685+0000] {local_task_job_runner.py:222} INFO - ::endgroup::
