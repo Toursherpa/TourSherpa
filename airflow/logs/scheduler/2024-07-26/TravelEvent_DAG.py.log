@@ -2095,3 +2095,10 @@
 [2024-07-26T07:40:04.547+0000] {logging_mixin.py:188} INFO - [2024-07-26T07:40:04.547+0000] {dag.py:3089} INFO - Sync 1 DAGs
 [2024-07-26T07:40:04.559+0000] {logging_mixin.py:188} INFO - [2024-07-26T07:40:04.558+0000] {dag.py:3947} INFO - Setting next_dagrun for update_JP_TravelEvents_Dags to 2024-07-26 05:58:00+00:00, run_after=2024-07-26 05:59:00+00:00
 [2024-07-26T07:40:04.568+0000] {processor.py:183} INFO - Processing /opt/airflow/dags/TravelEvent_DAG.py took 0.286 seconds
+[2024-07-26T07:40:34.739+0000] {processor.py:161} INFO - Started process (PID=644) to work on /opt/airflow/dags/TravelEvent_DAG.py
+[2024-07-26T07:40:34.740+0000] {processor.py:830} INFO - Processing file /opt/airflow/dags/TravelEvent_DAG.py for tasks to queue
+[2024-07-26T07:40:34.742+0000] {logging_mixin.py:188} INFO - [2024-07-26T07:40:34.741+0000] {dagbag.py:545} INFO - Filling up the DagBag from /opt/airflow/dags/TravelEvent_DAG.py
+[2024-07-26T07:40:34.991+0000] {processor.py:840} INFO - DAG(s) 'update_JP_TravelEvents_Dags' retrieved from /opt/airflow/dags/TravelEvent_DAG.py
+[2024-07-26T07:40:35.003+0000] {logging_mixin.py:188} INFO - [2024-07-26T07:40:35.002+0000] {dag.py:3089} INFO - Sync 1 DAGs
+[2024-07-26T07:40:35.014+0000] {logging_mixin.py:188} INFO - [2024-07-26T07:40:35.014+0000] {dag.py:3947} INFO - Setting next_dagrun for update_JP_TravelEvents_Dags to 2024-07-26 05:58:00+00:00, run_after=2024-07-26 05:59:00+00:00
+[2024-07-26T07:40:35.023+0000] {processor.py:183} INFO - Processing /opt/airflow/dags/TravelEvent_DAG.py took 0.287 seconds
