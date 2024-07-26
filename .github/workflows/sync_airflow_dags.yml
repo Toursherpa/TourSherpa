@@ -1,4 +1,4 @@
-name: Update Airflow DAGs
+name: Pull Changes from dags Directory
 
 on:
   push:
@@ -9,22 +9,21 @@ on:
       - 'airflow/dags/**'
 
 jobs:
-  update-dags:
+  pull-changes:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      - name: Determine user-specific path
+      - name: Set user-specific path
         id: get_user_path
         run: echo "::set-output name=path::/c/Users/${{ github.actor }}/TourSherpa/airflow/dags"
 
-      - name: Update Docker Airflow DAGs
+      - name: Pull changes from dags directory
         run: |
-          DOCKER_CONTAINER_NAME="your_airflow_container_name"
-          BRANCH=$(if [ "${{ github.ref }}" == "refs/heads/main" ]; then echo "main"; else echo "develop"; fi)
-          DAGS_PATH="${{ steps.get_user_path.outputs.path }}"
+          cd ${{ steps.get_user_path.outputs.path }}
+          git pull origin main
+          git pull origin develop
 
           docker exec $DOCKER_CONTAINER_NAME bash -c "cd ${DAGS_PATH} && git fetch origin && git checkout $BRANCH && git pull"
         env:
