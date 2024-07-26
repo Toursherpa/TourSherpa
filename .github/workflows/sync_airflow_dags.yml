@@ -24,7 +24,3 @@ jobs:
           cd ${{ steps.get_user_path.outputs.path }}
           git pull origin main
           git pull origin develop
-
-          docker exec $DOCKER_CONTAINER_NAME bash -c "cd ${DAGS_PATH} && git fetch origin && git checkout $BRANCH && git pull"
-        env:
-          DOCKER_CONTAINER_NAME: your_airflow_container_name
