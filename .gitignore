@@ -8,3 +8,5 @@ webserver_config.py
 *.out
 *.cfg
 /airflow/logs
+*.log
+django/project_structure.txt
