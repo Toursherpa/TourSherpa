@@ -8,9 +8,6 @@ from .forms import EventFilterForm
 import urllib.parse
 import requests
 
-def dashboard(request):
-    return render(request, 'maps/dashboard.html')
-    
 def upload_csv(request):
     if request.method == 'POST':
         csv_file = request.FILES['file']
