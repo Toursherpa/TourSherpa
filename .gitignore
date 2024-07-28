@@ -7,4 +7,9 @@ webserver_config.py
 *.sh
 *.out
 *.cfg
+<<<<<<< Updated upstream
 /airflow/logs
+=======
+*.log
+django/project_structure.txt
+>>>>>>> Stashed changes
