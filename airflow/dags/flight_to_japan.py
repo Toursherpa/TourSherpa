@@ -22,12 +22,12 @@ def fetch_flight_data():
 
     # 항공편 데이터 요청
     response_list = []
-    airport_list = ["NRT", "HND", "KIX", "NGO", "FUK", "CTS", "OKA", "SDJ", "KMI", "FSZ", "HIJ", "MYJ", "OIT", "HSG", "KMJ", "YGJ", "TAK"]
+    airport_list = ["NRT", "KIX", "NGO", "FUK", "CTS", "OKA"]
     date_list = []
 
     today = datetime.today()
 
-    for i in range(90):
+    for i in range(3):
         date = today + timedelta(days=i)
         date_list.append(date.strftime('%Y-%m-%d'))
 
@@ -41,11 +41,13 @@ def fetch_flight_data():
                     adults=1,
                     nonStop='true'
                 )
+            
+                response_list.append(response.data)
 
                 print("==========================================")
                 if response.data:
                     response_list.append(response.data)
-                    
+
                     print(response.data[0]['itineraries'][0]['segments'][0]['arrival']['at'])
                     print(response.data[0]['itineraries'][0]['segments'][0]['arrival']['iataCode'])
                 else:
@@ -59,13 +61,17 @@ def fetch_flight_data():
                 return 0
 
     # 데이터 처리
+    airport_name = {"NRT": "나리타 국제공항", "KIX": "간사이 국제공항", "NGO": "츄부국제공항", "FUK": "후쿠오카 공항", "CTS": "신치토세 공항", "OKA": "나하 공항"}
+    country_code = "JP"
+    country_name = "일본"
+
     flight_list = []
 
     for i in response_list:
         for j in i:
             info_dict = dict()
         
-            info_dict['airline'] = j['itineraries'][0]['segments'][0]['carrierCode']
+            info_dict['airline_code'] = j['itineraries'][0]['segments'][0]['carrierCode']
             info_dict['departure'] = j['itineraries'][0]['segments'][0]['departure']['iataCode']
             info_dict['departure_at'] = j['itineraries'][0]['segments'][0]['departure']['at']
             info_dict['arrival'] = j['itineraries'][0]['segments'][0]['arrival']['iataCode']
@@ -73,6 +79,9 @@ def fetch_flight_data():
             info_dict['duration'] = j['itineraries'][0]['segments'][0]['duration'][2: ].replace("H", "시간 ").replace("M", "분")
             info_dict['seats'] = j['numberOfBookableSeats']
             info_dict['price'] = j['price']['total']
+            info_dict['airport_name'] = airport_name[info_dict['arrival']]
+            info_dict['country_code'] = country_code
+            info_dict['country_name'] = country_name
         
             flight_list.append(info_dict)
 
