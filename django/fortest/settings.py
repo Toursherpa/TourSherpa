@@ -16,14 +16,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Build paths inside the project like this: os.path.join(BASE_DIR, ...)
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = Path(__file__).resolve().parent.parent
 
-
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/2.0/howto/deployment/checklist/
-
-# SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'g5(d3z)ff(#f&u_hiaj@=-nsx1%nva66-*@qi#@#9-#%(9ia^@'
 
 # SECURITY WARNING: don't run with debug turned on in production!
@@ -75,23 +69,16 @@ TEMPLATES = [
 WSGI_APPLICATION = 'fortest.wsgi.application'
 
 
-# Database
-# https://docs.djangoproject.com/en/2.0/ref/settings/#databases
-
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'team_hori_db',
-        'USER': 'postgres',  # RDS 데이터베이스 사용자 이름
-        'PASSWORD': 'ZbEwxdE3tENdaspoUUs3',  # 선택한 비밀번호
-        'HOST': 'team-hori-2.ch4xfyi6stod.ap-northeast-2.rds.amazonaws.com',  # RDS 엔드포인트
-        'PORT': '5432',  # RDS 포트
-        'OPTIONS': {
-            'options': '-c timezone=UTC',
-        },
+        'ENGINE': 'django_redshift_backend',
+        'NAME': 'dev',
+        'USER': 'awsuser',
+        'PASSWORD': 'nDihmJJRWfG5krrOKXQTRoUJ1xsIKHsbuCUxUytJ',
+        'HOST': 'team-hori-2.cvkht4jvd430.ap-northeast-2.redshift.amazonaws.com',
+        'PORT': '5439',
     }
 }
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Password validation
 # https://docs.djangoproject.com/en/2.0/ref/settings/#auth-password-validators
@@ -130,5 +117,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/2.0/howto/static-files/
 
 STATIC_URL = '/static/'
-
+STATICFILES_DIRS = [
+    BASE_DIR / "static",
+]
 GOOGLE_MAPS_API_KEY = os.getenv('GOOGLE_MAPS_API_KEY')
