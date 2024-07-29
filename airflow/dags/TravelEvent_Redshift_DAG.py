@@ -73,11 +73,61 @@ def generate_and_save_data(**kwargs):
     redshift_table = 'travel_events'
 
     redshift_hook = PostgresHook(postgres_conn_id=redshift_conn_id)
+    conn = redshift_hook.get_conn()
+    cursor = conn.cursor()
 
-    if transformed_data:
-        redshift_hook.insert_rows(table=redshift_table, rows=transformed_data, replace=True, columns=[
-            'EventID', 'Title', 'Description', 'Category', 'Rank', 'PhqAttendance', 'TimeStart', 'TimeEnd', 'LocationID', 'Address', 'Country', 'PredictedEventSpend'
-        ])
+    # Define the table schema
+    create_table_sql = f"""
+    CREATE TABLE {redshift_table} (
+        EventID VARCHAR(255) PRIMARY KEY,
+        Title VARCHAR(255),
+        Description TEXT,
+        Category VARCHAR(255),
+        Rank INT,
+        PhqAttendance INT,
+        TimeStart TIMESTAMP,
+        TimeEnd TIMESTAMP,
+        LocationID JSONB,
+        Address TEXT,
+        Country VARCHAR(2),
+        PredictedEventSpend FLOAT
+    );
+    """
+
+    # Drop table if it exists
+    drop_table_sql = f"DROP TABLE IF EXISTS {redshift_table};"
+
+    try:
+        # Drop the existing table
+        cursor.execute(drop_table_sql)
+        conn.commit()
+
+        # Create a new table
+        cursor.execute(create_table_sql)
+        conn.commit()
+
+        if transformed_data:
+            for record in transformed_data:
+                columns = ', '.join(record.keys())
+                values_placeholders = ', '.join(['%s'] * len(record))
+                sql = f"""
+                    INSERT INTO {redshift_table} ({columns})
+                    VALUES ({values_placeholders});
+                """
+                try:
+                    cursor.execute(sql, tuple(record.values()))
+                    conn.commit()
+                except Exception as e:
+                    print(f"Error inserting record {record}: {e}")
+                    conn.rollback()
+    except Exception as e:
+        print(f"Error creating or dropping table: {e}")
+        conn.rollback()
+
+    finally:
+        cursor.close()
+        conn.close()
+
 
 
 default_args = {
