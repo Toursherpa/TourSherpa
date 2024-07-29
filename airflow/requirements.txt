@@ -1,9 +1,3 @@
-<<<<<<< HEAD
 pytz==2024.1
 requests==2.32.3
 amadeus==10.1.0
-=======
-pytz==2024.1
-requests==2.32.3
-amadeus==10.1.0
->>>>>>> 3e19c78b0396a6fe28373666be32d16688392f2b
