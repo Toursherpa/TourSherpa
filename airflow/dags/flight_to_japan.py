@@ -41,11 +41,11 @@ def fetch_flight_data():
                     adults=1,
                     nonStop='true'
                 )
-            
-                response_list.append(response.data)
 
                 print("==========================================")
                 if response.data:
+                    response_list.append(response.data)
+                    
                     print(response.data[0]['itineraries'][0]['segments'][0]['arrival']['at'])
                     print(response.data[0]['itineraries'][0]['segments'][0]['arrival']['iataCode'])
                 else:
