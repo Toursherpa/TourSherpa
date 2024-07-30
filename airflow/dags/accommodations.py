@@ -73,7 +73,7 @@ def process_locations():
         result_df.to_csv(csv_buffer, index=False)
         
         # 새로운 CSV 파일을 S3에 업로드
-        output_key = 'source/source_TravelEvents/AE_TravelEvents_data/Accommodations.csv'
+        output_key = 'source/source_TravelEvents/Accommodations.csv'
         hook.load_string(
             string_data=csv_buffer.getvalue(),
             key=output_key,
