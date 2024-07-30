@@ -11,7 +11,6 @@ from airflow.hooks.postgres_hook import PostgresHook
 import ast
 import re
 
-countrys = ['AT', 'AU', 'BR', 'CA', 'CN', 'DE', 'ES', 'FR', 'GB', 'ID', 'IN', 'IT', 'JP', 'MY', 'NL', 'TW', 'US']
 
 kst = pytz.timezone('Asia/Seoul')
 utc_now = datetime.utcnow()
