@@ -8,7 +8,7 @@ import pandas as pd
 import requests
 import pytz
 
-countrys=['AT', 'AU', 'BR', 'CA', 'CN', 'DE', 'ES', 'FR', 'GB', 'ID', 'IN', 'IT', 'JP', 'MY', 'NL', 'TW', 'US']
+countrys=['AT', 'AU', 'CA', 'CN', 'DE', 'ES', 'FR', 'GB', 'ID', 'IN', 'IT', 'JP', 'MY', 'NL', 'TW', 'US']
 categories = [
     "expos",
     "concerts",
@@ -80,7 +80,7 @@ dag = DAG(
     'update_TravelEvents_Dags',
     default_args=default_args,
     description='A DAG to update parking data every days and save it to S3',
-    schedule_interval='@daily',
+    schedule_interval='*/5 * * * *',  # 필요에 따라 조정
     catchup=False,
 )
 
