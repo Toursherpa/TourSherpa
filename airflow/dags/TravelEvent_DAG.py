@@ -24,7 +24,7 @@ future_date = datetime.today() + timedelta(days=90)
 future_date_str = future_date.strftime('%Y-%m-%d')
 
 def fetch_data_setting(country, category):
-    ACCESS_TOKEN = Variable.get('predicthq_ACCESS_TOKEN')
+    ACCESS_TOKEN = 'FxuWwsZkxHxgrWUb-3MIBapXsgiPr3AjcYIYgmLd'
     response = requests.get(
         url="https://api.predicthq.com/v1/events/",
         headers={
