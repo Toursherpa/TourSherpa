@@ -46,7 +46,7 @@ def fetch_accommodations(location):
 def process_locations():
     hook = S3Hook(aws_conn_id='aws_default')
     bucket_name = 'team-hori-2-bucket'
-    input_key = 'source/source_TravelEvents/AE_TravelEvents_data/TravelEvents.csv'
+    input_key = 'source/source_TravelEvents/TravelEvents.csv'
     
     # S3에서 CSV 파일 읽기
     if hook.check_for_key(input_key, bucket_name):
