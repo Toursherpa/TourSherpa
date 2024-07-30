@@ -22,7 +22,7 @@ def fetch_flight_data():
 
     # 항공편 데이터 요청
     response_list = []
-    airport_list = ["NRT", "KIX", "NGO", "FUK", "CTS", "OKA"]
+    airport_list = ["PEK", "PVG", "CAN", "CKG", "HRB", "HKG"]
     date_list = []
 
     today = datetime.today()
@@ -61,9 +61,9 @@ def fetch_flight_data():
                 return 0
 
     # 데이터 처리
-    airport_name = {"NRT": "나리타 국제공항", "KIX": "간사이 국제공항", "NGO": "츄부국제공항", "FUK": "후쿠오카 공항", "CTS": "신치토세 공항", "OKA": "나하 공항"}
-    country_code = "JP"
-    country_name = "일본"
+    airport_name = {"PEK": "베이징 서우두 국제공항", "PVG": "상하이 푸둥 국제공항", "CAN": "광저우 바이윈 국제공항", "CKG": "충칭 장베이 국제공항", "HRB": "하얼빈 타이핑 국제공항", "HKG": "홍콩 국제 공항"}
+    country_code = "CN"
+    country_name = "중국"
 
     flight_list = []
 
@@ -97,7 +97,7 @@ def upload_to_s3(data):
     )
 
     bucket_name = 'team-hori-2-bucket'
-    s3_client.put_object(Body=data.to_csv(), Bucket=bucket_name, Key="source/source_flight/flight_to_japan.csv")
+    s3_client.put_object(Body=data.to_csv(), Bucket=bucket_name, Key="source/source_flight/flight_to_china.csv")
 
 # DAG 정의
 default_args = {
@@ -106,7 +106,7 @@ default_args = {
 }
 
 with DAG(
-    dag_id='flight_to_japan',
+    dag_id='flight_to_china',
     default_args=default_args,
     schedule_interval='@daily',
     catchup=False
