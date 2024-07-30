@@ -53,14 +53,14 @@ def fetch_and_upload_data():
                 combined_df = pd.concat([combined_df, df], ignore_index=True)
     if not combined_df.empty:
         combined_df = combined_df.sort_values(by=['rank', 'predicted_event_spend'], ascending=[False, False])
-        combined_df.to_csv(f'/opt/airflow/dags/TravelEvent_data.csv', index=False, encoding='utf-8-sig')
+        combined_df.to_csv(f'/tmp/TravelEvent_data.csv', index=False, encoding='utf-8-sig')
     else:
-        combined_df.to_csv(f'/opt/airflow/dags/TravelEvent_data.csv', index=False, encoding='utf-8-sig')
+        combined_df.to_csv(f'/tmp/TravelEvent_data.csv', index=False, encoding='utf-8-sig')
         print(f"No data fetched for. Skipping CSV creation.")
-    print("Domestic data fetched and saved to '/opt/airflow/dags/TravelEvents_data.csv'")
+    print("Domestic data fetched and saved to '/tmp/TravelEvents_data.csv'")
 
 def generate_and_save_data(**kwargs):
-    csv_filename = f'/opt/airflow/dags/TravelEvent_data.csv'  # Connection ID of your S3 connection in Airflow
+    csv_filename = f'/tmp/TravelEvent_data.csv'  # Connection ID of your S3 connection in Airflow
     s3_bucket_name = Variable.get('my_s3_bucket')
     s3_key = f'source/source_TravelEvents/TravelEvents.csv'
 
@@ -80,7 +80,7 @@ dag = DAG(
     'update_TravelEvents_Dags',
     default_args=default_args,
     description='A DAG to update parking data every days and save it to S3',
-    schedule_interval='*/5 * * * *',  # 필요에 따라 조정
+    schedule_interval='@daily',
     catchup=False,
 )
 
