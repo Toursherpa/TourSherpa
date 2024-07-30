@@ -35,8 +35,8 @@ def fetch_flight_data():
         for j in date_list:
             try:
                 response = amadeus.shopping.flight_offers_search.get(
-                    originLocationCode='ICN',
-                    destinationLocationCode=i,
+                    originLocationCode=i,
+                    destinationLocationCode='ICN',
                     departureDate=j,
                     adults=1,
                     nonStop='true'
@@ -48,7 +48,7 @@ def fetch_flight_data():
                 if response.data:
                     response_list.append(response.data)
 
-                    print(response.data[0]['itineraries'][0]['segments'][0]['arrival']['iataCode'])
+                    print(response.data[0]['itineraries'][0]['segments'][0]['departure']['iataCode'])
                     print(response.data[0]['itineraries'][0]['segments'][0]['departure']['at'])
                 else:
                     print(i)
@@ -79,7 +79,7 @@ def fetch_flight_data():
             info_dict['duration'] = j['itineraries'][0]['segments'][0]['duration'][2: ].replace("H", "시간 ").replace("M", "분")
             info_dict['seats'] = j['numberOfBookableSeats']
             info_dict['price'] = j['price']['total']
-            info_dict['airport_name'] = airport_name[info_dict['arrival']]
+            info_dict['airport_name'] = airport_name[info_dict['departure']]
             info_dict['country_code'] = country_code
             info_dict['country_name'] = country_name
         
@@ -97,7 +97,7 @@ def upload_to_s3(data):
     )
 
     bucket_name = 'team-hori-2-bucket'
-    s3_client.put_object(Body=data.to_csv(), Bucket=bucket_name, Key="source/source_flight/flight_to_japan.csv")
+    s3_client.put_object(Body=data.to_csv(), Bucket=bucket_name, Key="source/source_flight/flight_from_japan.csv")
 
 # DAG 정의
 default_args = {
@@ -106,7 +106,7 @@ default_args = {
 }
 
 with DAG(
-    dag_id='flight_to_japan',
+    dag_id='flight_from_japan',
     default_args=default_args,
     schedule_interval='@daily',
     catchup=False
