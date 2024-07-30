@@ -46,7 +46,7 @@ def fetch_accommodations(location):
 def process_locations():
     hook = S3Hook(aws_conn_id='aws_default')
     bucket_name = 'team-hori-2-bucket'
-    input_key = 'source/source_TravelEvents/AE_TravelEvents_data/2024-07-24/AE_TravelEvents_2024-07-24.csv'
+    input_key = 'source/source_TravelEvents/AE_TravelEvents_data/TravelEvents.csv'
     
     # S3에서 CSV 파일 읽기
     if hook.check_for_key(input_key, bucket_name):
@@ -73,7 +73,7 @@ def process_locations():
         result_df.to_csv(csv_buffer, index=False)
         
         # 새로운 CSV 파일을 S3에 업로드
-        output_key = 'source/source_TravelEvents/AE_TravelEvents_data/2024-07-24/AE_Accommodations_2024-07-24.csv'
+        output_key = 'source/source_TravelEvents/AE_TravelEvents_data/Accommodations.csv'
         hook.load_string(
             string_data=csv_buffer.getvalue(),
             key=output_key,
