@@ -22,7 +22,7 @@ def fetch_flight_data():
 
     # 항공편 데이터 요청
     response_list = []
-    airport_list = ["NRT", "KIX", "NGO", "FUK", "CTS", "OKA"]
+    airport_list = ["CGK", "DEL", "TPE", "KHH", "KUL", "BKI"]
     date_list = []
 
     today = datetime.today()
@@ -35,8 +35,8 @@ def fetch_flight_data():
         for j in date_list:
             try:
                 response = amadeus.shopping.flight_offers_search.get(
-                    originLocationCode='ICN',
-                    destinationLocationCode=i,
+                    originLocationCode=i,
+                    destinationLocationCode='ICN',
                     departureDate=j,
                     adults=1,
                     nonStop='true'
@@ -48,7 +48,7 @@ def fetch_flight_data():
                 if response.data:
                     response_list.append(response.data)
 
-                    print(response.data[0]['itineraries'][0]['segments'][0]['arrival']['iataCode'])
+                    print(response.data[0]['itineraries'][0]['segments'][0]['departure']['iataCode'])
                     print(response.data[0]['itineraries'][0]['segments'][0]['departure']['at'])
                 else:
                     print(i)
@@ -61,9 +61,7 @@ def fetch_flight_data():
                 return 0
 
     # 데이터 처리
-    airport_name = {"NRT": "나리타 국제공항", "KIX": "간사이 국제공항", "NGO": "츄부국제공항", "FUK": "후쿠오카 공항", "CTS": "신치토세 공항", "OKA": "나하 공항"}
-    country_code = "JP"
-    country_name = "일본"
+    airport_info = {"CGK": ["수카르노 하타 국제공항", "ID", "인도네시아"], "DEL": ["인디라 간디 국제공항", "IN", "인도"], "TPE": ["타이완 타오위안 국제공항", "TW", "대만"], "KHH": ["가오슝 국제공항", "TW", "대만"], "KUL": ["쿠알라룸푸르 국제공항", "MY", "말레이시아"], "BKI": ["코타키나발루 국제공항", "MY", "말레이시아"]}
 
     flight_list = []
 
@@ -79,9 +77,9 @@ def fetch_flight_data():
             info_dict['duration'] = j['itineraries'][0]['segments'][0]['duration'][2: ].replace("H", "시간 ").replace("M", "분")
             info_dict['seats'] = j['numberOfBookableSeats']
             info_dict['price'] = j['price']['total']
-            info_dict['airport_name'] = airport_name[info_dict['arrival']]
-            info_dict['country_code'] = country_code
-            info_dict['country_name'] = country_name
+            info_dict['airport_name'] = airport_info[info_dict['departure']][0]
+            info_dict['country_code'] = airport_info[info_dict['departure']][1]
+            info_dict['country_name'] = airport_info[info_dict['departure']][2]
         
             flight_list.append(info_dict)
 
@@ -97,7 +95,7 @@ def upload_to_s3(data):
     )
 
     bucket_name = 'team-hori-2-bucket'
-    s3_client.put_object(Body=data.to_csv(), Bucket=bucket_name, Key="source/source_flight/flight_to_japan.csv")
+    s3_client.put_object(Body=data.to_csv(), Bucket=bucket_name, Key="source/source_flight/flight_from_asia.csv")
 
 # DAG 정의
 default_args = {
@@ -106,7 +104,7 @@ default_args = {
 }
 
 with DAG(
-    dag_id='flight_to_japan',
+    dag_id='flight_from_asia',
     default_args=default_args,
     schedule_interval='@daily',
     catchup=False
