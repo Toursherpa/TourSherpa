@@ -22,7 +22,7 @@ def fetch_flight_data():
 
     # 항공편 데이터 요청
     response_list = []
-    airport_list = ["NRT", "KIX", "NGO", "FUK", "CTS", "OKA"]
+    airport_list = ["SYD", "BNE", "YVR", "YYZ"]
     date_list = []
 
     today = datetime.today()
@@ -61,9 +61,7 @@ def fetch_flight_data():
                 return 0
 
     # 데이터 처리
-    airport_name = {"NRT": "나리타 국제공항", "KIX": "간사이 국제공항", "NGO": "츄부국제공항", "FUK": "후쿠오카 공항", "CTS": "신치토세 공항", "OKA": "나하 공항"}
-    country_code = "JP"
-    country_name = "일본"
+    airport_info = {"SYD": ["시드니 인터내셔널 에어포트", "AU", "호주"], "BNE": ["브리즈번 공항", "AU", "호주"], "YVR": ["밴쿠버 국제공항", "CA", "캐나다"], "YYZ": ["토론토 피어슨 국제공항", "CA", "캐나다"]}
 
     flight_list = []
 
@@ -79,9 +77,9 @@ def fetch_flight_data():
             info_dict['duration'] = j['itineraries'][0]['segments'][0]['duration'][2: ].replace("H", "시간 ").replace("M", "분")
             info_dict['seats'] = j['numberOfBookableSeats']
             info_dict['price'] = j['price']['total']
-            info_dict['airport_name'] = airport_name[info_dict['arrival']]
-            info_dict['country_code'] = country_code
-            info_dict['country_name'] = country_name
+            info_dict['airport_name'] = airport_info[info_dict['arrival']][0]
+            info_dict['country_code'] = airport_info[info_dict['arrival']][1]
+            info_dict['country_name'] = airport_info[info_dict['arrival']][2]
         
             flight_list.append(info_dict)
 
@@ -97,7 +95,7 @@ def upload_to_s3(data):
     )
 
     bucket_name = 'team-hori-2-bucket'
-    s3_client.put_object(Body=data.to_csv(), Bucket=bucket_name, Key="source/source_flight/flight_to_japan.csv")
+    s3_client.put_object(Body=data.to_csv(), Bucket=bucket_name, Key="source/source_flight/flight_to_other.csv")
 
 # DAG 정의
 default_args = {
@@ -106,7 +104,7 @@ default_args = {
 }
 
 with DAG(
-    dag_id='flight_to_japan',
+    dag_id='flight_to_other',
     default_args=default_args,
     schedule_interval='@daily',
     catchup=False
