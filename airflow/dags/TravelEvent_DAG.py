@@ -8,7 +8,7 @@ import pandas as pd
 import requests
 import pytz
 
-countrys=['AT', 'AU', 'BR', 'CA', 'CN', 'DE', 'ES', 'FR', 'GB', 'ID', 'IN', 'IT', 'JP', 'MY', 'NL', 'TW', 'US']
+countrys=['AT', 'AU', 'CA', 'CN', 'DE', 'ES', 'FR', 'GB', 'ID', 'IN', 'IT', 'JP', 'MY', 'NL', 'TW', 'US']
 categories = [
     "expos",
     "concerts",
