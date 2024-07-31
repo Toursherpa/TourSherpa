@@ -2,6 +2,7 @@ from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
 from airflow.hooks.base import BaseHook
 from airflow.utils.dates import days_ago
+from airflow.models import Variable
 from amadeus import Client, ResponseError
 import pandas as pd 
 import boto3
@@ -16,16 +17,16 @@ def get_s3_connection():
 # Amadeus API를 통해 항공편 정보 가져오기
 def fetch_flight_data():
     amadeus = Client(
-        client_id = "bNPlTPOBKmXuY8b3FfUeRPGG7swBNGuV",
-        client_secret = "46D2WeXiicgBgVdj"
+        client_id = Variable.get("amadeus_id"),
+        client_secret = Variable.get("amadeus_secret")
     )
 
     # 항공편 데이터 요청
     response_list = []
-    airport_list = ["FRA", "BCN", "CDG", "LHR", "FCO", "VIE", "AMS"]
+    airport_list = ["FRA", "MAD", "CDG", "LHR", "FCO", "VIE", "AMS"]
     date_list = []
 
-    today = datetime.today()
+    today = datetime(2024, 8, 5, 0, 0, 0)
 
     for i in range(100):
         date = today + timedelta(days=i)
@@ -54,15 +55,13 @@ def fetch_flight_data():
                     print(i)
                     print("비행편 없음")
 
-                time.sleep(5)
+                time.sleep(1)
             except ResponseError as error:
                 print(error)
 
                 return 0
 
     # 데이터 처리
-    airport_info = {"FRA": ["프랑크푸르트 암마인 공항", "DE", "독일"], "BCN": ["바르셀로나 엘프라트 공항", "ES", "스페인"], "CDG": ["파리 샤를드골 국제공항", "FR", "프랑스"], "LHR": ["히스로 공항", "GB", "영국"], "FCO": ["로마 피우미치노 레오나르도 다 빈치 공항", "IT", "이탈리아"], "VIE": ["빈 국제공항", "AT", "오스트리아"], "AMS": ["암스테르담 스키폴 국제공항", "NL", "네덜란드"]}
-
     flight_list = []
 
     for i in response_list:
@@ -77,10 +76,7 @@ def fetch_flight_data():
             info_dict['duration'] = j['itineraries'][0]['segments'][0]['duration'][2: ].replace("H", "시간 ").replace("M", "분")
             info_dict['seats'] = j['numberOfBookableSeats']
             info_dict['price'] = j['price']['total']
-            info_dict['airport_name'] = airport_info[info_dict['arrival']][0]
-            info_dict['country_code'] = airport_info[info_dict['arrival']][1]
-            info_dict['country_name'] = airport_info[info_dict['arrival']][2]
-        
+            
             flight_list.append(info_dict)
 
     return pd.DataFrame(flight_list)

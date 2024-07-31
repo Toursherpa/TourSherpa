@@ -27,7 +27,7 @@ def fetch_airline_data():
     for i in soup.find_all("tr")[16: ]:
         info_dict = dict()
 
-        info_dict['airline_code'] = re.sub(r'[\n\r\t ]', '', i.find_all("td")[4].text)
+        info_dict['airline'] = re.sub(r'[\n\r\t ]', '', i.find_all("td")[4].text)
         info_dict['airline_name'] = re.sub(r'[\n\r\t ]', '', i.find_all("td")[0].text)
 
         airline_list.append(info_dict)
