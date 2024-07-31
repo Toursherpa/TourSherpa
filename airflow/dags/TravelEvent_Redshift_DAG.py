@@ -158,7 +158,7 @@ dag = DAG(
     'update_TravelEvents_Dags_to_Redshift',
     default_args=default_args,
     description='A DAG to update Travel Events data and save it to Redshift',
-    schedule_interval='*/5 * * * *',  # 필요에 따라 조정
+    schedule_interval='@daily',
     catchup=False,
 )
 

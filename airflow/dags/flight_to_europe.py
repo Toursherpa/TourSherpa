@@ -23,7 +23,7 @@ def fetch_flight_data():
 
     # 항공편 데이터 요청
     response_list = []
-    airport_list = ["NRT", "KIX", "NGO", "FUK", "CTS", "OKA"]
+    airport_list = ["FRA", "MAD", "CDG", "LHR", "FCO", "VIE", "AMS"]
     date_list = []
 
     today = datetime(2024, 8, 5, 0, 0, 0)
@@ -68,7 +68,7 @@ def fetch_flight_data():
         for j in i:
             info_dict = dict()
         
-            info_dict['airline'] = j['itineraries'][0]['segments'][0]['carrierCode']
+            info_dict['airline_code'] = j['itineraries'][0]['segments'][0]['carrierCode']
             info_dict['departure'] = j['itineraries'][0]['segments'][0]['departure']['iataCode']
             info_dict['departure_at'] = j['itineraries'][0]['segments'][0]['departure']['at']
             info_dict['arrival'] = j['itineraries'][0]['segments'][0]['arrival']['iataCode']
@@ -76,7 +76,7 @@ def fetch_flight_data():
             info_dict['duration'] = j['itineraries'][0]['segments'][0]['duration'][2: ].replace("H", "시간 ").replace("M", "분")
             info_dict['seats'] = j['numberOfBookableSeats']
             info_dict['price'] = j['price']['total']
-        
+            
             flight_list.append(info_dict)
 
     return pd.DataFrame(flight_list)
@@ -91,7 +91,7 @@ def upload_to_s3(data):
     )
 
     bucket_name = 'team-hori-2-bucket'
-    s3_client.put_object(Body=data.to_csv(), Bucket=bucket_name, Key="source/source_flight/flight_to_japan.csv")
+    s3_client.put_object(Body=data.to_csv(), Bucket=bucket_name, Key="source/source_flight/flight_to_europe.csv")
 
 # DAG 정의
 default_args = {
@@ -100,7 +100,7 @@ default_args = {
 }
 
 with DAG(
-    dag_id='flight_to_japan',
+    dag_id='flight_to_europe',
     default_args=default_args,
     schedule_interval='@daily',
     catchup=False
