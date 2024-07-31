@@ -23,7 +23,7 @@ def fetch_flight_data():
 
     # 항공편 데이터 요청
     response_list = []
-    airport_list = ["NRT", "KIX", "NGO", "FUK", "CTS", "OKA"]
+    airport_list = ["HNL", "SEA", "LAX", "ORD", "DFW", "JFK"]
     date_list = []
 
     today = datetime(2024, 8, 5, 0, 0, 0)
@@ -36,8 +36,8 @@ def fetch_flight_data():
         for j in date_list:
             try:
                 response = amadeus.shopping.flight_offers_search.get(
-                    originLocationCode='ICN',
-                    destinationLocationCode=i,
+                    originLocationCode=i,
+                    destinationLocationCode='ICN',
                     departureDate=j,
                     adults=1,
                     nonStop='true'
@@ -49,7 +49,7 @@ def fetch_flight_data():
                 if response.data:
                     response_list.append(response.data)
 
-                    print(response.data[0]['itineraries'][0]['segments'][0]['arrival']['iataCode'])
+                    print(response.data[0]['itineraries'][0]['segments'][0]['departure']['iataCode'])
                     print(response.data[0]['itineraries'][0]['segments'][0]['departure']['at'])
                 else:
                     print(i)
@@ -68,7 +68,7 @@ def fetch_flight_data():
         for j in i:
             info_dict = dict()
         
-            info_dict['airline'] = j['itineraries'][0]['segments'][0]['carrierCode']
+            info_dict['airline_code'] = j['itineraries'][0]['segments'][0]['carrierCode']
             info_dict['departure'] = j['itineraries'][0]['segments'][0]['departure']['iataCode']
             info_dict['departure_at'] = j['itineraries'][0]['segments'][0]['departure']['at']
             info_dict['arrival'] = j['itineraries'][0]['segments'][0]['arrival']['iataCode']
@@ -91,7 +91,7 @@ def upload_to_s3(data):
     )
 
     bucket_name = 'team-hori-2-bucket'
-    s3_client.put_object(Body=data.to_csv(), Bucket=bucket_name, Key="source/source_flight/flight_to_japan.csv")
+    s3_client.put_object(Body=data.to_csv(), Bucket=bucket_name, Key="source/source_flight/flight_from_usa.csv")
 
 # DAG 정의
 default_args = {
@@ -100,7 +100,7 @@ default_args = {
 }
 
 with DAG(
-    dag_id='flight_to_japan',
+    dag_id='flight_from_usa',
     default_args=default_args,
     schedule_interval='@daily',
     catchup=False
