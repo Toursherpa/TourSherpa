@@ -1,5 +1,8 @@
 airflow/logs/
 django/logs/
+django/Lib/
+django/Scripts/
+django/Include/
 /temp/
 *.pid
 *.db
@@ -8,5 +11,12 @@ webserver_config.py
 *.sh
 *.out
 *.cfg
-airflow/.env
+<<<<<<< Updated upstream
 /airflow/logs
+<<<<<<< HEAD
+=======
+*.log
+django/project_structure.txt
+>>>>>>> Stashed changes
+=======
+>>>>>>> parent of 2d4f54a (템플릿 업데이트)

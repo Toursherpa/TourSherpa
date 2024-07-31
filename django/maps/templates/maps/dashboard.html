@@ -1,0 +1,22 @@
+<!-- templates/maps/dashboard.html -->
+{% extends 'maps/base.html' %}
+{% load static %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<h2>세계 다양한 행사에 대한 여행 정보를 제공합니다.</h2>
+<p>행사리스트, 항공권, 숙박, 맛집 정보 제공.</p>
+<br>
+
+<h2>인기 있는 이벤트 TOP 3</h2>
+{% for event in top_events %}
+    {% if empty %}
+    <li>No events found</li>
+    {% else %}
+    <li>{{ event.Title }} (Category: {{ event.Category }})</li>
+    {% endif %}
+{% endfor %}
+<h2>Event가 많은 국가는?</h2>
+{% endblock %}
+
