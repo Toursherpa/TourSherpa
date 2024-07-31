@@ -11048,14 +11048,14 @@ body {
 }
 
 .sb-sidenav-light {
-  background-color: #f8f9fa;
-  color: #212529;
+  background-color: #212529;
+  color: #fff;
 }
 .sb-sidenav-light .sb-sidenav-menu .sb-sidenav-menu-heading {
-  color: #adb5bd;
+  color: #fff;
 }
 .sb-sidenav-light .sb-sidenav-menu .nav-link {
-  color: #212529;
+  color: #fff;
 }
 .sb-sidenav-light .sb-sidenav-menu .nav-link .sb-nav-link-icon {
   color: #adb5bd;
