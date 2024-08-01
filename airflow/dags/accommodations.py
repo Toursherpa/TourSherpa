@@ -49,11 +49,10 @@ def fetch_accommodations(location):
             accommodations.append(accommodation_info)
     return accommodations
 
-def fetch_tripadvisor_id(name, address):
+def fetch_tripadvisor_id(name):
     endpoint_url = "https://api.tripadvisor.com/api/partner/2.0/search"
     params = {
         'query': name,
-        'location': address,
         'key': TRIPADVISOR_API_KEY
     }
     response = requests.get(endpoint_url, params=params)
@@ -132,7 +131,7 @@ def process_tripadvisor_details():
         def fetch_and_append_details(row):
             name = row['name']
             address = row['address']
-            tripadvisor_id = fetch_tripadvisor_id(name, address)
+            tripadvisor_id = fetch_tripadvisor_id(name)
             if tripadvisor_id:
                 details = fetch_tripadvisor_details(tripadvisor_id)
                 all_details.append(details)
