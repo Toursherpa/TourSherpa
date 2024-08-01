@@ -8,9 +8,11 @@ from concurrent.futures import ThreadPoolExecutor
 from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
 from airflow.hooks.S3_hook import S3Hook
+from airflow.models import Variable
 
-GOOGLE_API_KEY = 'AIzaSyBtisA7MOZ4fM248MoHSqBMbz5M4m_hggY'
-TRIPADVISOR_API_KEY = 'BEFA8CF9FE1E4DEBB9B16747EDFE841E'
+# 에어플로우 변수에서 API 키 가져오기
+GOOGLE_API_KEY = Variable.get("GOOGLE_API_KEY")
+TRIPADVISOR_API_KEY = Variable.get("TRIPADVISOR_API_KEY")
 
 def fetch_accommodations(location):
     endpoint_url = "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
@@ -136,7 +138,7 @@ def process_tripadvisor_details():
                 all_details.append(details)
         
         with ThreadPoolExecutor(max_workers=10) as executor:
-            executor.map(fetch_and_append_details, [row for _, row in df.iterrows()][:100])
+            executor.map(fetch_and_append_details, [row for _, row in df.iterrows()][:10])
         
         # 결과를 DataFrame으로 변환
         detailed_df = pd.DataFrame(all_details)
@@ -190,4 +192,4 @@ t2 = PythonOperator(
     dag=dag,
 )
 
-t2
+t1 >> t2
