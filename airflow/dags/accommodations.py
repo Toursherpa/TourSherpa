@@ -5,7 +5,7 @@ import requests
 import os
 import ast
 import math
-
+from difflib import SequenceMatcher
 from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
 from airflow.hooks.S3_hook import S3Hook
@@ -45,6 +45,9 @@ def fetch_accommodations(location):
         accommodations.append(accommodation_info)
     return accommodations
 
+def similar(a, b):
+    return SequenceMatcher(None, a, b).ratio()
+
 def process_locations():
     hook = S3Hook(aws_conn_id='aws_default')
     bucket_name = 'team-hori-2-bucket'
@@ -79,12 +82,25 @@ def process_locations():
             # hotel_list.csv 파일을 pandas DataFrame으로 읽기
             hotel_list_df = pd.read_csv(StringIO(hotel_list_content))
             
-            # accommodations DataFrame과 hotel_list DataFrame을 'name' 열을 기준으로 병합
-            merged_df = result_df.merge(hotel_list_df[['name', 'hotel_id']], on='name', how='left')
+            # 이름 유사도 기준으로 병합
+            def get_closest_match(name, hotel_list):
+                max_similarity = 0
+                closest_match = None
+                for hotel_name in hotel_list['name']:
+                    similarity = similar(name, hotel_name)
+                    if similarity > max_similarity:
+                        max_similarity = similarity
+                        closest_match = hotel_list[hotel_list['name'] == hotel_name]
+                if max_similarity > 0.8:  # 유사도 기준값 설정
+                    return closest_match['hotel_id'].values[0]
+                else:
+                    return None
+            
+            result_df['hotel_id'] = result_df['name'].apply(lambda x: get_closest_match(x, hotel_list_df))
             
             # 병합된 DataFrame을 CSV로 변환
             csv_buffer = StringIO()
-            merged_df.to_csv(csv_buffer, index=False)
+            result_df.to_csv(csv_buffer, index=False)
             
             # 새로운 CSV 파일을 S3에 업로드
             output_key = 'source/source_TravelEvents/Accommodations.csv'
