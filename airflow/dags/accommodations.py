@@ -4,7 +4,7 @@ from io import StringIO
 import requests
 import os
 import ast
-
+from airflow.models import Variable
 from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
 from airflow.hooks.S3_hook import S3Hook
