@@ -27,10 +27,16 @@ def fetch_airline_data():
     for i in soup.find_all("tr")[16: ]:
         info_dict = dict()
 
-        info_dict['airline'] = re.sub(r'[\n\r\t ]', '', i.find_all("td")[4].text)
+        info_dict['airline_code'] = re.sub(r'[\n\r\t ]', '', i.find_all("td")[4].text)
         info_dict['airline_name'] = re.sub(r'[\n\r\t ]', '', i.find_all("td")[0].text)
 
         airline_list.append(info_dict)
+
+    airline_list.append({'airline_code': 'H1', 'airline_name': '한에어'})
+    airline_list.append({'airline_code': '6X', 'airline_name': '에어오디샤'})
+    airline_list.append({'airline_code': 'UX', 'airline_name': '에어유로파'})
+    airline_list.append({'airline_code': 'AZ', 'airline_name': '알리탈리아'})
+    airline_list.append({'airline_code': 'VS', 'airline_name': '버진애틀랜틱항공'})
 
     return pd.DataFrame(airline_list)
 
@@ -44,7 +50,7 @@ def upload_to_s3(data):
     )
 
     bucket_name = 'team-hori-2-bucket'
-    s3_client.put_object(Body=data.to_csv(), Bucket=bucket_name, Key="source/source_flight/flight_airline.csv")
+    s3_client.put_object(Body=data.to_csv(index=False), Bucket=bucket_name, Key="source/source_flight/flight_airline.csv")
 
 # DAG 정의
 default_args = {
