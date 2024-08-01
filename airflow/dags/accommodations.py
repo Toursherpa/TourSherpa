@@ -12,7 +12,6 @@ from airflow.hooks.S3_hook import S3Hook
 from airflow.models import Variable
 
 GOOGLE_API_KEY = Variable.get("GOOGLE_API_KEY")
-NUM_WORKERS = 4  # Number of parallel workers
 
 def fetch_accommodations(location):
     endpoint_url = "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
@@ -46,7 +45,7 @@ def fetch_accommodations(location):
         accommodations.append(accommodation_info)
     return accommodations
 
-def process_locations(start_idx, end_idx, chunk_id):
+def process_locations():
     hook = S3Hook(aws_conn_id='aws_default')
     bucket_name = 'team-hori-2-bucket'
     input_key = 'source/source_TravelEvents/TravelEvents.csv'
@@ -62,7 +61,7 @@ def process_locations(start_idx, end_idx, chunk_id):
         
         # 'location' 열에 있는 각 위치에 대해 숙박시설 정보 가져오기
         all_accommodations = []
-        for loc_str in df['location'][start_idx:end_idx]:
+        for loc_str in df['location']:
             location = ast.literal_eval(loc_str)
             accommodations = fetch_accommodations(location)
             for acc in accommodations:
@@ -88,7 +87,7 @@ def process_locations(start_idx, end_idx, chunk_id):
             merged_df.to_csv(csv_buffer, index=False)
             
             # 새로운 CSV 파일을 S3에 업로드
-            output_key = f'source/source_TravelEvents/Accommodations_chunk_{chunk_id}.csv'
+            output_key = 'source/source_TravelEvents/Accommodations.csv'
             hook.load_string(
                 string_data=csv_buffer.getvalue(),
                 key=output_key,
@@ -101,41 +100,6 @@ def process_locations(start_idx, end_idx, chunk_id):
             print("hotel_list.csv file not found in S3")
     else:
         print("TravelEvents.csv file not found in S3")
-
-def create_chunk_tasks():
-    hook = S3Hook(aws_conn_id='aws_default')
-    bucket_name = 'team-hori-2-bucket'
-    input_key = 'source/source_TravelEvents/TravelEvents.csv'
-    
-    # S3에서 TravelEvents.csv 파일 읽기
-    if hook.check_for_key(input_key, bucket_name):
-        s3_object = hook.get_key(input_key, bucket_name)
-        content = s3_object.get()['Body'].read().decode('utf-8')
-        
-        # CSV 파일을 pandas DataFrame으로 읽기
-        df = pd.read_csv(StringIO(content))
-        
-        num_locations = len(df)
-        chunk_size = math.ceil(num_locations / NUM_WORKERS)
-        
-        tasks = []
-        for i in range(NUM_WORKERS):
-            start_idx = i * chunk_size
-            end_idx = min(start_idx + chunk_size, num_locations)
-            task_id = f'process_locations_chunk_{i}'
-            
-            task = PythonOperator(
-                task_id=task_id,
-                python_callable=process_locations,
-                op_args=[start_idx, end_idx, i],
-                dag=dag,
-            )
-            tasks.append(task)
-        
-        return tasks
-    else:
-        print("TravelEvents.csv file not found in S3")
-        return []
 
 # DAG 정의
 default_args = {
@@ -157,8 +121,10 @@ dag = DAG(
     catchup=False,
 )
 
-chunk_tasks = create_chunk_tasks()
-if chunk_tasks:
-    for task in chunk_tasks:
-        task
+t1 = PythonOperator(
+    task_id='process_locations',
+    python_callable=process_locations,
+    dag=dag,
+)
 
+t1
