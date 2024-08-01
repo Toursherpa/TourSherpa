@@ -88,7 +88,7 @@ default_args = {
 }
 
 dag = DAG(
-    's3_process_accommodations',
+    's3_process_hotel',
     default_args=default_args,
     description='Process Accommodations.csv and match with hotel_list.csv to add hotel_id',
     schedule_interval=timedelta(days=1),
