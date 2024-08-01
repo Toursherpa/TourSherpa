@@ -19,16 +19,26 @@ def download_files():
     accommodations_key = 'source/source_TravelEvents/Accommodations.csv'
     hotel_list_key = 'source/source_TravelEvents/hotel_list.csv'
     
+    # 파일 경로 설정
+    local_accommodations_path = '/tmp/Accommodations.csv'
+    local_hotel_list_path = '/tmp/hotel_list.csv'
+    
+    # 기존 파일 삭제
+    if os.path.exists(local_accommodations_path):
+        os.remove(local_accommodations_path)
+    if os.path.exists(local_hotel_list_path):
+        os.remove(local_hotel_list_path)
+    
     # S3에서 Accommodations.csv 파일 다운로드
     s3_accommodations_object = hook.get_key(accommodations_key, bucket_name)
     accommodations_content = s3_accommodations_object.get()['Body'].read().decode('utf-8')
-    with open('/tmp/Accommodations.csv', 'w') as f:
+    with open(local_accommodations_path, 'w') as f:
         f.write(accommodations_content)
     
     # S3에서 hotel_list.csv 파일 다운로드
     s3_hotel_list_object = hook.get_key(hotel_list_key, bucket_name)
     hotel_list_content = s3_hotel_list_object.get()['Body'].read().decode('utf-8')
-    with open('/tmp/hotel_list.csv', 'w') as f:
+    with open(local_hotel_list_path, 'w') as f:
         f.write(hotel_list_content)
 
 def process_accommodations():
@@ -60,10 +70,7 @@ def process_accommodations():
     accommodations_df['hotel_id'] = accommodations_df.apply(lambda x: get_closest_match(x, hotel_list_df), axis=1)
     
     # 병합된 DataFrame을 CSV로 변환하여 저장
-    output_path = '/tmp/Updated_Accommodations.csv'
-    if os.path.exists(output_path):
-        os.remove(output_path)
-    accommodations_df.to_csv(output_path, index=False)
+    accommodations_df.to_csv('/tmp/Updated_Accommodations.csv', index=False)
 
 def upload_file():
     hook = S3Hook(aws_conn_id='aws_default')
