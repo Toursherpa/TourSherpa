@@ -24,7 +24,6 @@ def fetch_accommodations(location):
     
     accommodations = []
     for result in results:
-        if rating >= 4.0 and user_ratings_total >= 100:
         accommodation_info = {
             'name': result.get('name'),
             'address': result.get('vicinity'),
@@ -48,8 +47,9 @@ def process_locations():
     hook = S3Hook(aws_conn_id='aws_default')
     bucket_name = 'team-hori-2-bucket'
     input_key = 'source/source_TravelEvents/TravelEvents.csv'
+    hotel_list_key = 'source/source_TravelEvents/hotel_list.csv'
     
-    # S3에서 CSV 파일 읽기
+    # S3에서 TravelEvents.csv 파일 읽기
     if hook.check_for_key(input_key, bucket_name):
         s3_object = hook.get_key(input_key, bucket_name)
         content = s3_object.get()['Body'].read().decode('utf-8')
@@ -69,22 +69,35 @@ def process_locations():
         # 결과를 DataFrame으로 변환
         result_df = pd.DataFrame(all_accommodations)
         
-        # DataFrame을 CSV로 변환
-        csv_buffer = StringIO()
-        result_df.to_csv(csv_buffer, index=False)
-        
-        # 새로운 CSV 파일을 S3에 업로드
-        output_key = 'source/source_TravelEvents/Accommodations.csv'
-        hook.load_string(
-            string_data=csv_buffer.getvalue(),
-            key=output_key,
-            bucket_name=bucket_name,
-            replace=True
-        )
-        
-        print(f"File saved to S3 at {output_key}")
+        # S3에서 hotel_list.csv 파일 읽기
+        if hook.check_for_key(hotel_list_key, bucket_name):
+            s3_hotel_list_object = hook.get_key(hotel_list_key, bucket_name)
+            hotel_list_content = s3_hotel_list_object.get()['Body'].read().decode('utf-8')
+            
+            # hotel_list.csv 파일을 pandas DataFrame으로 읽기
+            hotel_list_df = pd.read_csv(StringIO(hotel_list_content))
+            
+            # accommodations DataFrame과 hotel_list DataFrame을 'name' 열을 기준으로 병합
+            merged_df = result_df.merge(hotel_list_df[['name', 'hotel_id']], on='name', how='left')
+            
+            # 병합된 DataFrame을 CSV로 변환
+            csv_buffer = StringIO()
+            merged_df.to_csv(csv_buffer, index=False)
+            
+            # 새로운 CSV 파일을 S3에 업로드
+            output_key = 'source/source_TravelEvents/Accommodations.csv'
+            hook.load_string(
+                string_data=csv_buffer.getvalue(),
+                key=output_key,
+                bucket_name=bucket_name,
+                replace=True
+            )
+            
+            print(f"File saved to S3 at {output_key}")
+        else:
+            print("hotel_list.csv file not found in S3")
     else:
-        print("Input file not found in S3")
+        print("TravelEvents.csv file not found in S3")
 
 # DAG 정의
 default_args = {
