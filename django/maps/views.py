@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from django.conf import settings
 import csv
 import pandas as pd
@@ -6,8 +6,12 @@ from django.http import HttpResponse
 from .models import Event
 from .models import TravelEvent
 from .forms import EventFilterForm
+from collections import OrderedDict
 import urllib.parse
 import requests
+
+country_list = {'오스트리아': 'AT', '호주': 'AU', '캐나다': 'CA', '중국': 'CN', '독일': 'DE', '스페인': 'ES', '프랑스': 'FR', '영국': 'GB', '인도네시아': 'ID', '인도': 'IN', '이탈리아': 'IT', '일본': 'JP', '말레이시아': 'MY', '네덜란드': 'NL', '대만': 'TW', '미국': 'US'}
+
 
 def dashboard(request):
     top_events = TravelEvent.objects.order_by('-Rank', '-PhqAttendance')[:3]
@@ -19,10 +23,26 @@ def dashboard(request):
     return render(request, 'maps/dashboard.html', context)
 
 
-
 def country(request, country):
-    # 'country' 파라미터를 사용합니다
-    return render(request, 'maps/country.html', {'country': country})
+    country_code = country_list.get(country, '')
+
+    # 해당 국가 코드와 일치하는 TravelEvent 객체들을 가져오기
+    country_events = TravelEvent.objects.filter(Country=country_code).order_by('-Rank', '-PhqAttendance')
+
+    # 정렬된 이벤트들을 템플릿에 전달
+    context = {
+        'country_events': country_events,
+        'country': country,  # 템플릿에 국가 이름도 전달
+    }
+    return render(request, 'maps/country.html', context)
+
+def event_detail(request, country, event_id):
+    event = get_object_or_404(TravelEvent, EventID=event_id)
+    context = {
+        'event': event,
+        'country': country,
+    }
+    return render(request, 'maps/event_detail.html', context)
 
 def upload_csv(request):
     if request.method == 'POST':
