@@ -68,7 +68,7 @@ def fetch_flight_data():
         for j in i:
             info_dict = dict()
         
-            info_dict['airline'] = j['itineraries'][0]['segments'][0]['carrierCode']
+            info_dict['airline_code'] = j['itineraries'][0]['segments'][0]['carrierCode']
             info_dict['departure'] = j['itineraries'][0]['segments'][0]['departure']['iataCode']
             info_dict['departure_at'] = j['itineraries'][0]['segments'][0]['departure']['at']
             info_dict['arrival'] = j['itineraries'][0]['segments'][0]['arrival']['iataCode']
@@ -91,7 +91,7 @@ def upload_to_s3(data):
     )
 
     bucket_name = 'team-hori-2-bucket'
-    s3_client.put_object(Body=data.to_csv(), Bucket=bucket_name, Key="source/source_flight/flight_to_japan.csv")
+    s3_client.put_object(Body=data.to_csv(index=False), Bucket=bucket_name, Key="source/source_flight/flight_to_japan.csv")
 
 # DAG 정의
 default_args = {
