@@ -91,7 +91,7 @@ def upload_to_s3(data):
     )
 
     bucket_name = 'team-hori-2-bucket'
-    s3_client.put_object(Body=data.to_csv(), Bucket=bucket_name, Key="source/source_flight/flight_from_other.csv")
+    s3_client.put_object(Body=data.to_csv(index=False), Bucket=bucket_name, Key="source/source_flight/flight_from_other.csv")
 
 # DAG 정의
 default_args = {
