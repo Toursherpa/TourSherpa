@@ -21,13 +21,13 @@ def download_files():
     # S3에서 Accommodations.csv 파일 다운로드
     s3_accommodations_object = hook.get_key(accommodations_key, bucket_name)
     accommodations_content = s3_accommodations_object.get()['Body'].read().decode('utf-8')
-    with open('/tmp/Accommodations.csv', 'w') as f:
+    with open('/tmp/Accommodations.csv', 'rw') as f:
         f.write(accommodations_content)
     
     # S3에서 hotel_list.csv 파일 다운로드
     s3_hotel_list_object = hook.get_key(hotel_list_key, bucket_name)
     hotel_list_content = s3_hotel_list_object.get()['Body'].read().decode('utf-8')
-    with open('/tmp/hotel_list.csv', 'w') as f:
+    with open('/tmp/hotel_list.csv', 'rw') as f:
         f.write(hotel_list_content)
 
 def process_accommodations():
