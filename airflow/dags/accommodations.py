@@ -137,8 +137,11 @@ def process_tripadvisor_details():
                 details = fetch_tripadvisor_details(tripadvisor_id)
                 all_details.append(details)
         
+        # 첫 10개 행만 처리하도록 제한
+        rows_to_process = [row for _, row in df.iterrows()][:10]
+        
         with ThreadPoolExecutor(max_workers=10) as executor:
-            executor.map(fetch_and_append_details, [row for _, row in df.iterrows()][:10])
+            executor.map(fetch_and_append_details, rows_to_process)
         
         # 결과를 DataFrame으로 변환
         detailed_df = pd.DataFrame(all_details)
@@ -192,4 +195,4 @@ t2 = PythonOperator(
     dag=dag,
 )
 
-t1 >> t2
+t2
