@@ -2,6 +2,7 @@ from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
 from airflow.hooks.base import BaseHook
 from airflow.utils.dates import days_ago
+from airflow.models import Variable
 from amadeus import Client, ResponseError
 import pandas as pd 
 import boto3
@@ -16,8 +17,8 @@ def get_s3_connection():
 # Amadeus API를 통해 항공편 정보 가져오기
 def fetch_flight_data():
     amadeus = Client(
-        client_id = "bNPlTPOBKmXuY8b3FfUeRPGG7swBNGuV",
-        client_secret = "46D2WeXiicgBgVdj"
+        client_id = Variable.get("amadeus_id"),
+        client_secret = Variable.get("amadeus_secret")
     )
 
     # 항공편 데이터 요청
@@ -25,7 +26,7 @@ def fetch_flight_data():
     airport_list = ["PEK", "PVG", "CAN", "CKG", "HRB", "HKG"]
     date_list = []
 
-    today = datetime.today()
+    today = datetime(2024, 8, 5, 0, 0, 0)
 
     for i in range(100):
         date = today + timedelta(days=i)
@@ -54,17 +55,13 @@ def fetch_flight_data():
                     print(i)
                     print("비행편 없음")
 
-                time.sleep(5)
+                time.sleep(1)
             except ResponseError as error:
                 print(error)
 
                 return 0
 
-    # 데이터 처리
-    airport_name = {"PEK": "베이징 서우두 국제공항", "PVG": "상하이 푸둥 국제공항", "CAN": "광저우 바이윈 국제공항", "CKG": "충칭 장베이 국제공항", "HRB": "하얼빈 타이핑 국제공항", "HKG": "홍콩 국제 공항"}
-    country_code = "CN"
-    country_name = "중국"
-
+    # 데이터 처리S
     flight_list = []
 
     for i in response_list:
@@ -79,9 +76,6 @@ def fetch_flight_data():
             info_dict['duration'] = j['itineraries'][0]['segments'][0]['duration'][2: ].replace("H", "시간 ").replace("M", "분")
             info_dict['seats'] = j['numberOfBookableSeats']
             info_dict['price'] = j['price']['total']
-            info_dict['airport_name'] = airport_name[info_dict['departure']]
-            info_dict['country_code'] = country_code
-            info_dict['country_name'] = country_name
         
             flight_list.append(info_dict)
 
@@ -97,7 +91,7 @@ def upload_to_s3(data):
     )
 
     bucket_name = 'team-hori-2-bucket'
-    s3_client.put_object(Body=data.to_csv(), Bucket=bucket_name, Key="source/source_flight/flight_from_china.csv")
+    s3_client.put_object(Body=data.to_csv(index=False), Bucket=bucket_name, Key="source/source_flight/flight_from_china.csv")
 
 # DAG 정의
 default_args = {
