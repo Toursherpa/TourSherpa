@@ -1,5 +1,8 @@
 airflow/logs/
 django/logs/
+django/Lib/
+django/Scripts/
+django/Include/
 /temp/
 *.pid
 *.db
