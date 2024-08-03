@@ -2,14 +2,19 @@
 services:
   web:
     build: .
-    command: 
-      - python manage.py runsslserver --certificate django.crt --key django.key
+    command: >
+      sh -c "
+      python manage.py migrate &&
+      python manage.py collectstatic --noinput &&
+      gunicorn fortest.wsgi:application --bind 0.0.0.0:8000 --certfile=/certs/django.crt --keyfile=/certs/django.key
+      "
     volumes:
-      - .:/app/src
+      - .:/app
       - /home/ubuntu/django.crt:/certs/django.crt:ro
       - /home/ubuntu/django.key:/certs/django.key:ro
     ports:
       - "8000:8000"
+      - "443:443"
     environment:
       DJANGO_SETTINGS_MODULE: 'fortest.settings'
       DATABASE_NAME: dev
@@ -18,3 +23,6 @@ services:
       DATABASE_HOST: team-hori-2.cvkht4jvd430.ap-northeast-2.redshift.amazonaws.com
       DATABASE_PORT: 5439
 
+networks:
+  default:
+    driver: bridge
