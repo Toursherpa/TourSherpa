@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 import pandas as pd
-
+from geopy.distance import great_circle
 import os
 from concurrent.futures import ThreadPoolExecutor
 import numpy as np
@@ -48,20 +48,7 @@ def download_files():
 
 def calculate_distance(location1, location2):
     """두 위치 간의 거리 계산 (킬로미터 단위)"""
-    lat1, lon1 = location1
-    lat2, lon2 = location2
-    R = 6371  # 지구의 반지름 (킬로미터 단위)
-    
-    delta_lat = math.radians(lat2 - lat1)
-    delta_lon = math.radians(lon2 - lon1)
-    
-    a = (math.sin(delta_lat / 2) ** 2 + 
-         math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * 
-         math.sin(delta_lon / 2) ** 2)
-    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
-    
-    distance = R * c
-    return distance
+    return great_circle(location1, location2).kilometers
 
 def parse_location(location_str):
     """위치 문자열을 튜플로 변환 (위도, 경도)"""
@@ -111,14 +98,14 @@ def process_chunk(chunk, hotel_list_df):
         match = exact_match(row, hotel_list_df)
         result_row = row.to_dict()
         if match is not None:
+            
             result_row.update(match.to_dict())  # 매칭된 호텔의 모든 정보를 추가
         result_list.append(result_row)
-
     
     return pd.DataFrame(result_list)
 
 def process_accommodations():
-    #숙소 데이터를 처리하여 호텔 ID를 매칭
+    """숙소 데이터를 처리하여 호텔 ID를 매칭"""
     print("Processing accommodations...")
     accommodations_df = pd.read_csv('/tmp/Accommodations.csv')
     hotel_list_df = pd.read_csv('/tmp/hotel_list.csv', dtype=str)
@@ -132,7 +119,7 @@ def process_accommodations():
     # 실패 시 재시도하는 함수
     def retry_process_chunk(chunk):
         attempt = 0
-        while attempt < 30:
+        while attempt < 3:
             try:
                 return process_chunk(chunk, hotel_list_df)
             except Exception as e:
