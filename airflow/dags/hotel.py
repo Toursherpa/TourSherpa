@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 import pandas as pd
-from geopy.distance import great_circle
+
 import os
 from concurrent.futures import ThreadPoolExecutor
 import numpy as np
@@ -48,7 +48,20 @@ def download_files():
 
 def calculate_distance(location1, location2):
     """두 위치 간의 거리 계산 (킬로미터 단위)"""
-    return great_circle(location1, location2).kilometers
+    lat1, lon1 = location1
+    lat2, lon2 = location2
+    R = 6371  # 지구의 반지름 (킬로미터 단위)
+    
+    delta_lat = math.radians(lat2 - lat1)
+    delta_lon = math.radians(lon2 - lon1)
+    
+    a = (math.sin(delta_lat / 2) ** 2 + 
+         math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * 
+         math.sin(delta_lon / 2) ** 2)
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+    
+    distance = R * c
+    return distance
 
 def parse_location(location_str):
     """위치 문자열을 튜플로 변환 (위도, 경도)"""
