@@ -58,7 +58,7 @@ def create_schema_table(**kwargs):
     create_table_sql = f"""
 
     CREATE TABLE IF NOT EXISTS {schema_name}.{table_name} (
-        HOTELID VARCHAR(512) PRIMARY KEY,
+        Google_Place_Id VARCHAR(512) PRIMARY KEY,
         HOTELNAME VARCHAR(512),
         EventID VARCHAR(65535)
     );
@@ -90,13 +90,13 @@ def update_table(**kwargs):
             # Update the existing record
             cursor.execute(f"""
                 UPDATE {table_name}
-                SET EventID = %s, HOTELID = %s
+                SET EventID = %s, Google_Place_Id = %s
                 WHERE HOTELNAME = %s
             """, (row['event_ids'],row['place_id'],row['name']))
         else:
             # Insert the new record
             cursor.execute(f"""
-                INSERT INTO {table_name} (EventID,HOTELNAME, HOTELID)
+                INSERT INTO {table_name} (EventID,HOTELNAME, Google_Place_Id)
                 VALUES (%s, %s,%s)
             """, (row['event_ids'],row['name'], row['place_id']))
     
