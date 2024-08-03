@@ -109,15 +109,16 @@ def process_chunk(chunk, hotel_list_df):
     result_list = []
     for _, row in chunk.iterrows():
         match = exact_match(row, hotel_list_df)
+        result_row = row.to_dict()
         if match is not None:
-            result_row = row.to_dict()
             result_row.update(match.to_dict())  # 매칭된 호텔의 모든 정보를 추가
-            result_list.append(result_row)
+        result_list.append(result_row)
+
     
     return pd.DataFrame(result_list)
 
 def process_accommodations():
-    """숙소 데이터를 처리하여 호텔 ID를 매칭"""
+    #숙소 데이터를 처리하여 호텔 ID를 매칭
     print("Processing accommodations...")
     accommodations_df = pd.read_csv('/tmp/Accommodations.csv')
     hotel_list_df = pd.read_csv('/tmp/hotel_list.csv', dtype=str)
@@ -131,7 +132,7 @@ def process_accommodations():
     # 실패 시 재시도하는 함수
     def retry_process_chunk(chunk):
         attempt = 0
-        while attempt < 3:
+        while attempt < 30:
             try:
                 return process_chunk(chunk, hotel_list_df)
             except Exception as e:
