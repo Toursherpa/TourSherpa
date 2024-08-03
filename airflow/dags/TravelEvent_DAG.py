@@ -68,11 +68,10 @@ def fetch_and_upload_data():
     print("Domestic data fetched and saved to '/tmp/TravelEvents_data.csv'")
 
 def generate_and_save_data(**kwargs):
-    csv_filename = f'/tmp/TravelEvent_data.csv'  # Connection ID of your S3 connection in Airflow
-    s3_bucket_name = Variable.get('my_s3_bucket')
-    s3_key = f'source/source_TravelEvents/TravelEvents.csv'
-
-
+    try:
+        csv_filename = f'/tmp/TravelEvent_data.csv'  # Connection ID of your S3 connection in Airflow
+        s3_bucket_name = Variable.get('my_s3_bucket')
+        s3_key = f'source/source_TravelEvents/TravelEvents.csv'
         logging.info("Domestic data fetched and saved to '/tmp/TravelEvent_data.csv'")
     except Exception as e:
         logging.error("Error in fetch_and_upload_data: %s", e)
