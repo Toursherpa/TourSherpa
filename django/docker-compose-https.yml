@@ -9,7 +9,7 @@ services:
       gunicorn fortest.wsgi:application --bind 0.0.0.0:8000 --certfile=/certs/django.crt --keyfile=/certs/django.key
       "
     volumes:
-      - .:/app
+      - .:/app/src
       - /home/ubuntu/django.crt:/certs/django.crt:ro
       - /home/ubuntu/django.key:/certs/django.key:ro
     ports:
