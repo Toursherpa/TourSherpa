@@ -4,12 +4,14 @@ from io import StringIO
 import requests
 import os
 import ast
-
+import math
+from difflib import SequenceMatcher
 from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
 from airflow.hooks.S3_hook import S3Hook
+from airflow.models import Variable
 
-GOOGLE_API_KEY = 'AIzaSyBtisA7MOZ4fM248MoHSqBMbz5M4m_hggY'
+GOOGLE_API_KEY = Variable.get("GOOGLE_API_KEY")
 
 def fetch_accommodations(location):
     endpoint_url = "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
@@ -43,12 +45,16 @@ def fetch_accommodations(location):
         accommodations.append(accommodation_info)
     return accommodations
 
+def similar(a, b):
+    return SequenceMatcher(None, a, b).ratio()
+
 def process_locations():
     hook = S3Hook(aws_conn_id='aws_default')
     bucket_name = 'team-hori-2-bucket'
-    input_key = 'source/source_TravelEvents/AE_TravelEvents_data/2024-07-24/AE_TravelEvents_2024-07-24.csv'
+    input_key = 'source/source_TravelEvents/TravelEvents.csv'
+    hotel_list_key = 'source/source_TravelEvents/hotel_list.csv'
     
-    # S3에서 CSV 파일 읽기
+    # S3에서 TravelEvents.csv 파일 읽기
     if hook.check_for_key(input_key, bucket_name):
         s3_object = hook.get_key(input_key, bucket_name)
         content = s3_object.get()['Body'].read().decode('utf-8')
@@ -68,22 +74,48 @@ def process_locations():
         # 결과를 DataFrame으로 변환
         result_df = pd.DataFrame(all_accommodations)
         
-        # DataFrame을 CSV로 변환
-        csv_buffer = StringIO()
-        result_df.to_csv(csv_buffer, index=False)
-        
-        # 새로운 CSV 파일을 S3에 업로드
-        output_key = 'source/source_TravelEvents/AE_TravelEvents_data/2024-07-24/AE_Accommodations_2024-07-24.csv'
-        hook.load_string(
-            string_data=csv_buffer.getvalue(),
-            key=output_key,
-            bucket_name=bucket_name,
-            replace=True
-        )
-        
-        print(f"File saved to S3 at {output_key}")
+        # S3에서 hotel_list.csv 파일 읽기
+        if hook.check_for_key(hotel_list_key, bucket_name):
+            s3_hotel_list_object = hook.get_key(hotel_list_key, bucket_name)
+            hotel_list_content = s3_hotel_list_object.get()['Body'].read().decode('utf-8')
+            
+            # hotel_list.csv 파일을 pandas DataFrame으로 읽기
+            hotel_list_df = pd.read_csv(StringIO(hotel_list_content))
+            
+            # 이름 유사도 기준으로 병합
+            def get_closest_match(name, hotel_list):
+                max_similarity = 0
+                closest_match = None
+                for hotel_name in hotel_list['name']:
+                    similarity = similar(name, hotel_name)
+                    if similarity > max_similarity:
+                        max_similarity = similarity
+                        closest_match = hotel_list[hotel_list['name'] == hotel_name]
+                if max_similarity > 0.8:  # 유사도 기준값 설정
+                    return closest_match['hotel_id'].values[0]
+                else:
+                    return None
+            
+            result_df['hotel_id'] = result_df['name'].apply(lambda x: get_closest_match(x, hotel_list_df))
+            
+            # 병합된 DataFrame을 CSV로 변환
+            csv_buffer = StringIO()
+            result_df.to_csv(csv_buffer, index=False)
+            
+            # 새로운 CSV 파일을 S3에 업로드
+            output_key = 'source/source_TravelEvents/Accommodations.csv'
+            hook.load_string(
+                string_data=csv_buffer.getvalue(),
+                key=output_key,
+                bucket_name=bucket_name,
+                replace=True
+            )
+            
+            print(f"File saved to S3 at {output_key}")
+        else:
+            print("hotel_list.csv file not found in S3")
     else:
-        print("Input file not found in S3")
+        print("TravelEvents.csv file not found in S3")
 
 # DAG 정의
 default_args = {
