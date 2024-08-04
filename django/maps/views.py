@@ -64,11 +64,29 @@ def country(request, country):
     top_regions = queryset.values('Region').annotate(total_events=Count('EventID')).order_by('-total_events')[:5]
     categories = queryset.values('Category').annotate(total_events=Count('EventID'))
 
+    regions_data = {
+        'labels': [region['Region'] for region in top_regions],
+        'datasets': [{
+            'label': 'Number of Events',
+            'backgroundColor': 'rgba(255, 99, 132, 0.2)',  # 색상 예시, 원하는 대로 수정 가능
+            'borderColor': 'rgba(255, 99, 132, 1)',      # 색상 예시, 원하는 대로 수정 가능
+            'data': [region['total_events'] for region in top_regions],
+        }]
+    }
+    categories_data = {
+        'labels': [category['Category'] for category in categories],
+        'datasets': [{
+            'label': 'Number of Events',
+            'backgroundColor': 'rgba(255, 99, 132, 0.2)',  # 색상 예시, 원하는 대로 수정 가능
+            'borderColor': 'rgba(255, 99, 132, 1)',      # 색상 예시, 원하는 대로 수정 가능
+            'data': [category['total_events'] for category in categories],
+        }]
+    }
     context = {
         'country_events': country_events,
         'country': country,
-        'top_regions': top_regions,
-        'categories': categories,
+        'categories_data': categories_data,
+        'regions_data': regions_data,
         'filter': event_filter,  # Pass the filter context to the template
     }
     return render(request, 'maps/country.html', context)
