@@ -79,8 +79,7 @@ class HotelList(models.Model):
     google_number_of_reviews = models.IntegerField(blank=True, null=True)
 
     class Meta:
-        db_table = 'hotel_list'
-        schema = 'hotel'
+        db_table = 'hotel.hotel_list'
 
     def __str__(self):
         return self.hotel_name or self.google_name
