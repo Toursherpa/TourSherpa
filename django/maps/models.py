@@ -35,3 +35,53 @@ class TravelEvent(models.Model):
     def __str__(self):
         return self.title or self.event_id
 
+class HotelsForEvent(models.Model):
+    EventID = models.CharField(max_length=512, primary_key=True)
+    Title = models.CharField(max_length=1000, null=True, blank=True)
+    Agoda_Hotels = models.TextField(null=True, blank=True)
+    Google_Place_Hotels = models.TextField(null=True, blank=True)
+
+    class Meta:
+        db_table = 'hotel.hotels_for_event'
+
+    def __str__(self):
+        return self.Title or self.EventID
+        
+class EventsForHotel(models.Model):
+    Google_Place_Id = models.CharField(max_length=512, primary_key=True)
+    HOTELNAME = models.CharField(max_length=512, null=True, blank=True)
+    EventID = models.TextField(null=True, blank=True)
+
+    class Meta:
+        db_table = 'hotel.events_for_hotel'
+
+    def __str__(self):
+        return self.HOTELNAME or self.Google_Place_Id
+        
+
+class HotelList(models.Model):
+    event_id = models.CharField(max_length=512, primary_key=True)
+    google_name = models.CharField(max_length=1000, blank=True, null=True)
+    google_address = models.CharField(max_length=1000, blank=True, null=True)
+    google_rating = models.FloatField(blank=True, null=True)
+    google_user_ratings_total = models.IntegerField(blank=True, null=True)
+    google_place_id = models.CharField(max_length=512, blank=True, null=True)
+    agoda_hotel_id = models.CharField(max_length=512, blank=True, null=True)
+    agoda_chain_id = models.CharField(max_length=512, blank=True, null=True)
+    agoda_chain_name = models.CharField(max_length=1000, blank=True, null=True)
+    agoda_hotel_name = models.CharField(max_length=1000, blank=True, null=True)
+    agoda_city = models.CharField(max_length=512, blank=True, null=True)
+    agoda_star_rating = models.FloatField(blank=True, null=True)
+    agoda_longitude = models.FloatField(blank=True, null=True)
+    agoda_latitude = models.FloatField(blank=True, null=True)
+    agoda_checkin = models.CharField(max_length=100, blank=True, null=True)
+    agoda_checkout = models.CharField(max_length=100, blank=True, null=True)
+    google_number_of_reviews = models.IntegerField(blank=True, null=True)
+
+    class Meta:
+        db_table = 'hotel_list'
+        schema = 'hotel'
+
+    def __str__(self):
+        return self.hotel_name or self.google_name
+
