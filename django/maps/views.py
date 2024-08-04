@@ -4,35 +4,72 @@ import csv
 import pandas as pd
 from django.http import HttpResponse
 from .models import Event
+from django_filters.views import FilterView
+from django.db.models import Count
 from .models import TravelEvent
+from .filters import TravelEventFilter
 from .forms import EventFilterForm
 from collections import OrderedDict
+from chartkick.django import ColumnChart, BarChart
 import urllib.parse
 import requests
 
 country_list = {'오스트리아': 'AT', '호주': 'AU', '캐나다': 'CA', '중국': 'CN', '독일': 'DE', '스페인': 'ES', '프랑스': 'FR', '영국': 'GB', '인도네시아': 'ID', '인도': 'IN', '이탈리아': 'IT', '일본': 'JP', '말레이시아': 'MY', '네덜란드': 'NL', '대만': 'TW', '미국': 'US'}
 
 
+
 def dashboard(request):
     top_events = TravelEvent.objects.order_by('-Rank', '-PhqAttendance')[:3]
+    countries = TravelEvent.objects.values('Country').annotate(total_events=Count('EventID')).order_by('-total_events')[:5]
+    categories = TravelEvent.objects.values('Category').annotate(total_events=Count('EventID'))
+    recent_events = TravelEvent.objects.exclude(TimeStart='none').order_by('TimeStart')[:3]
+    earliest_end_events = TravelEvent.objects.exclude(TimeEnd='none').order_by('TimeEnd')[:3]
 
-    # 정렬된 이벤트들을 템플릿에 전달
+    countries_data = {
+        'labels': [country['Country'] for country in countries],
+        'datasets': [{
+            'label': 'Number of Events',
+            'backgroundColor': 'rgba(0, 128, 255, 0.2)',  # 색상 예시, 원하는 대로 수정 가능
+            'borderColor': 'rgba(0, 128, 255, 1)',      # 색상 예시, 원하는 대로 수정 가능
+            'data': [country['total_events'] for country in countries],
+        }]
+    }
+    # BarChart 생성
+    categories_data = {
+        'labels': [category['Category'] for category in categories],
+        'datasets': [{
+            'label': 'Number of Events',
+            'backgroundColor': 'rgba(255, 99, 132, 0.2)',  # 색상 예시, 원하는 대로 수정 가능
+            'borderColor': 'rgba(255, 99, 132, 1)',      # 색상 예시, 원하는 대로 수정 가능
+            'data': [category['total_events'] for category in categories],
+        }]
+    }
     context = {
+        'categories_data': categories_data,
+        'countries_data': countries_data,
         'top_events': top_events,
+        'recent_events': recent_events,
+        'earliest_end_events': earliest_end_events,
     }
     return render(request, 'maps/dashboard.html', context)
 
-
 def country(request, country):
     country_code = country_list.get(country, '')
+    queryset = TravelEvent.objects.filter(Country=country_code)
 
-    # 해당 국가 코드와 일치하는 TravelEvent 객체들을 가져오기
+    event_filter = TravelEventFilter(request.GET, queryset=queryset)
+
     country_events = TravelEvent.objects.filter(Country=country_code).order_by('-Rank', '-PhqAttendance')
 
-    # 정렬된 이벤트들을 템플릿에 전달
+    top_regions = queryset.values('Region').annotate(total_events=Count('EventID')).order_by('-total_events')[:5]
+    categories = queryset.values('Category').annotate(total_events=Count('EventID'))
+
     context = {
         'country_events': country_events,
-        'country': country,  # 템플릿에 국가 이름도 전달
+        'country': country,
+        'top_regions': top_regions,
+        'categories': categories,
+        'filter': event_filter,  # Pass the filter context to the template
     }
     return render(request, 'maps/country.html', context)
 
@@ -43,6 +80,12 @@ def event_detail(request, country, event_id):
         'country': country,
     }
     return render(request, 'maps/event_detail.html', context)
+
+def charts(request):
+    return render(request, 'maps/charts.html')
+
+def tables(request):
+    return render(request, 'maps/tables.html')
 
 def upload_csv(request):
     if request.method == 'POST':
