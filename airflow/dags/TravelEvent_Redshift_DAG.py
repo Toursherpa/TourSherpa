@@ -51,7 +51,7 @@ def extract_formatted_region(data):
     # 문자열의 작은따옴표를 큰따옴표로 변환하여 JSON 형식에 맞게 통일
     data = str(data).replace("'", '"')
 
-    match = re.search(r'"region"\s*:\s*["\'](.*?)(?<!\\)["\'],', data)
+    match = re.search(r'"region"\s*:\s*["\'](.*?)(?<!\\)["\']\}\}', data)
 
     if match:
         # 주소를 반환
