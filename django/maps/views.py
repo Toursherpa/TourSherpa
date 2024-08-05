@@ -7,7 +7,6 @@ from .models import Event
 from django_filters.views import FilterView
 from django.db.models import Count
 from .models import TravelEvent
-from .filters import TravelEventFilter
 from .forms import EventFilterForm
 from collections import OrderedDict
 from chartkick.django import ColumnChart, BarChart
@@ -57,8 +56,6 @@ def country(request, country):
     country_code = country_list.get(country, '')
     queryset = TravelEvent.objects.filter(Country=country_code)
 
-    event_filter = TravelEventFilter(request.GET, queryset=queryset)
-
     country_events = TravelEvent.objects.filter(Country=country_code).order_by('-Rank', '-PhqAttendance')
 
     top_regions = queryset.values('Region').annotate(total_events=Count('EventID')).order_by('-total_events')[:5]
@@ -87,7 +84,6 @@ def country(request, country):
         'country': country,
         'categories_data': categories_data,
         'regions_data': regions_data,
-        'filter': event_filter,  # Pass the filter context to the template
     }
     return render(request, 'maps/country.html', context)
 
