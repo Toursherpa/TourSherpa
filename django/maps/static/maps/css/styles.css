@@ -11263,3 +11263,23 @@ body {
 .event-item p {
     margin-bottom: 5px;
 }
+
+.event-detail {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+.event-detail h2 {
+    font-size: 24px;
+    margin-bottom: 10px;
+}
+.event-info {
+    margin-top: 20px;
+}
+.event-info p {
+    margin-bottom: 10px;
+    line-height: 1.6;
+}
+.event-info strong {
+    font-weight: bold;
+}

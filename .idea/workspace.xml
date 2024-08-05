@@ -4,9 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="ad1196d5-195c-42c7-aa6d-945fa72dbd38" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/airflow/dags/TravelEvent_DAG.py" beforeDir="false" afterPath="$PROJECT_DIR$/airflow/dags/TravelEvent_DAG.py" afterDir="false" />
-    </list>
+    <list default="true" id="ad1196d5-195c-42c7-aa6d-945fa72dbd38" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -35,8 +33,8 @@
   "keyToString": {
     "DefaultHtmlFileTemplate": "HTML File",
     "RunOnceActivity.ShowReadmeOnStart": "true",
-    "git-widget-placeholder": "Merging develop",
-    "last_opened_file_path": "C:/Users/sjo55/django"
+    "git-widget-placeholder": "TravelEvent",
+    "last_opened_file_path": "C:/Users/sjo55/TourSherpa"
   }
 }]]></component>
   <component name="RecentsManager">
