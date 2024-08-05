@@ -49,7 +49,7 @@ def similar(a, b):
     return SequenceMatcher(None, a, b).ratio()
 
 def process_locations():
-    hook = S3Hook(aws_conn_id='aws_default')
+    hook = S3Hook(aws_conn_id='s3_connection')
     bucket_name = 'team-hori-2-bucket'
     input_key = 'source/source_TravelEvents/TravelEvents.csv'
     hotel_list_key = 'source/source_TravelEvents/hotel_list.csv'

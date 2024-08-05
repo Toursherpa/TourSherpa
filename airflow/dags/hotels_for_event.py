@@ -60,7 +60,7 @@ def find_accommodations():
     print("숙소 ID 및 평점 4 이상인 숙소 이름이 포함된 업데이트된 CSV 파일이 저장되었습니다.")
     
 def create_schema_table(**kwargs):
-    redshift_conn_id = 'redshift_default'
+    redshift_conn_id = 'redshift_connection'
     table_name = 'hotels_for_event'
     schema_name = 'hotel'
     
@@ -85,7 +85,7 @@ def create_schema_table(**kwargs):
     cursor.close()
     conn.close()
 def update_table(**kwargs):
-    redshift_conn_id = 'redshift_default'
+    redshift_conn_id = 'redshift_connection'
     table_name = 'hotel.hotels_for_event'
     redshift_hook = PostgresHook(postgres_conn_id=redshift_conn_id)
     conn = redshift_hook.get_conn()
