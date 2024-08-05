@@ -78,6 +78,9 @@ DATABASES = {
         'PASSWORD': 'nDihmJJRWfG5krrOKXQTRoUJ1xsIKHsbuCUxUytJ',
         'HOST': 'team-hori-2.cvkht4jvd430.ap-northeast-2.redshift.amazonaws.com',
         'PORT': '5439',
+        'OPTIONS': {
+            'options': '-c search_path=hotel,public'
+        },
     }
 }
 

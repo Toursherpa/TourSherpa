@@ -42,7 +42,7 @@ class HotelsForEvent(models.Model):
     Google_Place_Hotels = models.TextField(null=True, blank=True)
 
     class Meta:
-        db_table = 'hotel.hotels_for_event'
+        db_table = 'hotels_for_event'
 
     def __str__(self):
         return self.Title or self.EventID
@@ -53,7 +53,7 @@ class EventsForHotel(models.Model):
     EventID = models.TextField(null=True, blank=True)
 
     class Meta:
-        db_table = 'hotel.events_for_hotel'
+        db_table = 'events_for_hotel'
 
     def __str__(self):
         return self.HOTELNAME or self.Google_Place_Id
@@ -79,7 +79,7 @@ class HotelList(models.Model):
     google_number_of_reviews = models.IntegerField(blank=True, null=True)
 
     class Meta:
-        db_table = 'hotel.hotel_list'
+        db_table = 'hotel_list'
 
     def __str__(self):
         return self.hotel_name or self.google_name
