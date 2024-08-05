@@ -18,7 +18,7 @@ def preprocess_text(text):
 def download_files():
     """S3에서 파일 다운로드"""
     print("Downloading files from S3...")
-    hook = S3Hook(aws_conn_id='aws_default')
+    hook = S3Hook(aws_conn_id='s3_connection')
     bucket_name = 'team-hori-2-bucket'
     accommodations_key = 'source/source_TravelEvents/Accommodations.csv'
     hotel_list_key = 'source/source_TravelEvents/hotel_list.csv'
@@ -142,7 +142,7 @@ def process_accommodations():
 
 def upload_file():
     """처리된 파일을 S3에 업로드"""
-    hook = S3Hook(aws_conn_id='aws_default')
+    hook = S3Hook(aws_conn_id='s3_connection')
     bucket_name = 'team-hori-2-bucket'
     output_key = 'source/source_TravelEvents/Updated_Accommodations.csv'
     
