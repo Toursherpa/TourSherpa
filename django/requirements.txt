@@ -17,3 +17,4 @@ zipp
 psycopg2
 django-redshift-backend
 django-sslserver
+django-filter
