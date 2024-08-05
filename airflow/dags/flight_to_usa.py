@@ -24,42 +24,36 @@ def fetch_flight_data():
     # 항공편 데이터 요청
     response_list = []
     airport_list = ["HNL", "SEA", "LAX", "ORD", "DFW", "JFK"]
-    date_list = []
-
-    today = datetime(2024, 8, 5, 0, 0, 0)
-
-    for i in range(100):
-        date = today + timedelta(days=i)
-        date_list.append(date.strftime('%Y-%m-%d'))
+    
+    date = datetime.now().date() + timedelta(days=1)
 
     for i in airport_list:
-        for j in date_list:
-            try:
-                response = amadeus.shopping.flight_offers_search.get(
-                    originLocationCode='ICN',
-                    destinationLocationCode=i,
-                    departureDate=j,
-                    adults=1,
-                    nonStop='true'
-                )
-            
+        try:
+            response = amadeus.shopping.flight_offers_search.get(
+                originLocationCode='ICN',
+                destinationLocationCode=i,
+                departureDate=date,
+                adults=1,
+                nonStop='true'
+            )
+        
+            response_list.append(response.data)
+
+            print("==========================================")
+            if response.data:
                 response_list.append(response.data)
 
-                print("==========================================")
-                if response.data:
-                    response_list.append(response.data)
+                print(response.data[0]['itineraries'][0]['segments'][0]['arrival']['iataCode'])
+                print(response.data[0]['itineraries'][0]['segments'][0]['departure']['at'])
+            else:
+                print(i)
+                print("비행편 없음")
 
-                    print(response.data[0]['itineraries'][0]['segments'][0]['arrival']['iataCode'])
-                    print(response.data[0]['itineraries'][0]['segments'][0]['departure']['at'])
-                else:
-                    print(i)
-                    print("비행편 없음")
+            time.sleep(1)
+        except ResponseError as error:
+            print(error)
 
-                time.sleep(1)
-            except ResponseError as error:
-                print(error)
-
-                return 0
+            return 0
 
     # 데이터 처리
     flight_list = []
@@ -91,7 +85,9 @@ def upload_to_s3(data):
     )
 
     bucket_name = 'team-hori-2-bucket'
-    s3_client.put_object(Body=data.to_csv(index=False), Bucket=bucket_name, Key="source/source_flight/flight_to_usa.csv")
+    key_name = "source/source_flight/flight/to_usa.csv"
+
+    s3_client.put_object(Body=data.to_csv(index=False), Bucket=bucket_name, Key=key_name)
 
 # DAG 정의
 default_args = {
