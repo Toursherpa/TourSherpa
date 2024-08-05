@@ -90,7 +90,7 @@ def update_table(**kwargs):
     redshift_hook = PostgresHook(postgres_conn_id=redshift_conn_id)
     conn = redshift_hook.get_conn()
     cursor = conn.cursor()
-    hotel_df=pd.read_csv('/tmp/Updated_Events_with_Accommodations.csv', usecols=['id', 'title', 'accommodation_ids', 'high_rating_accommodation_names'])
+    hotel_df=pd.read_csv('/tmp/Updated_Events_with_Accommodations.csv', usecols=['id', 'title', 'agoda_accommodation_ids', 'high_rating_accommodation_names'])
     print(hotel_df)
     
     for index, row in hotel_df.iterrows():
@@ -106,13 +106,13 @@ def update_table(**kwargs):
                     Agoda_Hotels = %s,
                     Google_Place_Hotels = %s
                 WHERE EventID = %s
-            """, (row['title'], row['accommodation_ids'], row['high_rating_accommodation_names'], row['id']))
+            """, (row['title'], row['agoda_accommodation_ids'], row['high_rating_accommodation_names'], row['id']))
         else:
             # Insert the new record
             cursor.execute(f"""
                 INSERT INTO {table_name} (EventID, Title, Agoda_Hotels, Google_Place_Hotels)
                 VALUES (%s, %s, %s, %s)
-            """, (row['id'], row['title'], row['accommodation_ids'], row['high_rating_accommodation_names']))
+            """, (row['id'], row['title'], row['agoda_accommodation_ids'], row['high_rating_accommodation_names']))
     
     conn.commit()
     cursor.close()
