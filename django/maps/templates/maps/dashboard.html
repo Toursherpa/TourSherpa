@@ -7,23 +7,28 @@
 {% block content %}
 <div class="container-fluid px-4">
     <h1 class="mt-4">Dashboard</h1>
-
-    <div class="card mb-4">
-        <div class="card-header">
-            <i class="fas fa-chart-bar me-1"></i>
-            Event가 많은 국가는?
+    <div class="row mb-4">
+        <div class="col-lg-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-chart-bar me-1"></i>
+                    Event가 많은 국가는?
+                </div>
+                <div class="card-body">
+                    <canvas id="EventCountryBarChart" width="100%" height="40"></canvas>
+                </div>
+            </div>
         </div>
-        <div class="card-body">
-            <canvas id="EventCountryBarChart" width="100%" height="40"></canvas>
-        </div>
-    </div>
-    <div class="card mb-4">
-        <div class="card-header">
-            <i class="fas fa-chart-bar me-1"></i>
-            카테고리별 이벤트 수
-        </div>
-        <div class="card-body">
-            <canvas id="EventCategoryBarChart" width="100%" height="40"></canvas>
+        <div class="col-lg-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-chart-bar me-1"></i>
+                    카테고리별 이벤트 수
+                </div>
+                <div class="card-body">
+                    <canvas id="EventCategoryBarChart" width="100%" height="40"></canvas>
+                </div>
+            </div>
         </div>
     </div>
     <div class="card mb-4">
@@ -49,45 +54,49 @@
             </div>
         </div>
     </div>
-    <div class="row">
-        <div class="col-lg-6">
-            <div class="card mb-4">
-                <div class="card-header">
-                    <i class="fas fa-clock me-1"></i>
-                    가장 빠르게 열린 이벤트 (테스트용)
-                </div>
-                <div class="card-body">
-                    {% for recent_event in recent_events %}
-                    <div class="card mb-3">
-                        <div class="card-body">
-                            <h5 class="card-title">{{ recent_event.Title }}</h5>
-                            <h6 class="card-subtitle mb-2 text-muted">{{ recent_event.Category }}</h6>
-                            <p class="card-text"><strong>Date:</strong> {{ recent_event.Date }}</p>
-                            <p class="card-text"><strong>Country:</strong> {{ recent_event.Country }}</p>
-                            <p class="card-text">{{ recent_event.Description }}</p>
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="fas fa-clock me-1"></i>
+            가장 빠르게 열린 이벤트
+        </div>
+        <div class="card-body">
+            <div class="row">
+                {% for recent_event in recent_events %}
+                    <div class="col-lg-4">
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ recent_event.Title }}</h5>
+                                <h6 class="card-subtitle mb-2 text-muted">{{ recent_event.Category }}</h6>
+                                <p class="card-text"><strong>Date:</strong> {{ recent_event.Date }}</p>
+                                <p class="card-text"><strong>Country:</strong> {{ recent_event.Country }}</p>
+                                <p class="card-text">{{ recent_event.Description }}</p>
+                            </div>
                         </div>
                     </div>
-                    {% endfor %}
-                </div>
+                {% endfor %}
             </div>
-            <div class="card mb-4">
-                <div class="card-header">
-                    <i class="fas fa-hourglass-half me-1"></i>
-                    기간이 촉박한 이벤트 (테스트용)
-                </div>
-                <div class="card-body">
-                    {% for earliest_end_event in earliest_end_events %}
-                    <div class="card mb-3">
-                        <div class="card-body">
-                            <h5 class="card-title">{{ earliest_end_event.Title }}</h5>
-                            <h6 class="card-subtitle mb-2 text-muted">{{ earliest_end_event.Category }}</h6>
-                            <p class="card-text"><strong>Date:</strong> {{ earliest_end_event.Date }}</p>
-                            <p class="card-text"><strong>Country:</strong> {{ earliest_end_event.Country }}</p>
-                            <p class="card-text">{{ earliest_end_event.Description }}</p>
+        </div>
+    </div>
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="fas fa-hourglass-half me-1"></i>
+            기간이 촉박한 이벤트
+        </div>
+        <div class="card-body">
+            <div class="row">
+                {% for earliest_end_event in earliest_end_events %}
+                    <div class="col-lg-4">
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ earliest_end_event.Title }}</h5>
+                                <h6 class="card-subtitle mb-2 text-muted">{{ earliest_end_event.Category }}</h6>
+                                <p class="card-text"><strong>Date:</strong> {{ earliest_end_event.Date }}</p>
+                                <p class="card-text"><strong>Country:</strong> {{ earliest_end_event.Country }}</p>
+                                <p class="card-text">{{ earliest_end_event.Description }}</p>
+                            </div>
                         </div>
                     </div>
-                    {% endfor %}
-                </div>
+                {% endfor %}
             </div>
         </div>
     </div>
@@ -122,10 +131,10 @@
                     }
                 }],
                 yAxes: [{
-                    barThickness: 30,
+                    barThickness: 20,
                     ticks: {
                         min: yAxisMin,
-                        max: maxEventCategoryData,
+                        max: maxEventCategoryData + 10,
                         maxTicksLimit: 5
                     }
                 }],
@@ -158,7 +167,7 @@
                     }
                 }],
                 yAxes: [{
-                    barThickness: 30,
+                    barThickness: 20,
                     ticks: {
                         min: 0,
                         max: maxEventCountryData + 10,
