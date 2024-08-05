@@ -5,187 +5,171 @@
 {% block title %}Dashboard{% endblock %}
 
 {% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Dashboard</h1>
 
-    <head>
-        <meta charset="utf-8" />
-        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
-        <meta name="description" content="" />
-        <meta name="author" content="" />
-        <title>Dashboard</title>
-        <link href="{% static 'maps/css/styles.css' %}" rel="stylesheet" />
-        <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.js" crossorigin="anonymous"></script>
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
-    </head>
-    <body class="sb-nav-fixed">
-        <div style="float: left; width: 100%; padding: 10px;">
-        <h2>세계 다양한 행사에 대한 여행 정보를 제공합니다.</h2>
-        <p>행사리스트, 항공권, 숙박, 맛집 정보 제공.</p>
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="fas fa-chart-bar me-1"></i>
+            Event가 많은 국가는?
         </div>
-        <br>
-
-        <div style="float: left; width: 100%; padding: 10px;">
-        <h2>인기 있는 이벤트 TOP 3</h2>
+        <div class="card-body">
+            <canvas id="EventCountryBarChart" width="100%" height="40"></canvas>
         </div>
-            {% for event in top_events %}
-            <div style="float: left; width: 33.33%; padding: 30px;">
-                <!-- 이 곳에 event 상세 정보 넣기 -->
-                    <div style="margin-bottom: 20px;">
-                        <h3>{{ event.Title }}</h3>
-                        <p><strong>Category:</strong> {{ event.Category }}</p>
-                        <p><strong>Date:</strong> {{ event.Date }}</p>
-                        <p><strong>Country:</strong> {{ event.Country }}</p>
-                        <p>{{ event.Description }}</p>
+    </div>
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="fas fa-chart-bar me-1"></i>
+            카테고리별 이벤트 수
+        </div>
+        <div class="card-body">
+            <canvas id="EventCategoryBarChart" width="100%" height="40"></canvas>
+        </div>
+    </div>
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="fas fa-star me-1"></i>
+            인기 있는 이벤트 TOP 3
+        </div>
+        <div class="card-body">
+            <div class="row">
+                {% for event in top_events %}
+                <div class="col-lg-4">
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ event.Title }}</h5>
+                            <h6 class="card-subtitle mb-2 text-muted">{{ event.Category }}</h6>
+                            <p class="card-text"><strong>Date:</strong> {{ event.Date }}</p>
+                            <p class="card-text"><strong>Country:</strong> {{ event.Country }}</p>
+                            <p class="card-text">{{ event.Description }}</p>
+                        </div>
                     </div>
-
+                </div>
+                {% endfor %}
             </div>
-            {% endfor %}
-        <br>
-        <div style="float: left; width: 100%; padding: 10px;">
-        <h2>Event가 많은 국가는?</h2>
-            <canvas id="EventCountryBarChart" width="100%" height="25px"></canvas>
-        <h2>카테고리별 이벤트 수</h2>
-            <canvas id="EventCategoryBarChart" width="100%" height="25px"></canvas>
         </div>
-        <div style="float: left; width: 100%; padding: 10px;">
-            <h2>가장 빠르게 열린 이벤트 (테스트용)</h2>
-            <ul>
-                {% for recent_event in recent_events %}
-                    <div style="float: left; width: 33.33%; padding: 30px;">
-                <!-- 이 곳에 event 상세 정보 넣기 -->
-                        <div style="margin-bottom: 20px;">
-                            <h3>{{ recent_event.Title }}</h3>
-                            <p><strong>Category:</strong> {{ recent_event.Category }}</p>
-                            <p><strong>Date:</strong> {{ recent_event.Date }}</p>
-                            <p><strong>Country:</strong> {{ recent_event.Country }}</p>
-                            <p>{{ recent_event.Description }}</p>
+    </div>
+    <div class="row">
+        <div class="col-lg-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-clock me-1"></i>
+                    가장 빠르게 열린 이벤트 (테스트용)
+                </div>
+                <div class="card-body">
+                    {% for recent_event in recent_events %}
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ recent_event.Title }}</h5>
+                            <h6 class="card-subtitle mb-2 text-muted">{{ recent_event.Category }}</h6>
+                            <p class="card-text"><strong>Date:</strong> {{ recent_event.Date }}</p>
+                            <p class="card-text"><strong>Country:</strong> {{ recent_event.Country }}</p>
+                            <p class="card-text">{{ recent_event.Description }}</p>
                         </div>
                     </div>
-                {% endfor %}
-            </ul>
-        </div>
-        <div style="float: left; width: 100%; padding: 10px;">
-            <h2>기간이 촉박한 이벤트 (테스트용)</h2>
-            <ul>
-                {% for earliest_end_event in earliest_end_events %}
-                    <div style="float: left; width: 33.33%; padding: 30px;">
-                <!-- 이 곳에 event 상세 정보 넣기 -->
-                        <div style="margin-bottom: 20px;">
-                            <h3>{{ earliest_end_event.Title }}</h3>
-                            <p><strong>Category:</strong> {{ earliest_end_event.Category }}</p>
-                            <p><strong>Date:</strong> {{ earliest_end_event.Date }}</p>
-                            <p><strong>Country:</strong> {{ earliest_end_event.Country }}</p>
-                            <p>{{ earliest_end_event.Description }}</p>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-hourglass-half me-1"></i>
+                    기간이 촉박한 이벤트 (테스트용)
+                </div>
+                <div class="card-body">
+                    {% for earliest_end_event in earliest_end_events %}
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ earliest_end_event.Title }}</h5>
+                            <h6 class="card-subtitle mb-2 text-muted">{{ earliest_end_event.Category }}</h6>
+                            <p class="card-text"><strong>Date:</strong> {{ earliest_end_event.Date }}</p>
+                            <p class="card-text"><strong>Country:</strong> {{ earliest_end_event.Country }}</p>
+                            <p class="card-text">{{ earliest_end_event.Description }}</p>
                         </div>
                     </div>
-                {% endfor %}
-            </ul>
+                    {% endfor %}
+                </div>
+            </div>
         </div>
-        <script src="{% static 'maps/js/scripts.js' %}"></script>
-        <script>
-            var maxEventCategoryData = Math.max.apply(null, {{ categories_data.datasets.0.data|safe }});  // 데이터의 최대값 계산
-            var minEventCategoryData = Math.min.apply(null, {{ categories_data.datasets.0.data|safe }});  // 데이터의 최소값 계산
+    </div>
+</div>
 
-            var yAxisMin = (minEventCategoryData < 0) ? minEventCategoryData : 0;
-            var Categoryctx = document.getElementById("EventCategoryBarChart");
-            var CategoryBarChart = new Chart(Categoryctx, {
-                type: 'horizontalBar',
-                data: {
-                    labels: {{ categories_data.labels|safe }},
-                    datasets: [{
-                        label: "Number of Events",
-                        backgroundColor: [
-                            'rgba(255, 99, 132, 0.8)',   // 진한 빨간색
-                            'rgba(255, 159, 64, 0.8)',   // 주황색
-                            'rgba(255, 205, 86, 0.8)',   // 연한 주황색
-                            'rgba(255, 240, 105, 0.8)',  // 연한 노란색
-                            'rgba(255, 255, 132, 0.8)'   // 밝은 노란색 (가장 밝은 색)
-                        ],
-                        borderColor: [
-                            'rgba(255, 99, 132, 1)',
-                            'rgba(255, 159, 64, 1)',
-                            'rgba(255, 205, 86, 1)',
-                            'rgba(255, 240, 105, 1)',
-                            'rgba(255, 255, 132, 1)'
-                        ],  // 테두리 색 설정
-                        borderWidth: 1,  // 테두리 두께 설정
-                        data: {{ categories_data.datasets.0.data|safe }},
-                    }],
-                },
-                options: {
-                    scales: {
-                        xAxes: [{
-                            ticks: {
-                                maxTicksLimit: 6
-                            }
-                        }],
-                        yAxes: [{
-                            barThickness: 30,  // 바 높이(두께) 설정
-                            ticks: {
-                                min: yAxisMin,
-                                max: maxEventCategoryData,  // 계산된 최대값으로 설정
-                                maxTicksLimit: 5
-                            }
-                        }],
-                    },
-                    legend: {
-                        display: false
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.js" crossorigin="anonymous"></script>
+<script src="{% static 'maps/js/scripts.js' %}"></script>
+<script>
+    var maxEventCategoryData = Math.max.apply(null, {{ categories_data.datasets.0.data|safe }});  
+    var minEventCategoryData = Math.min.apply(null, {{ categories_data.datasets.0.data|safe }});  
+
+    var yAxisMin = (minEventCategoryData < 0) ? minEventCategoryData : 0;
+    var Categoryctx = document.getElementById("EventCategoryBarChart");
+    var CategoryBarChart = new Chart(Categoryctx, {
+        type: 'horizontalBar',
+        data: {
+            labels: {{ categories_data.labels|safe }},
+            datasets: [{
+                label: "Number of Events",
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 1,
+                data: {{ categories_data.datasets.0.data|safe }},
+            }],
+        },
+        options: {
+            scales: {
+                xAxes: [{
+                    ticks: {
+                        maxTicksLimit: 6
                     }
-                }
-            });
-        </script>
-        <script>
-            var maxEventCountryData = Math.max.apply(null, {{ countries_data.datasets.0.data|safe }});  // 데이터의 최대값 계산
-
-            var Countryctx = document.getElementById("EventCountryBarChart");
-            var CountryBarChart = new Chart(Countryctx, {
-                type: 'horizontalBar',
-                data: {
-                    labels: {{ countries_data.labels|safe }},
-                    datasets: [{
-                        label: "Number of Events",
-                        backgroundColor: [
-                            'rgba(0, 0, 128, 0.8)',      // 네이비
-                            'rgba(0, 77, 153, 0.8)',     // 다크 슬레이트 블루 (채도 높임)
-                            'rgba(0, 122, 204, 0.8)',    // 텔 블루 (채도 높임)
-                            'rgba(0, 178, 238, 0.8)',    // 스카이 블루 (채도 높임)
-                            'rgba(127, 255, 212, 0.8)'   // 아쿠아마린
-                        ],
-                        borderColor: [
-                            'rgba(0, 0, 128, 1)',
-                            'rgba(0, 77, 153, 1)',
-                            'rgba(0, 122, 204, 1)',
-                            'rgba(0, 178, 238, 1)',
-                            'rgba(127, 255, 212, 1)'
-                        ],
-                        borderWidth: 1,  // 테두리 두께 설정
-                        data: {{ countries_data.datasets.0.data|safe }},
-                    }],
-                },
-                options: {
-                    scales: {
-                        xAxes: [{
-                            ticks: {
-                                maxTicksLimit: 6
-                            }
-                        }],
-                        yAxes: [{
-                            barThickness: 30,  // 바 높이(두께) 설정
-                            ticks: {
-                                min: 0,
-                                max: maxEventCountryData + 10,  // 계산된 최대값으로 설정
-                                maxTicksLimit: 5
-                            }
-                        }],
-                    },
-                    legend: {
-                        display: false
+                }],
+                yAxes: [{
+                    barThickness: 30,
+                    ticks: {
+                        min: yAxisMin,
+                        max: maxEventCategoryData,
+                        maxTicksLimit: 5
                     }
-                }
-            });
-        </script>
+                }],
+            },
+            legend: {
+                display: false
+            }
+        }
+    });
 
-    </body>
+    var maxEventCountryData = Math.max.apply(null, {{ countries_data.datasets.0.data|safe }});  
+    var Countryctx = document.getElementById("EventCountryBarChart");
+    var CountryBarChart = new Chart(Countryctx, {
+        type: 'horizontalBar',
+        data: {
+            labels: {{ countries_data.labels|safe }},
+            datasets: [{
+                label: "Number of Events",
+                backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1,
+                data: {{ countries_data.datasets.0.data|safe }},
+            }],
+        },
+        options: {
+            scales: {
+                xAxes: [{
+                    ticks: {
+                        maxTicksLimit: 6
+                    }
+                }],
+                yAxes: [{
+                    barThickness: 30,
+                    ticks: {
+                        min: 0,
+                        max: maxEventCountryData + 10,
+                        maxTicksLimit: 5
+                    }
+                }],
+            },
+            legend: {
+                display: false
+            }
+        }
+    });
+</script>
 {% endblock %}
-
