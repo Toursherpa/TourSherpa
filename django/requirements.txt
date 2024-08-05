@@ -1,8 +1,11 @@
 asgiref==3.8.1
 certifi==2024.7.4
 charset-normalizer==3.3.2
+chartkick==1.0.1
 Django==4.2.14
+django-filter==24.3
 django-redshift-backend==4.1.0
+django-sslserver==0.22
 idna==3.7
 importlib_resources==6.4.0
 numpy==2.0.1
@@ -19,3 +22,4 @@ typing_extensions==4.12.2
 tzdata==2024.1
 urllib3==2.2.2
 zipp==3.19.2
+
