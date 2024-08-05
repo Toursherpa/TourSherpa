@@ -45,7 +45,7 @@ def find_events():
     
     
 def create_schema_table(**kwargs):
-    redshift_conn_id = 'redshift_default'
+    redshift_conn_id = 'redshift_connection'
     table_name = 'events_for_hotel'
     schema_name = 'hotel'
     
@@ -72,7 +72,7 @@ def create_schema_table(**kwargs):
     
     
 def update_table(**kwargs):
-    redshift_conn_id = 'redshift_default'
+    redshift_conn_id = 'redshift_connection'
     table_name = 'hotel.events_for_hotel'
     redshift_hook = PostgresHook(postgres_conn_id=redshift_conn_id)
     conn = redshift_hook.get_conn()
