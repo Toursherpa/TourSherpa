@@ -20,8 +20,8 @@ today = kst_now.strftime('%Y-%m-%d')
 
 
 def read_data_from_s3(**kwargs):
-    s3_hook = S3Hook('TravelEvent_s3_conn')
-    s3_bucket_name = Variable.get('my_s3_bucket')
+    s3_hook = S3Hook('s3_connection')
+    s3_bucket_name = Variable.get('s3_bucket_name')
 
     s3_key = f'source/source_TravelEvents/TravelEvents.csv'
     if s3_hook.check_for_key(key=s3_key, bucket_name=s3_bucket_name):
@@ -85,7 +85,7 @@ def transform_data(**kwargs):
 
 def generate_and_save_data(**kwargs):
     transformed_data = kwargs['ti'].xcom_pull(key='transformed_data', task_ids='transform_data')
-    redshift_conn_id = 'my_redshift_connection_id'
+    redshift_conn_id = 'redshift_connection'
     redshift_table = 'travel_events'
 
     redshift_hook = PostgresHook(postgres_conn_id=redshift_conn_id)
