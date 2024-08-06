@@ -25,53 +25,25 @@
             <h3>Google Place Hotels</h3>
         </div>
         <div class="card-body">
-            <div class="row">
-                {% if google_place_hotels %}
-                    {% for hotel in google_place_hotels %}
-                    <div class="col-lg-4 mb-4">
-                        <div class="card">
-                            <div class="card-body">
-                                <h5 class="card-title">
-                                    {% if hotel in hotel_list %}
-                                    <a href="{% url 'hotel_detail' hotel_name=hotel %}">
-                                        {{ hotel }}
-                                    </a>
-                                    {% else %}
-                                    {{ hotel }}
-                                    {% endif %}
-                                </h5>
-                            </div>
-                        </div>
-                    </div>
-                    {% endfor %}
-                {% else %}
-                    <p>No hotels found for this event.</p>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-
-    <div class="card mb-4">
-        <div class="card-header">
-            <i class="fas fa-star me-1"></i>
-            인기 있는 이벤트 TOP 3
-        </div>
-        <div class="card-body">
-            <div class="row">
-                {% for event in top_events %}
-                <div class="col-lg-4">
-                    <div class="card mb-3" onclick="redirectToEventDetail('{% url 'event_detail' country=event.Country event_id=event.EventID %}');">
-                        <div class="card-body">
-                            <h5 class="card-title">{{ event.Title }}</h5>
-                            <h6 class="card-subtitle mb-2 text-muted">{{ event.Category }}</h6>
-                            <p class="card-text"><strong>Date:</strong> {{ event.Date }}</p>
-                            <p class="card-text"><strong>Country:</strong> {{ event.Country }}</p>
-                            <p class="card-text">{{ event.Description }}</p>
-                        </div>
+            {% if google_place_hotels %}
+                {% for hotel in google_place_hotels %}
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            {% if hotel in hotel_list %}
+                            <a href="{% url 'hotel_detail' hotel_name=hotel %}">
+                                {{ hotel }}
+                            </a>
+                            {% else %}
+                            {{ hotel }}
+                            {% endif %}
+                        </h5>
                     </div>
                 </div>
                 {% endfor %}
-            </div>
+            {% else %}
+                <p>No hotels found for this event.</p>
+            {% endif %}
         </div>
     </div>
 </div>
