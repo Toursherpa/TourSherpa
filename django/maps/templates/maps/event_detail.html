@@ -19,7 +19,42 @@
             <p><strong>Predicted Event Spend:</strong> {{ event.PredictedEventSpend }}</p>
         </div>
     </div>
-
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="fas fa-table me-1"></i>
+            출발 항공권
+        </div>
+        <div class="card-body">
+            <table id="datatablesSimple" class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Airline</th>
+                        <th>Departure</th>
+                        <th>Departure Time</th>
+                        <th>Arrival</th>
+                        <th>Arrival Time</th>
+                        <th>Duration</th>
+                        <th>Seats</th>
+                        <th>Price</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for f in flight_to %}
+                    <tr>
+                        <td>{{ f.airline_code }}</td>
+                        <td>{{ f.departure }}</td>
+                        <td>{{ f.departure_at }}</td>
+                        <td>{{ f.arrival }}</td>
+                        <td>{{ f.arrival_at }}</td>
+                        <td>{{ f.duration }}</td>
+                        <td>{{ f.seats }}</td>
+                        <td>{{ f.price }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
     <div class="card mt-4">
         <div class="card-header">
             <h2>Related Hotels</h2>
