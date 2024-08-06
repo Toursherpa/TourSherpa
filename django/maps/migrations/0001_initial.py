@@ -8,20 +8,10 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
+        # 다른 마이그레이션 파일에 대한 의존성을 여기에 추가하세요.
     ]
 
     operations = [
-        migrations.CreateModel(
-            name='Event',
-            fields=[
-                ('id', models.BigAutoField(primary_key=True, serialize=False)),
-                ('name', models.CharField(max_length=255)),
-                ('date', models.DateTimeField()),
-                ('category', models.CharField(max_length=255)),
-                ('location', models.CharField(max_length=255)),
-                ('city', models.CharField(max_length=255)),
-            ],
-        ),
         migrations.CreateModel(
             name='TravelEvent',
             fields=[
@@ -44,3 +34,4 @@ class Migration(migrations.Migration):
             },
         ),
     ]
+
