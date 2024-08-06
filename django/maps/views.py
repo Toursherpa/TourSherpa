@@ -5,7 +5,7 @@ import pandas as pd
 from django.http import HttpResponse
 from django_filters.views import FilterView
 from django.db.models import Count
-from .models import Event, HotelsForEvent, EventsForHotel, TravelEvent, HotelList
+from .models import HotelsForEvent, EventsForHotel, TravelEvent, HotelList
 from .forms import EventFilterForm
 from collections import OrderedDict
 from chartkick.django import ColumnChart, BarChart
