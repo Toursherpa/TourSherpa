@@ -22,49 +22,49 @@
 
     <div class="card mt-4">
         <div class="card-header">
-            <h3>Google Place Hotels</h3>
+            <h2>Related Hotels</h2>
         </div>
         <div class="card-body">
-            {% if google_place_hotels %}
-                {% for hotel in google_place_hotels %}
-                <div class="card mb-4">
-                    <div class="card-body">
-                        <h5 class="card-title">
-                            {% if hotel in hotel_list %}
-                            <a href="{% url 'hotel_detail' hotel_name=hotel %}">
-                                {{ hotel }}
-                            </a>
-                            {% else %}
-                            {{ hotel }}
-                            {% endif %}
-                        </h5>
-                    </div>
-                </div>
-                {% endfor %}
-            {% else %}
-                <p>No hotels found for this event.</p>
-            {% endif %}
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th scope="col">Hotel Name</th>
+                        <th scope="col">Address</th>
+                        <th scope="col">Rating</th>
+                        <th scope="col">Total Reviews</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for hotel in hotel_list %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'hotel_detail' hotel_name=hotel.google_name %}">{{ hotel.google_name }}</a>
+                        </td>
+                        <td>{{ hotel.google_address }}</td>
+                        <td>{{ hotel.google_rating }}</td>
+                        <td>{{ hotel.google_user_ratings_total }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
 
 <style>
-    .card h2, .card h5 {
+    .card h2 {
         font-size: 24px;
         margin-bottom: 10px;
     }
-    .card p {
+    .card p, .card td, .card th {
         margin-bottom: 10px;
         line-height: 1.6;
     }
     .card strong {
         font-weight: bold;
     }
-</style>
-
-<script>
-    function redirectToEventDetail(url) {
-        window.location.href = url;
+    .table td, .table th {
+        vertical-align: middle;
     }
-</script>
+</style>
 {% endblock %}
