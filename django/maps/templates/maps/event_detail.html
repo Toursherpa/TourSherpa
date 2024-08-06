@@ -32,9 +32,13 @@
                         <div class="card">
                             <div class="card-body">
                                 <h5 class="card-title">
+                                    {% if hotel in hotel_list %}
                                     <a href="{% url 'hotel_detail' hotel_name=hotel %}">
                                         {{ hotel }}
                                     </a>
+                                    {% else %}
+                                    {{ hotel }}
+                                    {% endif %}
                                 </h5>
                             </div>
                         </div>
