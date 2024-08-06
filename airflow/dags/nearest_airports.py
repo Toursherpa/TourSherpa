@@ -6,11 +6,10 @@ from airflow.operators.python_operator import PythonOperator
 from airflow.providers.amazon.aws.hooks.s3 import S3Hook
 from airflow.providers.amazon.aws.transfers.s3_to_redshift import S3ToRedshiftOperator
 from airflow.hooks.postgres_hook import PostgresHook
-from datetime import  timedelta
+from datetime import timedelta
 from airflow.utils.dates import days_ago
 from airflow.models import Variable
-
-
+from io import StringIO
 
 '''
 geodesic 라이브러리 설치 필요
@@ -41,16 +40,19 @@ def read_data_from_s3(**context):
         event_df = pd.read_csv(StringIO(events_file_content))
         airport_df = pd.read_csv(StringIO(airports_file_content))
 
-        event_df[['lon', 'lat']] = pd.DataFrame(event_df['location'].apply(lambda x: eval(x)).tolist(), index=event_df.index)
-        airport_df[['airport_lat', 'airport_lon']] = pd.DataFrame(airport_df['airport_location'].apply(lambda x: eval(x)).tolist(), index=airport_df.index)
+        event_df[['lon', 'lat']] = pd.DataFrame(event_df['location'].apply(lambda x: eval(x)).tolist(),
+                                                index=event_df.index)
+        airport_df[['airport_lat', 'airport_lon']] = pd.DataFrame(
+            airport_df['airport_location'].apply(lambda x: eval(x)).tolist(), index=airport_df.index)
 
         context['ti'].xcom_push(key='event_df', value=event_df.to_dict(orient='records'))
         context['ti'].xcom_push(key='airport_df', value=airport_df.to_dict(orient='records'))
         logging.info("Events and Airports data has been read from S3 and pushed to XCom.")
-    
+
     except Exception as e:
         logging.error(f"Error in read_data_from_s3: {e}")
         raise
+
 
 def find_nearest_airports(**context):
     try:
@@ -91,18 +93,18 @@ def find_nearest_airports(**context):
         result_df = pd.DataFrame(results)
         csv_filename = '/tmp/nearest_airports.csv'
         result_df.to_csv(csv_filename, index=False, encoding='utf-8-sig')
-   
+
         s3_hook = S3Hook('s3_connection')
         s3_result_key = 'source/source_flight/nearest_airports.csv'
         s3_bucket_name = Variable.get('s3_bucket_name')
-        s3_hook.load_file(filename=result_file, key=s3_result_key, bucket_name=s3_bucket_name, replace=True)
-        
+        s3_hook.load_file(filename=csv_filename, key=s3_result_key, bucket_name=s3_bucket_name, replace=True)
 
         logging.info("Nearest airports data has been calculated and uploaded to S3.")
-    
+
     except Exception as e:
         logging.error(f"Error in find_nearest_airports: {e}")
         raise
+
 
 def preprocess_redshift_table():
     try:
@@ -110,7 +112,8 @@ def preprocess_redshift_table():
         redshift_conn = redshift_hook.get_conn()
         cursor = redshift_conn.cursor()
 
-        cursor.execute(f"DROP TABLE IF EXISTS {Variable.get('redshift_schema_places')}.{Variable.get('redshift_table_nearest')};")
+        cursor.execute(
+            f"DROP TABLE IF EXISTS {Variable.get('redshift_schema_places')}.{Variable.get('redshift_table_nearest')};")
         cursor.execute(f"""
             CREATE TABLE {Variable.get('redshift_schema_places')}.{Variable.get('redshift_table_nearest')} (
                 id VARCHAR(255),
@@ -122,14 +125,15 @@ def preprocess_redshift_table():
         """)
         redshift_conn.commit()
         logging.info(f"Redshift table {Variable.get('redshift_table_nearest')} has been dropped and recreated.")
-    
+
     except Exception as e:
         logging.error(f"Error in preprocess_redshift_table: {e}")
         raise
 
+
 default_args = {
     'owner': 'airflow',
-    'start_date': days_ago(1), 
+    'start_date': days_ago(1),
     'retries': 1,
     'retry_delay': timedelta(minutes=5),
 }
@@ -167,13 +171,12 @@ load_to_redshift_task = S3ToRedshiftOperator(
     task_id='load_to_redshift',
     schema=Variable.get('redshift_schema_places'),
     table=Variable.get('redshift_table_nearest'),
-    s3_bucket=Variable.get('s3_bucket_name'),
+    s3_bucket=Variable.get('my_s3_bucket'),
     s3_key='source/source_flight/nearest_airports.csv',
     copy_options=['IGNOREHEADER 1', 'CSV'],
-    aws_conn_id='s3_connection',
-    redshift_conn_id='redshift_connection',
+    aws_conn_id='TravelEvent_s3_conn',
+    redshift_conn_id='my_redshift_connection_id',
     dag=dag,
 )
-
 
 read_data_from_s3_task >> find_nearest_airports_task >> preprocess_redshift_task >> load_to_redshift_task
