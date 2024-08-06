@@ -3,17 +3,6 @@ from django.db import models
 import json
 
 
-class Event(models.Model):
-    id = models.BigAutoField(primary_key=True)
-    name = models.CharField(max_length=255)
-    date = models.DateTimeField()
-    category = models.CharField(max_length=255)
-    location = models.CharField(max_length=255)
-    city = models.CharField(max_length=255)
-
-    def __str__(self):
-        return self.name
-
 class TravelEvent(models.Model):
     EventID = models.CharField(max_length=255, primary_key=True, default='none')
     Title = models.CharField(max_length=1000, null=True, blank=True, default='none')

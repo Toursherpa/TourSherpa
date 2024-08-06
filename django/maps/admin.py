@@ -1,12 +1,7 @@
 from django.contrib import admin
-from .models import Event, HotelsForEvent, EventsForHotel, TravelEvent, HotelList
+from .models import HotelsForEvent, EventsForHotel, TravelEvent, HotelList
 
-@admin.register(Event)
-class EventAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'date', 'category', 'location', 'city')
-    search_fields = ('name', 'category', 'location', 'city')
-    list_filter = ('category', 'city')
-    ordering = ('date',)
+
 
 @admin.register(TravelEvent)
 class TravelEventAdmin(admin.ModelAdmin):
