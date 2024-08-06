@@ -5,7 +5,7 @@ import pandas as pd
 from django.http import HttpResponse
 from django_filters.views import FilterView
 from django.db.models import Count
-from .models import HotelsForEvent, EventsForHotel, TravelEvent, HotelList
+from .models import HotelsForEvent, EventsForHotel, TravelEvent, HotelList, FlightTo, FlightFrom, Airline, Airport, NearestAirport
 from .forms import EventFilterForm
 from collections import OrderedDict
 from chartkick.django import ColumnChart, BarChart
@@ -13,6 +13,8 @@ import urllib.parse
 import requests
 import json
 from json.decoder import JSONDecodeError
+from datetime import datetime, timedelta
+
 country_list = {'오스트리아': 'AT', '호주': 'AU', '캐나다': 'CA', '중국': 'CN', '독일': 'DE', '스페인': 'ES', '프랑스': 'FR', '영국': 'GB', '인도네시아': 'ID', '인도': 'IN', '이탈리아': 'IT', '일본': 'JP', '말레이시아': 'MY', '네덜란드': 'NL', '대만': 'TW', '미국': 'US'}
 
 
@@ -92,18 +94,27 @@ def country(request, country):
 def event_detail(request, country, event_id):
     event = get_object_or_404(TravelEvent, EventID=event_id)
     hotels_data = get_object_or_404(HotelsForEvent, EventID=event_id)
+    nearest_airport = get_object_or_404(NearestAirport, id=event_id)
+
+    date_obj = datetime.strptime(event.TimeStart, "%Y-%m-%dT%H:%M:%S")
     
+    end_date = date_obj.strftime('%Y-%m-%d')
+    start_date = (date_obj - timedelta(days=3)).strftime('%Y-%m-%d')
+
+    flight_to = FlightTo.objects.filter(departure_at__range=[start_date, end_date], arrival=nearest_airport.airport_code)
+
     # Google_Place_Hotels를 쉼표로 구분된 문자열로 가정하고 리스트로 변환
     google_place_hotels = hotels_data.Google_Place_Hotels.split(',') if hotels_data.Google_Place_Hotels else ['None']
 
     # HotelList에 있는지 확인
-    hotel_list = {hotel.google_name: hotel for hotel in HotelList.objects.filter(google_name__in=google_place_hotels)}
+    hotel_list = [hotel for hotel in HotelList.objects.filter(google_name__in=google_place_hotels)]
 
     context = {
         'event': event,
         'country': country,
-        'google_place_hotels': google_place_hotels,
         'hotel_list': hotel_list,
+        'flight_to': flight_to,
+        'd': start_date
     }
     return render(request, 'maps/event_detail.html', context)
     
