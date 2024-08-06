@@ -1,12 +1,8 @@
 from django.contrib import admin
-from .models import Event, HotelsForEvent, EventsForHotel, TravelEvent, HotelList
 
-@admin.register(Event)
-class EventAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'date', 'category', 'location', 'city')
-    search_fields = ('name', 'category', 'location', 'city')
-    list_filter = ('category', 'city')
-    ordering = ('date',)
+from .models import  HotelsForEvent, EventsForHotel, TravelEvent, HotelList, FlightTo, FlightFrom, Airline, Airport
+
+
 
 @admin.register(TravelEvent)
 class TravelEventAdmin(admin.ModelAdmin):
@@ -31,3 +27,27 @@ class HotelListAdmin(admin.ModelAdmin):
     search_fields = ('event_id', 'google_name', 'agoda_hotel_name')
     list_filter = ('agoda_star_rating', 'google_rating', 'agoda_city')
     ordering = ('event_id',)
+
+@admin.register(FlightTo)
+class FlightToAdmin(admin.ModelAdmin):
+    list_display = ('airline_code', 'departure', 'departure_at', 'arrival', 'arrival_at', 'duration', 'seats', 'price')
+    search_fields = ('airline_code', 'departure_at', 'arrival')
+    list_filter = ('airline_code', 'arrival')
+
+@admin.register(FlightFrom)
+class FlightFromAdmin(admin.ModelAdmin):
+    list_display = ('airline_code', 'departure', 'departure_at', 'arrival', 'arrival_at', 'duration', 'seats', 'price')
+    search_fields = ('airline_code', 'departure', 'departure_at')
+    list_filter = ('airline_code', 'departure')
+
+@admin.register(Airline)
+class AirlineAdmin(admin.ModelAdmin):
+    list_display = ('airline_code', 'airline_name')
+    search_fields = ('airline_code', 'airline_name')
+    list_filter = ('airline_code', 'airline_name')
+
+@admin.register(Airport)
+class AirportAdmin(admin.ModelAdmin):
+    list_display = ('airport_code', 'airport_name', 'airport_location', 'country_code', 'country_name')
+    search_fields = ('airport_code', 'airport_name', 'country_code', 'country_name')
+    list_filter = ('airport_code', 'country_code')
