@@ -5,6 +5,14 @@
 {% block title %}Dashboard{% endblock %}
 
 {% block content %}
+
+<head>
+    <style>
+        .card-body {
+            cursor: pointer; /* Change cursor to pointer to indicate clickable element */
+        }
+    </style>
+</head>
 <div class="container-fluid px-4">
     <h1 class="mt-4">Dashboard</h1>
     <div class="row mb-4">
@@ -41,7 +49,7 @@
                 {% for event in top_events %}
                 <div class="col-lg-4">
                     <div class="card mb-3">
-                        <div class="card-body">
+                        <div class="card-body" onclick="redirectToEventDetail('{% url 'event_detail' country=event.Country event_id=event.EventID %}');">
                             <h5 class="card-title">{{ event.Title }}</h5>
                             <h6 class="card-subtitle mb-2 text-muted">{{ event.Category }}</h6>
                             <p class="card-text"><strong>Date:</strong> {{ event.Date }}</p>
@@ -64,7 +72,7 @@
                 {% for recent_event in recent_events %}
                     <div class="col-lg-4">
                         <div class="card mb-3">
-                            <div class="card-body">
+                        <div class="card-body" onclick="redirectToEventDetail('{% url 'event_detail' country=recent_event.Country event_id=recent_event.EventID %}');">
                                 <h5 class="card-title">{{ recent_event.Title }}</h5>
                                 <h6 class="card-subtitle mb-2 text-muted">{{ recent_event.Category }}</h6>
                                 <p class="card-text"><strong>Date:</strong> {{ recent_event.Date }}</p>
@@ -87,7 +95,7 @@
                 {% for earliest_end_event in earliest_end_events %}
                     <div class="col-lg-4">
                         <div class="card mb-3">
-                            <div class="card-body">
+                            <div class="card-body" onclick="redirectToEventDetail('{% url 'event_detail' country=earliest_end_event.Country event_id=earliest_end_event.EventID %}');">
                                 <h5 class="card-title">{{ earliest_end_event.Title }}</h5>
                                 <h6 class="card-subtitle mb-2 text-muted">{{ earliest_end_event.Category }}</h6>
                                 <p class="card-text"><strong>Date:</strong> {{ earliest_end_event.Date }}</p>
@@ -180,5 +188,10 @@
             }
         }
     });
+</script>
+<script>
+    function redirectToEventDetail(url) {
+        window.location.href = url; // Redirect to the specified URL
+    }
 </script>
 {% endblock %}
