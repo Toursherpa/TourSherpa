@@ -44,7 +44,6 @@ def find_accommodations():
         if nearby_accommodations:
             events_df.at[index, 'agoda_accommodation_ids'] = ','.join(map(str, nearby_accommodations))
         else:
-            nearby_accommodations.append('null')
             events_df.at[index, 'agoda_accommodation_ids'] = ','.join(map(str, nearby_accommodations))
         for _, accommodation in high_rating_accommodations_df.iterrows():
             distance = calculate_distance(event['longitude'], event['latitude'], accommodation['longitude'], accommodation['latitude'])
@@ -151,3 +150,5 @@ t3=PythonOperator(
     provide_context=True,
     dag=dag,
 )
+
+t1 >> t2 >> t3
