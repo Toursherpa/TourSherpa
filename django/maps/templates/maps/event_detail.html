@@ -22,7 +22,7 @@
 
     <div class="card mt-4">
         <div class="card-header">
-            <h3>Hotels Nearby</h3>
+            <h3>Google Place Hotels</h3>
         </div>
         <div class="card-body">
             <div class="row">
@@ -31,13 +31,17 @@
                     <div class="col-lg-4 mb-4">
                         <div class="card">
                             <div class="card-body">
-                                <h5 class="card-title">{{ hotel }}</h5>
+                                <h5 class="card-title">
+                                    <a href="{% url 'hotel_detail' hotel_name=hotel %}">
+                                        {{ hotel }}
+                                    </a>
+                                </h5>
                             </div>
                         </div>
                     </div>
                     {% endfor %}
                 {% else %}
-                    <p>No hotel information available.</p>
+                    <p>No hotels found for this event.</p>
                 {% endif %}
             </div>
         </div>

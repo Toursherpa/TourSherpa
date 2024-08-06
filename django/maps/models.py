@@ -3,17 +3,6 @@ from django.db import models
 import json
 
 
-class Event(models.Model):
-    id = models.BigAutoField(primary_key=True)
-    name = models.CharField(max_length=255)
-    date = models.DateTimeField()
-    category = models.CharField(max_length=255)
-    location = models.CharField(max_length=255)
-    city = models.CharField(max_length=255)
-
-    def __str__(self):
-        return self.name
-
 class TravelEvent(models.Model):
     EventID = models.CharField(max_length=255, primary_key=True, default='none')
     Title = models.CharField(max_length=1000, null=True, blank=True, default='none')
@@ -84,3 +73,57 @@ class HotelList(models.Model):
     def __str__(self):
         return self.hotel_name or self.google_name
 
+class FlightTo(models.Model):
+    airline_code = models.CharField(max_length=50, primary_key=True)
+    departure = models.CharField(max_length=50)
+    departure_at = models.CharField(max_length=50)
+    arrival = models.CharField(max_length=50)
+    arrival_at = models.CharField(max_length=50)
+    duration = models.CharField(max_length=50)
+    seats = models.IntegerField()
+    price = models.FloatField()
+
+    class Meta:
+        db_table = 'flight_to'
+
+    def __str__(self):
+        return self.airline_code or self.arrival
+
+class FlightFrom(models.Model):
+    airline_code = models.CharField(max_length=50, primary_key=True)
+    departure = models.CharField(max_length=50)
+    departure_at = models.CharField(max_length=50)
+    arrival = models.CharField(max_length=50)
+    arrival_at = models.CharField(max_length=50)
+    duration = models.CharField(max_length=50)
+    seats = models.IntegerField()
+    price = models.FloatField()
+
+    class Meta:
+        db_table = 'flight_from'
+
+    def __str__(self):
+        return self.airline_code or self.departure
+
+class Airline(models.Model):
+    airline_code = models.CharField(max_length=50, primary_key=True)
+    airline_name = models.CharField(max_length=50)
+
+    class Meta:
+        db_table = 'airline'
+
+    def __str__(self):
+        return self.airline_code or self.airline_name
+
+class Airport(models.Model):
+    airport_code = models.CharField(max_length=50, primary_key=True)
+    airport_name = models.CharField(max_length=100)
+    airport_location = models.CharField(max_length=200)
+    country_code = models.CharField(max_length=50)
+    country_name = models.CharField(max_length=50)
+
+    class Meta:
+        db_table = 'airport'
+
+    def __str__(self):
+        return self.airport_code or self.country_code
