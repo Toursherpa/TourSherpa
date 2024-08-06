@@ -3,7 +3,6 @@ from django.conf import settings
 import csv
 import pandas as pd
 from django.http import HttpResponse
-from .models import Event
 from django_filters.views import FilterView
 from django.db.models import Count
 from .models import HotelsForEvent, EventsForHotel, TravelEvent, HotelList
@@ -89,12 +88,13 @@ def country(request, country):
     return render(request, 'maps/country.html', context)
 
 
+
 def event_detail(request, country, event_id):
     event = get_object_or_404(TravelEvent, EventID=event_id)
     hotels_data = get_object_or_404(HotelsForEvent, EventID=event_id)
     
     # Google_Place_Hotels를 쉼표로 구분된 문자열로 가정하고 리스트로 변환
-    google_place_hotels = hotels_data.Google_Place_Hotels.split(',') if hotels_data.Google_Place_Hotels else []
+    google_place_hotels = hotels_data.Google_Place_Hotels.split(',') if hotels_data.Google_Place_Hotels else ['None']
 
     context = {
         'event': event,
