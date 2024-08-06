@@ -72,16 +72,16 @@ def exact_match(row, hotel_list_df):
     hotel_list_df['name_normalized'] = hotel_list_df['hotel_name'].apply(preprocess_text)
     row['name_normalized'] = preprocess_text(row['name'])
     
-    # 문자열이 아닌 값이 있는 경우 예외 처리
+    # 문자열이 아닌 값이 있는 경우 원래 데이터를 반환
     if not isinstance(row['name_normalized'], str):
-        return None
+        return row
     
     matching_hotels = hotel_list_df[hotel_list_df['name_normalized'] == row['name_normalized']]
     
     if not matching_hotels.empty:
         row_location = parse_location(row['location'])
         if row_location is None:
-            return None
+            return row
         for _, match in matching_hotels.iterrows():
             match_location = parse_location_from_lat_lon(match['latitude'], match['longitude'])
             if match_location is None:
@@ -89,8 +89,7 @@ def exact_match(row, hotel_list_df):
             distance = calculate_distance(row_location, match_location)
             if distance <= 2:  # 2km 이내
                 return match  # 모든 칼럼을 포함한 일치하는 행
-    return None
-
+    return row
 def process_chunk(chunk, hotel_list_df):
     """청크를 처리하여 호텔 ID 및 기타 정보를 매칭"""
     result_list = []
