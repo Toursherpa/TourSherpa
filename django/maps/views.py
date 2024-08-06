@@ -102,35 +102,21 @@ def event_detail(request, country, event_id):
         'google_place_hotels': google_place_hotels,
     }
     return render(request, 'maps/event_detail.html', context)
-
+def hotel_detail(request, hotel_name):
+    hotel = get_object_or_404(HotelList, google_name=hotel_name)
+    
+    context = {
+        'hotel': hotel,
+        #'event_date': event_date,
+    }
+    return render(request, 'maps/hotel_detail.html', context)
+    
 def charts(request):
     return render(request, 'maps/charts.html')
 
 def tables(request):
     return render(request, 'maps/tables.html')
 
-def upload_csv(request):
-    if request.method == 'POST':
-        csv_file = request.FILES['file']
-        if not csv_file.name.endswith('.csv'):
-            return HttpResponse("This is not a CSV file.")
-        
-        # 판다스를 사용하여 CSV 파일 읽기
-        data = pd.read_csv(csv_file)
-
-        # 데이터베이스에 데이터 저장
-        for index, row in data.iterrows():
-            event = Event(
-                name=row['Event Name'],
-                date=row['Date'],
-                category=row['Category'],
-                location=row['Location'],
-                city=row['City']
-            )
-            event.save()
-
-        return HttpResponse("CSV file data has been uploaded to the database.")
-    return render(request, 'upload_csv.html')
 
 
 
