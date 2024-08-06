@@ -87,9 +87,9 @@ class HotelList(models.Model):
 class FlightTo(models.Model):
     airline_code = models.CharField(max_length=50, primary_key=True)
     departure = models.CharField(max_length=50)
-    departure_at = models.CharField(max_length=50)
+    departure_at = models.DateTimeField()
     arrival = models.CharField(max_length=50)
-    arrival_at = models.CharField(max_length=50)
+    arrival_at = models.DateTimeField()
     duration = models.CharField(max_length=50)
     seats = models.IntegerField()
     price = models.FloatField()
@@ -103,9 +103,9 @@ class FlightTo(models.Model):
 class FlightFrom(models.Model):
     airline_code = models.CharField(max_length=50, primary_key=True)
     departure = models.CharField(max_length=50)
-    departure_at = models.CharField(max_length=50)
+    departure_at = models.DateTimeField()
     arrival = models.CharField(max_length=50)
-    arrival_at = models.CharField(max_length=50)
+    arrival_at = models.DateTimeField()
     duration = models.CharField(max_length=50)
     seats = models.IntegerField()
     price = models.FloatField()
