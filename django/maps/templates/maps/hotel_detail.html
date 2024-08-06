@@ -1,0 +1,45 @@
+{% extends 'maps/base.html' %}
+{% load static %}
+
+{% block title %}Hotel Detail - {{ hotel.google_name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="card mt-4">
+        <div class="card-header">
+            <h2>{{ hotel.google_name }}</h2>
+        </div>
+        <div class="card-body">
+            <p><strong>Address:</strong> {{ hotel.google_address }}</p>
+            <p><strong>Rating:</strong> {{ hotel.google_rating }}</p>
+            <p><strong>User Ratings Total:</strong> {{ hotel.google_user_ratings_total }}</p>
+            <p><strong>Place ID:</strong> {{ hotel.google_place_id }}</p>
+            <p><strong>Number of Reviews:</strong> {{ hotel.google_number_of_reviews }}</p>
+            <hr>
+            <h3>Agoda Information</h3>
+            <p><strong>Hotel Name:</strong> {{ hotel.agoda_hotel_name }}</p>
+            <p><strong>Chain Name:</strong> {{ hotel.agoda_chain_name }}</p>
+            <p><strong>City:</strong> {{ hotel.agoda_city }}</p>
+            <p><strong>Star Rating:</strong> {{ hotel.agoda_star_rating }}</p>
+            <p><strong>Check-in:</strong> {{ hotel.agoda_checkin }}</p>
+            <p><strong>Check-out:</strong> {{ hotel.agoda_checkout }}</p>
+            <p><strong>Longitude:</strong> {{ hotel.agoda_longitude }}</p>
+            <p><strong>Latitude:</strong> {{ hotel.agoda_latitude }}</p>
+        </div>
+    </div>
+</div>
+
+<style>
+    .card h2, .card h3 {
+        font-size: 24px;
+        margin-bottom: 10px;
+    }
+    .card p {
+        margin-bottom: 10px;
+        line-height: 1.6;
+    }
+    .card strong {
+        font-weight: bold;
+    }
+</style>
+{% endblock %}
