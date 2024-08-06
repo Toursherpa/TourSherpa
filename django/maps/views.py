@@ -96,10 +96,14 @@ def event_detail(request, country, event_id):
     # Google_Place_Hotels를 쉼표로 구분된 문자열로 가정하고 리스트로 변환
     google_place_hotels = hotels_data.Google_Place_Hotels.split(',') if hotels_data.Google_Place_Hotels else ['None']
 
+    # HotelList에 있는지 확인
+    hotel_list = {hotel.google_name: hotel for hotel in HotelList.objects.filter(google_name__in=google_place_hotels)}
+
     context = {
         'event': event,
         'country': country,
         'google_place_hotels': google_place_hotels,
+        'hotel_list': hotel_list,
     }
     return render(request, 'maps/event_detail.html', context)
     
