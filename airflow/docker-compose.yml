@@ -106,6 +106,7 @@ services:
       - |
         mkdir -p /sources/logs /sources/dags /sources/plugins
         chown -R "${AIRFLOW_UID}:0" /sources/{logs,dags,plugins}
+        airflow db init
         airflow db upgrade
         airflow users create --username admin --password admin --firstname Admin --lastname User --role Admin --email admin@airflow.com
     environment:
