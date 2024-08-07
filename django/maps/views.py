@@ -99,13 +99,21 @@ def event_detail(request, country, event_id):
     hotels_data = get_object_or_404(HotelsForEvent, EventID=event_id)
     nearest_airport = get_object_or_404(NearestAirport, id=event_id)
     flight_to = ''
+    flight_from = ''
+    flight_state = ''
 
     if event.TimeStart != 'NaN':
-        start_date = (datetime.strptime(event.TimeStart, "%Y-%m-%dT%H:%M:%S") - timedelta(days=3)).strftime('%Y-%m-%d')
-        end_date = (datetime.strptime(event.TimeEnd, "%Y-%m-%dT%H:%M:%S")).strftime('%Y-%m-%d')
+        to_start_date = (datetime.strptime(event.TimeStart, "%Y-%m-%dT%H:%M:%S") - timedelta(days=3)).strftime('%Y-%m-%d')
+        to_end_date = (datetime.strptime(event.TimeEnd, "%Y-%m-%dT%H:%M:%S")).strftime('%Y-%m-%d')
+        from_start_date = (datetime.strptime(event.TimeStart, "%Y-%m-%dT%H:%M:%S") + timedelta(days=1)).strftime('%Y-%m-%d')
+        from_end_date = (datetime.strptime(event.TimeEnd, "%Y-%m-%dT%H:%M:%S") + timedelta(days=4)).strftime('%Y-%m-%d')
 
-        flight_to = FlightTo.objects.filter(departure_at__range=[start_date, end_date],
+        flight_to = FlightTo.objects.filter(departure_at__range=[to_start_date, to_end_date],
                                             arrival=nearest_airport.airport_code)
+        flight_from = FlightFrom.objects.filter(departure_at__range=[from_start_date, from_end_date],
+                                            departure=nearest_airport.airport_code)
+    else:
+        flight_state = " [아직 행사 일정이 정해지지 않았습니다!]"
 
     # Google_Place_Hotels를 쉼표로 구분된 문자열로 가정하고 리스트로 변환
     google_place_hotels = hotels_data.Google_Place_Hotels.split(',') if hotels_data.Google_Place_Hotels else ['None']
@@ -118,7 +126,10 @@ def event_detail(request, country, event_id):
         'event': event,
         'country': country,
         'hotel_list': hotel_list,
-        'flight_to': flight_to
+        'nearest_airport': nearest_airport,
+        'flight_to': flight_to,
+        'flight_from': flight_from,
+        'flight_state': flight_state,
     }
     return render(request, 'maps/event_detail.html', context)
 
