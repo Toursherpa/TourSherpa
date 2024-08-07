@@ -30,8 +30,8 @@ class HotelListAdmin(admin.ModelAdmin):
 
 @admin.register(FlightTo)
 class FlightToAdmin(admin.ModelAdmin):
-    list_display = ('airline_code', 'departure', 'departure_at', 'arrival', 'arrival_at', 'duration', 'seats', 'price')
-    search_fields = ('airline_code', 'departure_at', 'arrival')
+    list_display = ('airline_code', 'departure', 'departure_at', 'arrival', 'arrival_at', 'duration', 'seats', 'price', 'airline_name', 'departure_date', 'departure_min')
+    search_fields = ('airline_code', 'departure_at', 'arrival', 'airline_name', 'departure_date')
     list_filter = ('airline_code', 'arrival')
 
 @admin.register(FlightFrom)
