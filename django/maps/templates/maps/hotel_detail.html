@@ -53,68 +53,42 @@
             {% endif %}
         </div>
     </div>
+    <div class="card mt-4">
+        <div class="card-header">
+            <i class="fas fa-table me-1"></i>
+            행사 list
+        </div>
+        <div class="card-body">
+            <table class="table table-striped datatablesSimple">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Rank</th>
+                        <th>PHQ Attendance</th>
+                        <th>Time Start</th>
+                        <th>Time End</th>
+                        <th>Address</th>
+                        <th>Region</th>
+                    </tr>
+                </thead>
 
-</div>
-<div class="card mb-4">
-    <div class="card-header">
-        <i class="fas fa-table me-1"></i>
-        행사 list
-    </div>
-    <div class="card-body">
-        <table id="datatablesSimple" class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Title</th>
-                    <th>Rank</th>
-                    <th>PHQ Attendance</th>
-                    <th>Time Start</th>
-                    <th>Time End</th>
-                    <th>Address</th>
-                    <th>Region</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for event in event_list %}
-                <tr>
-                    <td><a class="nav-link" href="{% url 'event_detail' country=event.Country event_id=event.EventID %}">{{ event.Title }}</a></td>
-                    <td>{{ event.Rank }}</td>
-                    <td>{{ event.PhqAttendance }}</td>
-                    <td>{{ event.TimeStart }}</td>
-                    <td>{{ event.TimeEnd }}</td>
-                    <td>{{ event.Address }}</td>
-                    <td>{{ event.Region }}</td>
-                    <td><button class="btn btn-primary" onclick="showEventPopup('{{ event.Title }}', '{{ event.Rank }}', '{{ event.PhqAttendance }}', '{{ event.TimeStart }}', '{{ event.TimeEnd }}', '{{ event.Address }}', '{{ event.Region }}', '{{ hotel.agoda_hotel_id }}')">Show Details</button></td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-
-    </div>
-</div>
-<!-- Modal Structure -->
-<div class="modal fade" id="eventModal" tabindex="-1" role="dialog" aria-labelledby="eventModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="eventModalLabel">Event Details</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <p><strong>Title:</strong> <span id="modalTitle"></span></p>
-                <p><strong>Rank:</strong> <span id="modalRank"></span></p>
-                <p><strong>PHQ Attendance:</strong> <span id="modalPhqAttendance"></span></p>
-                <p><strong>Time Start:</strong> <span id="modalTimeStart"></span></p>
-                <p><strong>Time End:</strong> <span id="modalTimeEnd"></span></p>
-                <p><strong>Address:</strong> <span id="modalAddress"></span></p>
-                <p><strong>Region:</strong> <span id="modalRegion"></span></p>
-                <div id="calendar" style="height: 400px;"></div>
-                <button id="checkAvailabilityBtn" class="btn btn-primary mt-3">Check Availability</button>
-            </div>
+                <tbody>
+                    {% for event in event_list %}
+                    <tr>
+                        <td><a class="nav-link" href="{% url 'event_detail' country=event.Country event_id=event.EventID %}">{{ event.Title }}</a></td>
+                        <td>{{ event.Rank }}</td>
+                        <td>{{ event.PhqAttendance }}</td>
+                        <td>{{ event.TimeStart }}</td>
+                        <td>{{ event.TimeEnd }}</td>
+                        <td>{{ event.Address }}</td>
+                        <td>{{ event.Region }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
-
 <style>
     .card h2, .card h3 {
         font-size: 24px;
@@ -127,103 +101,5 @@
     .card strong {
         font-weight: bold;
     }
-    #calendar {
-        max-width: 100%;
-        margin: 0 auto;
-    }
-    .modal-dialog {
-        max-width: none;
-        width: auto;
-    }
-    .modal-content {
-        width: auto;
-        max-width: none;
-    }
-    .modal-body {
-        display: flex;
-        flex-direction: column;
-    }
 </style>
-
-<!-- FullCalendar CSS -->
-<link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.css" rel="stylesheet">
-<!-- FullCalendar JS -->
-<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.js"></script>
-<!-- Bootstrap JS (Ensure you have included the Bootstrap JS for modal functionality) -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-
-<script>
-    var checkInDate, checkOutDate;
-    function showEventPopup(title, rank, phqAttendance, timeStart, timeEnd, address, region,hotelId) {
-        document.getElementById('modalTitle').innerText = title;
-        document.getElementById('modalRank').innerText = rank;
-        document.getElementById('modalPhqAttendance').innerText = phqAttendance;
-        document.getElementById('modalTimeStart').innerText = timeStart;
-        document.getElementById('modalTimeEnd').innerText = timeEnd;
-        document.getElementById('modalAddress').innerText = address;
-        document.getElementById('modalRegion').innerText = region;
-
-        var calendarEl = document.getElementById('calendar');
-        calendarEl.innerHTML = '';  // Clear the previous calendar content
-
-        var modal = new bootstrap.Modal(document.getElementById('eventModal'));
-        modal.show();
-
-        modal._element.addEventListener('shown.bs.modal', function () {
-            var calendar = new FullCalendar.Calendar(calendarEl, {
-                initialView: 'dayGridMonth',
-                initialDate: timeStart,
-                height: 'auto',
-                contentHeight: 'auto',
-                    selectable: true,
-                    select: function(info) {
-                        checkInDate = info.startStr;
-                        checkOutDate = info.endStr;
-                    },
-                events: [
-                    {
-                        title: title,
-                        start: timeStart,
-                        end: timeEnd,
-                        display: 'block',
-                        backgroundColor: '#ffc107'
-                    }
-                ]
-            });
-            calendar.render();
-        });
-        document.getElementById('checkAvailabilityBtn').addEventListener('click', function() {
-            checkHotelAvailability(checkInDate, checkOutDate, hotelId);
-        });
-    }
-    function checkHotelAvailability(checkInDate, checkOutDate, hotelId) {
-        if (!checkInDate || !checkOutDate || !hotelId) {
-            alert('Please select check-in and check-out dates.');
-            return;
-        }
-        fetch('/check_availability/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': '{{ csrf_token }}'
-            },
-            body: JSON.stringify({
-                hotel_id: hotelId,
-                check_in_date: checkInDate,
-                check_out_date: checkOutDate
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.landingURL) {
-                window.location.href = data.landingURL;
-            } else {
-                alert(`No available rooms found for the specified dates. Hotel ID: ${data.hotelId}, Check-in: ${data.check_in_date}, Check-out: ${data.check_out_date}, Result: ${data.result}`);
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-        });
-      }
-</script>
 {% endblock %}
