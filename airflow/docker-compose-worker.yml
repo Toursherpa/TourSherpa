@@ -1,0 +1,20 @@
+services:
+  airflow-worker:
+    image: apache/airflow:2.9.3
+    environment:
+      AIRFLOW__CORE__EXECUTOR: CeleryExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@43.201.108.232:5432/airflow
+      AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:airflow@43.201.108.232:5432/airflow
+      AIRFLOW__CELERY__BROKER_URL: redis://43.201.108.232:6379/0
+      AIRFLOW__CORE__FERNET_KEY: ''  
+      AIRFLOW__WEBSERVER__BASE_URL: http://43.201.108.232:8080
+      AIRFLOW__WEBSERVER__WEB_SERVER_HOST: 0.0.0.0
+      AIRFLOW__WEBSERVER__WEB_SERVER_PORT: 8080
+      AIRFLOW__LOGGING__BASE_LOG_FOLDER: /opt/airflow/logs
+      AIRFLOW__LOGGING__REMOTE_LOGGING: 'False'
+    volumes:
+      - ./airflow.cfg:/opt/airflow/airflow.cfg
+      - ./dags:/opt/airflow/dags
+      - ${AIRFLOW_PROJ_DIR:-.}/logs:/opt/airflow/logs
+      - /tmp:/tmp
+    command: celery worker

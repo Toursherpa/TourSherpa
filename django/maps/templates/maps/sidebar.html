@@ -1,0 +1,122 @@
+<!-- templates/maps/sidebar.html -->
+<nav class="sb-sidenav accordion sb-sidenav-light" id="sidenavAccordion">
+    <div class="sb-sidenav-menu">
+        <div class="nav">
+            <div class="sb-sidenav-menu-heading">Core</div>
+            <a class="nav-link" href="{% url 'dashboard' %}">
+                <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
+                Home
+            </a>
+            <div class="sb-sidenav-menu-heading">나라별 행사 정보</div>
+            <form id="countryForm" method="get" action="{% url 'country_Event' 'PLACEHOLDER' %}">
+                <input type="hidden" name="country" id="countryInput">
+                <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseAsia" aria-expanded="false" aria-controls="collapseLayouts">
+                    <div class="sb-nav-link-icon"><i class="fas fa-columns"></i></div>
+                    아시아
+                    <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
+                </a>
+                <div class="collapse" id="collapseAsia" aria-labelledby="headingOne" data-bs-parent="#sidenavAccordion">
+                    <nav class="sb-sidenav-menu-nested nav">
+                        <a class="nav-link" href="#" onclick="submitForm('중국'); return false;">중국</a>
+                        <a class="nav-link" href="#" onclick="submitForm('일본'); return false;">일본</a>
+                        <a class="nav-link" href="#" onclick="submitForm('대만'); return false;">대만</a>
+                        <a class="nav-link" href="#" onclick="submitForm('인도'); return false;">인도</a>
+                        <a class="nav-link" href="#" onclick="submitForm('인도네시아'); return false;">인도네시아</a>
+                        <a class="nav-link" href="#" onclick="submitForm('말레이시아'); return false;">말레이시아</a>
+                    </nav>
+                </div>
+                <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseEurope" aria-expanded="false" aria-controls="collapseLayouts">
+                    <div class="sb-nav-link-icon"><i class="fas fa-columns"></i></div>
+                    유럽
+                    <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
+                </a>
+                <div class="collapse" id="collapseEurope" aria-labelledby="headingOne" data-bs-parent="#sidenavAccordion">
+                    <nav class="sb-sidenav-menu-nested nav">
+                        <a class="nav-link" href="#" onclick="submitForm('영국'); return false;">영국</a>
+                        <a class="nav-link" href="#" onclick="submitForm('프랑스'); return false;">프랑스</a>
+                        <a class="nav-link" href="#" onclick="submitForm('독일'); return false;">독일</a>
+                        <a class="nav-link" href="#" onclick="submitForm('이탈리아'); return false;">이탈리아</a>
+                        <a class="nav-link" href="#" onclick="submitForm('스페인'); return false;">스페인</a>
+                        <a class="nav-link" href="#" onclick="submitForm('네덜란드'); return false;">네덜란드</a>
+                        <a class="nav-link" href="#" onclick="submitForm('오스트리아'); return false;">오스트리아</a>
+                    </nav>
+                </div>
+                <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseNorthAmerica" aria-expanded="false" aria-controls="collapseLayouts">
+                    <div class="sb-nav-link-icon"><i class="fas fa-columns"></i></div>
+                    북아메리카
+                    <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
+                </a>
+                <div class="collapse" id="collapseNorthAmerica" aria-labelledby="headingOne" data-bs-parent="#sidenavAccordion">
+                    <nav class="sb-sidenav-menu-nested nav">
+                        <a class="nav-link" href="#" onclick="submitForm('미국'); return false;">미국</a>
+                        <a class="nav-link" href="#" onclick="submitForm('캐나다'); return false;">캐나다</a>
+                    </nav>
+                </div>
+                <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseOceania" aria-expanded="false" aria-controls="collapseLayouts">
+                    <div class="sb-nav-link-icon"><i class="fas fa-columns"></i></div>
+                    오세아니아
+                    <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
+                </a>
+                <div class="collapse" id="collapseOceania" aria-labelledby="headingOne" data-bs-parent="#sidenavAccordion">
+                    <nav class="sb-sidenav-menu-nested nav">
+                        <a class="nav-link" href="#" onclick="submitForm('호주'); return false;">호주</a>
+                    </nav>
+                </div>
+                <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapsePages" aria-expanded="false" aria-controls="collapsePages">
+                    <div class="sb-nav-link-icon"><i class="fas fa-book-open"></i></div>
+                    Pages
+                    <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
+                </a>
+                <div class="collapse" id="collapsePages" aria-labelledby="headingTwo" data-bs-parent="#sidenavAccordion">
+                    <nav class="sb-sidenav-menu-nested nav accordion" id="sidenavAccordionPages">
+                        <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#pagesCollapseAuth" aria-expanded="false" aria-controls="pagesCollapseAuth">
+                            Authentication
+                            <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
+                        </a>
+                        <div class="collapse" id="pagesCollapseAuth" aria-labelledby="headingOne" data-bs-parent="#sidenavAccordionPages">
+                            <nav class="sb-sidenav-menu-nested nav">
+                                <a class="nav-link" href="#">Login</a>
+                                <a class="nav-link" href="#">Register</a>
+                                <a class="nav-link" href="#">Forgot Password</a>
+                            </nav>
+                        </div>
+                        <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#pagesCollapseError" aria-expanded="false" aria-controls="pagesCollapseError">
+                            Error
+                            <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
+                        </a>
+                        <div class="collapse" id="pagesCollapseError" aria-labelledby="headingOne" data-bs-parent="#sidenavAccordionPages">
+                            <nav class="sb-sidenav-menu-nested nav">
+                                <a class="nav-link" href="#">401 Page</a>
+                                <a class="nav-link" href="#">404 Page</a>
+                                <a class="nav-link" href="#">500 Page</a>
+                            </nav>
+                        </div>
+                    </nav>
+                </div>
+            </form>
+            <div class="sb-sidenav-menu-heading">Addons</div>
+            <a class="nav-link" href="#">
+                <div class="sb-nav-link-icon"><i class="fas fa-chart-area"></i></div>
+                Charts
+            </a>
+            <a class="nav-link" href="#">
+                <div class="sb-nav-link-icon"><i class="fas fa-table"></i></div>
+                Tables
+            </a>
+        </div>
+    </div>
+    <div class="sb-sidenav-footer">
+        <div class="small">Logged in as:</div>
+        Start Bootstrap
+    </div>
+    <script>
+        function submitForm(country) {
+            var actionUrl = "{% url 'country_Event' 'PLACEHOLDER' %}".replace('PLACEHOLDER', encodeURIComponent(country));
+            var form = document.getElementById('countryForm');
+            form.action = actionUrl;
+            document.getElementById('countryInput').value = country;
+            form.submit();
+        }
+    </script>
+</nav>
+
