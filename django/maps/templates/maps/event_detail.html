@@ -73,7 +73,7 @@
                     {% for hotel in hotel_list %}
                     <tr>
                         <td>
-                            <a href="{% url 'hotel_detail' hotel_name=hotel.google_name %}">{{ hotel.google_name }}</a>
+                            <a class="nav-link" href="{% url 'hotel_detail' hotel_name=hotel.google_name %}">{{ hotel.google_name }}</a>
                         </td>
                         <td>{{ hotel.google_address }}</td>
                         <td>{{ hotel.google_rating }}</td>
