@@ -44,23 +44,22 @@ def find_accommodations():
         if nearby_accommodations:
             events_df.at[index, 'agoda_accommodation_ids'] = ','.join(map(str, nearby_accommodations))
         else:
-            nearby_accommodations.append('null')
             events_df.at[index, 'agoda_accommodation_ids'] = ','.join(map(str, nearby_accommodations))
         for _, accommodation in high_rating_accommodations_df.iterrows():
             distance = calculate_distance(event['longitude'], event['latitude'], accommodation['longitude'], accommodation['latitude'])
             if distance <= 0.1:  # 단순한 거리 계산이므로 10km에 해당하는 임의의 기준값 0.1 사용
                 high_rating_accommodations.append(accommodation['name'])
         
-        events_df.at[index, 'high_rating_accommodation_names'] = ','.join(high_rating_accommodationss)
+        events_df.at[index, 'high_rating_accommodation_names'] = ','.join(high_rating_accommodations)
             
 
     # id와 name, accommodation_ids, high_rating_accommodation_names 열만 포함한 데이터프레임 저장
-    result_df = events_df[['id', 'title', 'accommodation_ids', 'high_rating_accommodation_names']]
+    result_df = events_df[['id', 'title', 'agoda_accommodation_ids', 'high_rating_accommodation_names']]
     result_df.to_csv('/tmp/Updated_Events_with_Accommodations.csv', index=False)
     print("숙소 ID 및 평점 4 이상인 숙소 이름이 포함된 업데이트된 CSV 파일이 저장되었습니다.")
     
 def create_schema_table(**kwargs):
-    redshift_conn_id = 'redshift_default'
+    redshift_conn_id = 'redshift_connection'
     table_name = 'hotels_for_event'
     schema_name = 'hotel'
     
@@ -85,12 +84,12 @@ def create_schema_table(**kwargs):
     cursor.close()
     conn.close()
 def update_table(**kwargs):
-    redshift_conn_id = 'redshift_default'
+    redshift_conn_id = 'redshift_connection'
     table_name = 'hotel.hotels_for_event'
     redshift_hook = PostgresHook(postgres_conn_id=redshift_conn_id)
     conn = redshift_hook.get_conn()
     cursor = conn.cursor()
-    hotel_df=pd.read_csv('/tmp/Updated_Events_with_Accommodations.csv', usecols=['id', 'title', 'accommodation_ids', 'high_rating_accommodation_names'])
+    hotel_df=pd.read_csv('/tmp/Updated_Events_with_Accommodations.csv', usecols=['id', 'title', 'agoda_accommodation_ids', 'high_rating_accommodation_names'])
     print(hotel_df)
     
     for index, row in hotel_df.iterrows():
@@ -106,13 +105,13 @@ def update_table(**kwargs):
                     Agoda_Hotels = %s,
                     Google_Place_Hotels = %s
                 WHERE EventID = %s
-            """, (row['title'], row['accommodation_ids'], row['high_rating_accommodation_names'], row['id']))
+            """, (row['title'], row['agoda_accommodation_ids'], row['high_rating_accommodation_names'], row['id']))
         else:
             # Insert the new record
             cursor.execute(f"""
                 INSERT INTO {table_name} (EventID, Title, Agoda_Hotels, Google_Place_Hotels)
                 VALUES (%s, %s, %s, %s)
-            """, (row['id'], row['title'], row['accommodation_ids'], row['high_rating_accommodation_names']))
+            """, (row['id'], row['title'], row['agoda_accommodation_ids'], row['high_rating_accommodation_names']))
     
     conn.commit()
     cursor.close()
@@ -151,3 +150,5 @@ t3=PythonOperator(
     provide_context=True,
     dag=dag,
 )
+
+t1 >> t2 >> t3
