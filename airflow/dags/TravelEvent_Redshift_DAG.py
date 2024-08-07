@@ -20,8 +20,8 @@ today = kst_now.strftime('%Y-%m-%d')
 
 
 def read_data_from_s3(**kwargs):
-    s3_hook = S3Hook('TravelEvent_s3_conn')
-    s3_bucket_name = Variable.get('my_s3_bucket')
+    s3_hook = S3Hook('s3_connection')
+    s3_bucket_name = Variable.get('s3_bucket_name')
 
     s3_key = f'source/source_TravelEvents/TravelEvents.csv'
     if s3_hook.check_for_key(key=s3_key, bucket_name=s3_bucket_name):
@@ -51,7 +51,7 @@ def extract_formatted_region(data):
     # 문자열의 작은따옴표를 큰따옴표로 변환하여 JSON 형식에 맞게 통일
     data = str(data).replace("'", '"')
 
-    match = re.search(r'"region"\s*:\s*["\'](.*?)(?<!\\)["\'],', data)
+    match = re.search(r'"region"\s*:\s*["\'](.*?)(?<!\\)["\']\}\}', data)
 
     if match:
         # 주소를 반환
@@ -85,7 +85,7 @@ def transform_data(**kwargs):
 
 def generate_and_save_data(**kwargs):
     transformed_data = kwargs['ti'].xcom_pull(key='transformed_data', task_ids='transform_data')
-    redshift_conn_id = 'my_redshift_connection_id'
+    redshift_conn_id = 'redshift_connection'
     redshift_table = 'travel_events'
 
     redshift_hook = PostgresHook(postgres_conn_id=redshift_conn_id)
