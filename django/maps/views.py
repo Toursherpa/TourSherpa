@@ -96,10 +96,8 @@ def event_detail(request, country, event_id):
     hotels_data = get_object_or_404(HotelsForEvent, EventID=event_id)
     nearest_airport = get_object_or_404(NearestAirport, id=event_id)
 
-    date_obj = datetime.strptime(event.TimeStart, "%Y-%m-%dT%H:%M:%S")
-    
-    end_date = date_obj.strftime('%Y-%m-%d')
-    start_date = (date_obj - timedelta(days=3)).strftime('%Y-%m-%d')
+    start_date = (datetime.strptime(event.TimeStart, "%Y-%m-%dT%H:%M:%S") - timedelta(days=3)).strftime('%Y-%m-%d')
+    end_date = (datetime.strptime(event.TimeEnd, "%Y-%m-%dT%H:%M:%S")).strftime('%Y-%m-%d')
 
     flight_to = FlightTo.objects.filter(departure_at__range=[start_date, end_date], arrival=nearest_airport.airport_code)
 
