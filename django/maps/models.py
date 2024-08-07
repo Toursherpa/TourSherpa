@@ -82,6 +82,9 @@ class FlightTo(models.Model):
     duration = models.CharField(max_length=50)
     seats = models.IntegerField()
     price = models.IntegerField()
+    airline_name = models.CharField(max_length=100)
+    departure_date = models.CharField(max_length=50)
+    departure_min = models.CharField(max_length=50)
 
     class Meta:
         db_table = 'flight_to'
