@@ -5,7 +5,8 @@ import pandas as pd
 from django.http import HttpResponse
 from django_filters.views import FilterView
 from django.db.models import Count
-from .models import HotelsForEvent, EventsForHotel, TravelEvent, HotelList, FlightTo, FlightFrom, Airline, Airport, NearestAirport
+from .models import HotelsForEvent, EventsForHotel, TravelEvent, HotelList, FlightTo, FlightFrom, Airline, Airport, \
+    NearestAirport
 from .forms import EventFilterForm
 from collections import OrderedDict
 from chartkick.django import ColumnChart, BarChart
@@ -17,13 +18,15 @@ from datetime import datetime, timedelta
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
-country_list = {'오스트리아': 'AT', '호주': 'AU', '캐나다': 'CA', '중국': 'CN', '독일': 'DE', '스페인': 'ES', '프랑스': 'FR', '영국': 'GB', '인도네시아': 'ID', '인도': 'IN', '이탈리아': 'IT', '일본': 'JP', '말레이시아': 'MY', '네덜란드': 'NL', '대만': 'TW', '미국': 'US'}
-
+country_list = {'오스트리아': 'AT', '호주': 'AU', '캐나다': 'CA', '중국': 'CN', '독일': 'DE', '스페인': 'ES', '프랑스': 'FR', '영국': 'GB',
+                '인도네시아': 'ID', '인도': 'IN', '이탈리아': 'IT', '일본': 'JP', '말레이시아': 'MY', '네덜란드': 'NL', '대만': 'TW',
+                '미국': 'US'}
 
 
 def dashboard(request):
     top_events = TravelEvent.objects.order_by('-Rank', '-PhqAttendance')[:3]
-    countries = TravelEvent.objects.values('Country').annotate(total_events=Count('EventID')).order_by('-total_events')[:5]
+    countries = TravelEvent.objects.values('Country').annotate(total_events=Count('EventID')).order_by('-total_events')[
+                :5]
     categories = TravelEvent.objects.values('Category').annotate(total_events=Count('EventID'))
     recent_events = TravelEvent.objects.exclude(TimeStart='none').order_by('TimeStart')[:3]
     earliest_end_events = TravelEvent.objects.exclude(TimeEnd='none').order_by('TimeEnd')[:3]
@@ -33,7 +36,7 @@ def dashboard(request):
         'datasets': [{
             'label': 'Number of Events',
             'backgroundColor': 'rgba(0, 128, 255, 0.2)',  # 색상 예시, 원하는 대로 수정 가능
-            'borderColor': 'rgba(0, 128, 255, 1)',      # 색상 예시, 원하는 대로 수정 가능
+            'borderColor': 'rgba(0, 128, 255, 1)',  # 색상 예시, 원하는 대로 수정 가능
             'data': [country['total_events'] for country in countries],
         }]
     }
@@ -43,7 +46,7 @@ def dashboard(request):
         'datasets': [{
             'label': 'Number of Events',
             'backgroundColor': 'rgba(255, 99, 132, 0.2)',  # 색상 예시, 원하는 대로 수정 가능
-            'borderColor': 'rgba(255, 99, 132, 1)',      # 색상 예시, 원하는 대로 수정 가능
+            'borderColor': 'rgba(255, 99, 132, 1)',  # 색상 예시, 원하는 대로 수정 가능
             'data': [category['total_events'] for category in categories],
         }]
     }
@@ -55,6 +58,7 @@ def dashboard(request):
         'earliest_end_events': earliest_end_events,
     }
     return render(request, 'maps/dashboard.html', context)
+
 
 def country(request, country):
     country_code = country_list.get(country, '')
@@ -70,7 +74,7 @@ def country(request, country):
         'datasets': [{
             'label': 'Number of Events',
             'backgroundColor': 'rgba(255, 99, 132, 0.2)',  # 색상 예시, 원하는 대로 수정 가능
-            'borderColor': 'rgba(255, 99, 132, 1)',      # 색상 예시, 원하는 대로 수정 가능
+            'borderColor': 'rgba(255, 99, 132, 1)',  # 색상 예시, 원하는 대로 수정 가능
             'data': [region['total_events'] for region in top_regions],
         }]
     }
@@ -79,7 +83,7 @@ def country(request, country):
         'datasets': [{
             'label': 'Number of Events',
             'backgroundColor': 'rgba(255, 99, 132, 0.2)',  # 색상 예시, 원하는 대로 수정 가능
-            'borderColor': 'rgba(255, 99, 132, 1)',      # 색상 예시, 원하는 대로 수정 가능
+            'borderColor': 'rgba(255, 99, 132, 1)',  # 색상 예시, 원하는 대로 수정 가능
             'data': [category['total_events'] for category in categories],
         }]
     }
@@ -92,18 +96,26 @@ def country(request, country):
     return render(request, 'maps/country.html', context)
 
 
-
 def event_detail(request, country, event_id):
     event = get_object_or_404(TravelEvent, EventID=event_id)
     hotels_data = get_object_or_404(HotelsForEvent, EventID=event_id)
     nearest_airport = get_object_or_404(NearestAirport, id=event_id)
+    flight_to = ''
+    flight_from = ''
+    flight_state = ''
 
-    date_obj = datetime.strptime(event.TimeStart, "%Y-%m-%dT%H:%M:%S")
-    
-    end_date = date_obj.strftime('%Y-%m-%d')
-    start_date = (date_obj - timedelta(days=3)).strftime('%Y-%m-%d')
+    if event.TimeStart != 'NaN':
+        to_start_date = (datetime.strptime(event.TimeStart, "%Y-%m-%dT%H:%M:%S") - timedelta(days=3)).strftime('%Y-%m-%d')
+        to_end_date = (datetime.strptime(event.TimeEnd, "%Y-%m-%dT%H:%M:%S")).strftime('%Y-%m-%d')
+        from_start_date = (datetime.strptime(event.TimeStart, "%Y-%m-%dT%H:%M:%S") + timedelta(days=1)).strftime('%Y-%m-%d')
+        from_end_date = (datetime.strptime(event.TimeEnd, "%Y-%m-%dT%H:%M:%S") + timedelta(days=4)).strftime('%Y-%m-%d')
 
-    flight_to = FlightTo.objects.filter(departure_at__range=[start_date, end_date], arrival=nearest_airport.airport_code)
+        flight_to = FlightTo.objects.filter(departure_at__range=[to_start_date, to_end_date],
+                                            arrival=nearest_airport.airport_code)
+        flight_from = FlightFrom.objects.filter(departure_at__range=[from_start_date, from_end_date],
+                                            departure=nearest_airport.airport_code)
+    else:
+        flight_state = " [아직 행사 일정이 정해지지 않았습니다!]"
 
     # Google_Place_Hotels를 쉼표로 구분된 문자열로 가정하고 리스트로 변환
     google_place_hotels = hotels_data.Google_Place_Hotels.split(',') if hotels_data.Google_Place_Hotels else ['None']
@@ -116,25 +128,27 @@ def event_detail(request, country, event_id):
         'event': event,
         'country': country,
         'hotel_list': hotel_list,
+        'nearest_airport': nearest_airport,
         'flight_to': flight_to,
-        'd': start_date
+        'flight_from': flight_from,
+        'flight_state': flight_state,
     }
     return render(request, 'maps/event_detail.html', context)
-    
+
+
 def hotel_detail(request, hotel_name):
     hotel = get_object_or_404(HotelList, google_name=hotel_name)
     events_for_hotel = get_object_or_404(EventsForHotel, HOTELNAME=hotel_name)
-    
+
     events = events_for_hotel.EventID.split(',') if events_for_hotel.EventID else ['None']
     event_list = [event for event in TravelEvent.objects.filter(EventID__in=events)]
 
     context = {
         'hotel': hotel,
-        'event_list':event_list,
+        'event_list': event_list,
     }
     return render(request, 'maps/hotel_detail.html', context)
-    
-    
+
 
 @csrf_exempt
 def check_availability(request):
@@ -160,15 +174,16 @@ def check_availability(request):
             })
     return JsonResponse({'error': 'Invalid request method.'})    
 #체크인/ 체크아웃 데이터를 받아 예약가능 여부 확인 및 상세정보    
+
 def check_hotel_availability(api_key, site_id, hotel_id, check_in_date, check_out_date):
     url = "http://affiliateapi7643.agoda.com/affiliateservice/lt_v1"
-    
+
     headers = {
         "Accept-Encoding": "gzip,deflate",
         "Authorization": f"{site_id}:{api_key}",
         "Content-Type": "application/json"  # Content-Type 헤더 추가
     }
-    
+
     payload = {
         "criteria": {
             "additional": {
@@ -185,9 +200,9 @@ def check_hotel_availability(api_key, site_id, hotel_id, check_in_date, check_ou
             "hotelId": [hotel_id]
         }
     }
-    
+
     response = requests.post(url, headers=headers, data=json.dumps(payload))
-    
+
     if response.status_code == 200:
         data = response.json()
         if "results" in data and len(data["results"]) > 0:
@@ -196,6 +211,3 @@ def check_hotel_availability(api_key, site_id, hotel_id, check_in_date, check_ou
             return "No available rooms found for the specified dates."
     else:
         return f"Error: {response.status_code} - {response.text}"
-
-    
-
