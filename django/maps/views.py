@@ -107,7 +107,8 @@ def event_detail(request, country, event_id):
     google_place_hotels = hotels_data.Google_Place_Hotels.split(',') if hotels_data.Google_Place_Hotels else ['None']
 
     # HotelList에 있는지 확인
-    hotel_list = [hotel for hotel in HotelList.objects.filter(google_name__in=google_place_hotels)]
+    google_place_hotels_filtered = [hotel for hotel in google_place_hotels if '/' not in hotel]
+    hotel_list = [hotel for hotel in HotelList.objects.filter(google_name__in=google_place_hotels_filtered)]
 
     context = {
         'event': event,
