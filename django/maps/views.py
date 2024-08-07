@@ -95,13 +95,13 @@ def event_detail(request, country, event_id):
     event = get_object_or_404(TravelEvent, EventID=event_id)
     hotels_data = get_object_or_404(HotelsForEvent, EventID=event_id)
     nearest_airport = get_object_or_404(NearestAirport, id=event_id)
+    flight_to = ''
 
-    date_obj = datetime.strptime(event.TimeStart, "%Y-%m-%dT%H:%M:%S")
-    
-    end_date = date_obj.strftime('%Y-%m-%d')
-    start_date = (date_obj - timedelta(days=3)).strftime('%Y-%m-%d')
+    if event.TimeStart != 'NaN':
+        start_date = (datetime.strptime(event.TimeStart, "%Y-%m-%dT%H:%M:%S") - timedelta(days=3)).strftime('%Y-%m-%d')
+        end_date = (datetime.strptime(event.TimeEnd, "%Y-%m-%dT%H:%M:%S")).strftime('%Y-%m-%d')
 
-    flight_to = FlightTo.objects.filter(departure_at__range=[start_date, end_date], arrival=nearest_airport.airport_code)
+        flight_to = FlightTo.objects.filter(departure_at__range=[start_date, end_date], arrival=nearest_airport.airport_code)
 
     # Google_Place_Hotels를 쉼표로 구분된 문자열로 가정하고 리스트로 변환
     google_place_hotels = hotels_data.Google_Place_Hotels.split(',') if hotels_data.Google_Place_Hotels else ['None']
@@ -113,8 +113,7 @@ def event_detail(request, country, event_id):
         'event': event,
         'country': country,
         'hotel_list': hotel_list,
-        'flight_to': flight_to,
-        'd': start_date
+        'flight_to': flight_to
     }
     return render(request, 'maps/event_detail.html', context)
     
