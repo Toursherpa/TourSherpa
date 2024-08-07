@@ -19,13 +19,13 @@
             <p><strong>Predicted Event Spend:</strong> {{ event.PredictedEventSpend }}</p>
         </div>
     </div>
-    <div class="card mb-4">
+    <div class="card mt-4">
         <div class="card-header">
             <i class="fas fa-table me-1"></i>
             출발 항공권
         </div>
         <div class="card-body">
-            <table id="datatablesSimple" class="table table-striped">
+            <table class="table table-striped datatablesSimple">
                 <thead>
                     <tr>
                         <th>Airline</th>
@@ -60,7 +60,7 @@
             <h2>Related Hotels</h2>
         </div>
         <div class="card-body">
-            <table class="table table-striped">
+            <table class="table table-striped datatablesSimple">
                 <thead>
                     <tr>
                         <th scope="col">Hotel Name</th>
@@ -73,7 +73,7 @@
                     {% for hotel in hotel_list %}
                     <tr>
                         <td>
-                            <a href="{% url 'hotel_detail' hotel_name=hotel.google_name %}">{{ hotel.google_name }}</a>
+                            <a class="nav-link" href="{% url 'hotel_detail' hotel_name=hotel.google_name %}">{{ hotel.google_name }}</a>
                         </td>
                         <td>{{ hotel.google_address }}</td>
                         <td>{{ hotel.google_rating }}</td>
