@@ -1,0 +1,105 @@
+{% extends 'maps/base.html' %}
+{% load static %}
+
+{% block title %}Hotel Detail - {{ hotel.google_name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="card mt-4">
+        <div class="card-header">
+            <h2>{{ hotel.google_name }}</h2>
+        </div>
+        <div class="card-body">
+            {% if hotel.google_address %}
+                <p><strong>Address:</strong> {{ hotel.google_address }}</p>
+            {% endif %}
+            {% if hotel.google_rating %}
+                <p><strong>Rating:</strong> {{ hotel.google_rating }}</p>
+            {% endif %}
+            {% if hotel.google_user_ratings_total %}
+                <p><strong>User Ratings Total:</strong> {{ hotel.google_user_ratings_total }}</p>
+            {% endif %}
+            {% if hotel.google_place_id %}
+                <p><strong>Place ID:</strong> {{ hotel.google_place_id }}</p>
+            {% endif %}
+            {% if hotel.google_number_of_reviews %}
+                <p><strong>Number of Reviews:</strong> {{ hotel.google_number_of_reviews }}</p>
+            {% endif %}
+            <hr>
+            <h3>Agoda Information</h3>
+            {% if hotel.agoda_hotel_name %}
+                <p><strong>Hotel Name:</strong> {{ hotel.agoda_hotel_name }}</p>
+            {% endif %}
+            {% if hotel.agoda_chain_name %}
+                <p><strong>Chain Name:</strong> {{ hotel.agoda_chain_name }}</p>
+            {% endif %}
+            {% if hotel.agoda_city %}
+                <p><strong>City:</strong> {{ hotel.agoda_city }}</p>
+            {% endif %}
+            {% if hotel.agoda_star_rating %}
+                <p><strong>Star Rating:</strong> {{ hotel.agoda_star_rating }}</p>
+            {% endif %}
+            {% if hotel.agoda_checkin %}
+                <p><strong>Check-in:</strong> {{ hotel.agoda_checkin }}</p>
+            {% endif %}
+            {% if hotel.agoda_checkout %}
+                <p><strong>Check-out:</strong> {{ hotel.agoda_checkout }}</p>
+            {% endif %}
+            {% if hotel.agoda_longitude %}
+                <p><strong>Longitude:</strong> {{ hotel.agoda_longitude }}</p>
+            {% endif %}
+            {% if hotel.agoda_latitude %}
+                <p><strong>Latitude:</strong> {{ hotel.agoda_latitude }}</p>
+            {% endif %}
+        </div>
+    </div>
+    <div class="card mt-4">
+        <div class="card-header">
+            <i class="fas fa-table me-1"></i>
+            행사 list
+        </div>
+        <div class="card-body">
+            <table class="table table-striped datatablesSimple">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Rank</th>
+                        <th>PHQ Attendance</th>
+                        <th>Time Start</th>
+                        <th>Time End</th>
+                        <th>Address</th>
+                        <th>Region</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for event in event_list %}
+                    <tr>
+                        <td><a class="nav-link" href="{% url 'event_detail' country=event.Country event_id=event.EventID %}">{{ event.Title }}</a></td>
+                        <td>{{ event.Rank }}</td>
+                        <td>{{ event.PhqAttendance }}</td>
+                        <td>{{ event.TimeStart }}</td>
+                        <td>{{ event.TimeEnd }}</td>
+                        <td>{{ event.Address }}</td>
+                        <td>{{ event.Region }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<style>
+    .card h2, .card h3 {
+        font-size: 24px;
+        margin-bottom: 10px;
+    }
+    .card p {
+        margin-bottom: 10px;
+        line-height: 1.6;
+    }
+    .card strong {
+        font-weight: bold;
+    }
+</style>
+{% endblock %}
