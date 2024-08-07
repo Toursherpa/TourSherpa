@@ -81,7 +81,7 @@ class FlightTo(models.Model):
     arrival_at = models.DateTimeField()
     duration = models.CharField(max_length=50)
     seats = models.IntegerField()
-    price = models.FloatField()
+    price = models.IntegerField()
 
     class Meta:
         db_table = 'flight_to'
@@ -97,7 +97,7 @@ class FlightFrom(models.Model):
     arrival_at = models.DateTimeField()
     duration = models.CharField(max_length=50)
     seats = models.IntegerField()
-    price = models.FloatField()
+    price = models.IntegerField()
 
     class Meta:
         db_table = 'flight_from'
