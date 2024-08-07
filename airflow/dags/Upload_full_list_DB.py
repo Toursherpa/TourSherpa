@@ -7,7 +7,7 @@ from airflow.hooks.postgres_hook import PostgresHook
 
 # 기본 DAG 설정
 def create_schema_table(**kwargs):
-    redshift_conn_id = 'redshift_default'
+    redshift_conn_id = 'redshift_connection'
     table_name = 'hotel_list'
     schema_name = 'hotel'
     
@@ -45,7 +45,7 @@ def create_schema_table(**kwargs):
     conn.close()
 
 def update_table(**kwargs):
-    redshift_conn_id = 'redshift_default'
+    redshift_conn_id = 'redshift_connection'
     table_name = 'hotel.hotel_list'
     redshift_hook = PostgresHook(postgres_conn_id=redshift_conn_id)
     conn = redshift_hook.get_conn()
@@ -91,7 +91,7 @@ default_args = {
 }
 
 dag = DAG(
-    'update_TravelEvents_Dags_to_Redshift',
+    'update_Redshift',
     default_args=default_args,
     description='A DAG to update Travel Events data and save it to Redshift',
     schedule_interval='@daily',
