@@ -176,7 +176,7 @@ dag = DAG(
     's3_accommodations_process',
     default_args=default_args,
     description='Download Accommodations and Hotel List CSV, process and upload updated Accommodations CSV',
-    schedule_interval=timedelta(days=1),
+    schedule_interval=timedelta(days=5),
     catchup=False,
 )
 

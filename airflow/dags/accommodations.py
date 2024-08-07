@@ -133,7 +133,7 @@ dag = DAG(
     's3_to_google_places_to_s3',
     default_args=default_args,
     description='Fetch accommodations around locations from S3 CSV and save to new CSV in S3',
-    schedule_interval=timedelta(days=1),
+    schedule_interval=timedelta(days=5),
     catchup=False,
 )
 
