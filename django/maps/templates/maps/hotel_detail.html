@@ -53,40 +53,40 @@
             {% endif %}
         </div>
     </div>
-</div>
-<div class="card mb-4">
-    <div class="card-header">
-        <i class="fas fa-table me-1"></i>
-        행사 list
-    </div>
-    <div class="card-body">
-        <table id="datatablesSimple" class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Title</th>
-                    <th>Rank</th>
-                    <th>PHQ Attendance</th>
-                    <th>Time Start</th>
-                    <th>Time End</th>
-                    <th>Address</th>
-                    <th>Region</th>
-                </tr>
-            </thead>
+    <div class="card mt-4">
+        <div class="card-header">
+            <i class="fas fa-table me-1"></i>
+            행사 list
+        </div>
+        <div class="card-body">
+            <table class="table table-striped datatablesSimple">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Rank</th>
+                        <th>PHQ Attendance</th>
+                        <th>Time Start</th>
+                        <th>Time End</th>
+                        <th>Address</th>
+                        <th>Region</th>
+                    </tr>
+                </thead>
 
-            <tbody>
-                {% for event in event_list %}
-                <tr>
-                    <td><a class="nav-link" href="{% url 'event_detail' country=event.Country event_id=event.EventID %}">{{ event.Title }}</a></td>
-                    <td>{{ event.Rank }}</td>
-                    <td>{{ event.PhqAttendance }}</td>
-                    <td>{{ event.TimeStart }}</td>
-                    <td>{{ event.TimeEnd }}</td>
-                    <td>{{ event.Address }}</td>
-                    <td>{{ event.Region }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+                <tbody>
+                    {% for event in event_list %}
+                    <tr>
+                        <td><a class="nav-link" href="{% url 'event_detail' country=event.Country event_id=event.EventID %}">{{ event.Title }}</a></td>
+                        <td>{{ event.Rank }}</td>
+                        <td>{{ event.PhqAttendance }}</td>
+                        <td>{{ event.TimeStart }}</td>
+                        <td>{{ event.TimeEnd }}</td>
+                        <td>{{ event.Address }}</td>
+                        <td>{{ event.Region }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 <style>
