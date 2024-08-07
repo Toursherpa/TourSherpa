@@ -120,11 +120,56 @@ def event_detail(request, country, event_id):
     
 def hotel_detail(request, hotel_name):
     hotel = get_object_or_404(HotelList, google_name=hotel_name)
+    events_for_hotel = get_object_or_404(EventsForHotel, HOTELNAME=hotel_name)
     
+    events = events_for_hotel.EventID.split(',') if events_for_hotel.EventID else ['None']
+    event_list = [event for event in TravelEvent.objects.filter(EventID__in=events)]
+
     context = {
         'hotel': hotel,
-        #'event_date': event_date,
+        'event_list':event_list,
     }
     return render(request, 'maps/hotel_detail.html', context)
+    
+    
+    
+#체크인/ 체크아웃 데이터를 받아 예약가능 여부 확인 및 상세정보    
+def check_hotel_availability(api_key, site_id, hotel_id, check_in_date, check_out_date):
+    url = "http://affiliateapi7643.agoda.com/affiliateservice/lt_v1"
+    
+    headers = {
+        "Accept-Encoding": "gzip,deflate",
+        "Authorization": f"{site_id}:{api_key}",
+        "Content-Type": "application/json"  # Content-Type 헤더 추가
+    }
+    
+    payload = {
+        "criteria": {
+            "additional": {
+                "currency": "USD",
+                "discountOnly": False,
+                "language": "en-us",
+                "occupancy": {
+                    "numberOfAdult": 2,
+                    "numberOfChildren": 0
+                }
+            },
+            "checkInDate": check_in_date,
+            "checkOutDate": check_out_date,
+            "hotelId": [hotel_id]
+        }
+    }
+    
+    response = requests.post(url, headers=headers, data=json.dumps(payload))
+    
+    if response.status_code == 200:
+        data = response.json()
+        if "results" in data and len(data["results"]) > 0:
+            return data["results"]
+        else:
+            return "No available rooms found for the specified dates."
+    else:
+        return f"Error: {response.status_code} - {response.text}"
+
     
 
