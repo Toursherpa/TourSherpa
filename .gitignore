@@ -1,0 +1,13 @@
+airflow/logs/
+django/logs/
+/tmp/
+*.pid
+*.db
+webserver_config.py
+*.pyc
+*.sh
+*.out
+*.cfg
+/airflow/logs
+*.log
+/django
