@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import  HotelsForEvent, EventsForHotel, TravelEvent, HotelList, FlightTo, FlightFrom, Airline, Airport
+from .models import  HotelsForEvent, EventsForHotel, TravelEvent, HotelList, FlightTo, FlightFrom, Airline, Airport, NearestAirport
 
 
 
@@ -51,3 +51,9 @@ class AirportAdmin(admin.ModelAdmin):
     list_display = ('airport_code', 'airport_name', 'airport_location', 'country_code', 'country_name')
     search_fields = ('airport_code', 'airport_name', 'country_code', 'country_name')
     list_filter = ('airport_code', 'country_code')
+
+@admin.register(NearestAirport)
+class NearestAirportAdmin(admin.ModelAdmin):
+    list_display = ('id', 'title', 'country', 'airport_code', 'airport_name')
+    search_fields = ('title', 'country', 'airport_code', 'airport_name')
+    list_filter = ('country', 'airport_code')
