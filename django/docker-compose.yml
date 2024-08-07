@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/app/src
+    ports:
+      - "8000:8000"
+    environment:
+      DJANGO_SETTINGS_MODULE: 'fortest.settings'
+      DATABASE_NAME: dev
+      DATABASE_USER: awsuser
+      DATABASE_PASSWORD: nDihmJJRWfG5krrOKXQTRoUJ1xsIKHsbuCUxUytJ
+      DATABASE_HOST: team-hori-2.cvkht4jvd430.ap-northeast-2.redshift.amazonaws.com
+      DATABASE_PORT: 5439
+

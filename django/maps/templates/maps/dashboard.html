@@ -1,0 +1,197 @@
+<!-- templates/maps/dashboard.html -->
+{% extends 'maps/base.html' %}
+{% load static %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+
+<head>
+    <style>
+        .card-body {
+            cursor: pointer; /* Change cursor to pointer to indicate clickable element */
+        }
+    </style>
+</head>
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Dashboard</h1>
+    <div class="row mb-4">
+        <div class="col-lg-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-chart-bar me-1"></i>
+                    Event가 많은 국가는?
+                </div>
+                <div class="card-body">
+                    <canvas id="EventCountryBarChart" width="100%" height="60"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-chart-bar me-1"></i>
+                    카테고리별 이벤트 수
+                </div>
+                <div class="card-body">
+                    <canvas id="EventCategoryBarChart" width="100%" height="60"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="fas fa-star me-1"></i>
+            인기 있는 이벤트 TOP 3
+        </div>
+        <div class="card-body">
+            <div class="row">
+                {% for event in top_events %}
+                <div class="col-lg-4">
+                    <div class="card mb-3">
+                        <div class="card-body" onclick="redirectToEventDetail('{% url 'event_detail' country=event.Country event_id=event.EventID %}');">
+                            <h5 class="card-title">{{ event.Title }}</h5>
+                            <h6 class="card-subtitle mb-2 text-muted">{{ event.Category }}</h6>
+                            <p class="card-text"><strong>Date:</strong> {{ event.Date }}</p>
+                            <p class="card-text"><strong>Country:</strong> {{ event.Country }}</p>
+                            <p class="card-text">{{ event.Description }}</p>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="fas fa-clock me-1"></i>
+            가장 빠르게 열린 이벤트
+        </div>
+        <div class="card-body">
+            <div class="row">
+                {% for recent_event in recent_events %}
+                    <div class="col-lg-4">
+                        <div class="card mb-3">
+                        <div class="card-body" onclick="redirectToEventDetail('{% url 'event_detail' country=recent_event.Country event_id=recent_event.EventID %}');">
+                                <h5 class="card-title">{{ recent_event.Title }}</h5>
+                                <h6 class="card-subtitle mb-2 text-muted">{{ recent_event.Category }}</h6>
+                                <p class="card-text"><strong>Date:</strong> {{ recent_event.Date }}</p>
+                                <p class="card-text"><strong>Country:</strong> {{ recent_event.Country }}</p>
+                                <p class="card-text">{{ recent_event.Description }}</p>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="fas fa-hourglass-half me-1"></i>
+            기간이 촉박한 이벤트
+        </div>
+        <div class="card-body">
+            <div class="row">
+                {% for earliest_end_event in earliest_end_events %}
+                    <div class="col-lg-4">
+                        <div class="card mb-3">
+                            <div class="card-body" onclick="redirectToEventDetail('{% url 'event_detail' country=earliest_end_event.Country event_id=earliest_end_event.EventID %}');">
+                                <h5 class="card-title">{{ earliest_end_event.Title }}</h5>
+                                <h6 class="card-subtitle mb-2 text-muted">{{ earliest_end_event.Category }}</h6>
+                                <p class="card-text"><strong>Date:</strong> {{ earliest_end_event.Date }}</p>
+                                <p class="card-text"><strong>Country:</strong> {{ earliest_end_event.Country }}</p>
+                                <p class="card-text">{{ earliest_end_event.Description }}</p>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.js" crossorigin="anonymous"></script>
+<script src="{% static 'maps/js/scripts.js' %}"></script>
+<script>
+    var maxEventCategoryData = Math.max.apply(null, {{ categories_data.datasets.0.data|safe }});  
+    var minEventCategoryData = Math.min.apply(null, {{ categories_data.datasets.0.data|safe }});  
+
+    var yAxisMin = (minEventCategoryData < 0) ? minEventCategoryData : 0;
+    var Categoryctx = document.getElementById("EventCategoryBarChart");
+    var CategoryBarChart = new Chart(Categoryctx, {
+        type: 'horizontalBar',
+        data: {
+            labels: {{ categories_data.labels|safe }},
+            datasets: [{
+                label: "Number of Events",
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 1,
+                data: {{ categories_data.datasets.0.data|safe }},
+            }],
+        },
+        options: {
+            scales: {
+                xAxes: [{
+                    ticks: {
+                        maxTicksLimit: 6
+                    }
+                }],
+                yAxes: [{
+                    barThickness: 30,
+                    ticks: {
+                        min: yAxisMin,
+                        max: maxEventCategoryData + 10,
+                        maxTicksLimit: 5
+                    }
+                }],
+            },
+            legend: {
+                display: false
+            }
+        }
+    });
+
+    var maxEventCountryData = Math.max.apply(null, {{ countries_data.datasets.0.data|safe }});  
+    var Countryctx = document.getElementById("EventCountryBarChart");
+    var CountryBarChart = new Chart(Countryctx, {
+        type: 'horizontalBar',
+        data: {
+            labels: {{ countries_data.labels|safe }},
+            datasets: [{
+                label: "Number of Events",
+                backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1,
+                data: {{ countries_data.datasets.0.data|safe }},
+            }],
+        },
+        options: {
+            scales: {
+                xAxes: [{
+                    ticks: {
+                        maxTicksLimit: 6
+                    }
+                }],
+                yAxes: [{
+                    barThickness: 30,
+                    ticks: {
+                        min: 0,
+                        max: maxEventCountryData + 10,
+                        maxTicksLimit: 5
+                    }
+                }],
+            },
+            legend: {
+                display: false
+            }
+        }
+    });
+</script>
+<script>
+    function redirectToEventDetail(url) {
+        window.location.href = url; // Redirect to the specified URL
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,27 @@
+
+services:
+  web:
+    build: .
+    command: >
+      sh -c "
+      python manage.py migrate &&
+      gunicorn fortest.wsgi:application --bind 0.0.0.0:8000 --certfile=/certs/django.crt --keyfile=/certs/django.key
+      "
+    volumes:
+      - .:/app/src
+      - /home/ubuntu/django.crt:/certs/django.crt:ro
+      - /home/ubuntu/django.key:/certs/django.key:ro
+    ports:
+      - "8000:8000"
+      - "443:443"
+    environment:
+      DJANGO_SETTINGS_MODULE: 'fortest.settings'
+      DATABASE_NAME: dev
+      DATABASE_USER: awsuser
+      DATABASE_PASSWORD: nDihmJJRWfG5krrOKXQTRoUJ1xsIKHsbuCUxUytJ
+      DATABASE_HOST: team-hori-2.cvkht4jvd430.ap-northeast-2.redshift.amazonaws.com
+      DATABASE_PORT: 5439
+
+networks:
+  default:
+    driver: bridge
