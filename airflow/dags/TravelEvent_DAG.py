@@ -221,4 +221,10 @@ upload_to_s3_task = PythonOperator(
     dag=dag,
 )
 
-fetch_and_upload_task >> read_data_from_s3_task >> update_combined_df >> upload_to_s3_task
+trigger_second_dag = TriggerDagRunOperator(
+    task_id='trigger_second_dag',
+    trigger_dag_id='update_TravelEvents_Dags_to_Redshift',  # The ID of the second DAG
+    dag=dag,
+)
+
+fetch_and_upload_task >> read_data_from_s3_task >> update_combined_df >> upload_to_s3_task >> trigger_second_dag
