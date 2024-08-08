@@ -135,6 +135,8 @@ class NearestAirport(models.Model):
     id = models.CharField(max_length=100, primary_key=True)
     title = models.CharField(max_length=100)
     country = models.CharField(max_length=100)
+    start_date = models.CharField(max_length=100)
+    end_date = models.CharField(max_length=100)
     airport_code = models.CharField(max_length=100)
     airport_name = models.CharField(max_length=100)
 
