@@ -179,4 +179,8 @@ load_to_redshift_task = S3ToRedshiftOperator(
     dag=dag,
 )
 
+<<<<<<< HEAD
 read_data_from_s3_task >> find_nearest_airports_task >> preprocess_redshift_task >> load_to_redshift_task
+=======
+read_data_from_s3_task >> find_nearest_airports_task >> preprocess_redshift_task >> load_to_redshift_task
+>>>>>>> 920d31690e0493a5fe3828e519a393b31f347b55

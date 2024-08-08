@@ -63,7 +63,8 @@ def fetch_places_data(**context):
         
         
         # 데이터 수집 설정
-        places_per_location = 5   # cafe, restaurant 수집 갯수
+        places_per_location = 3   # cafe, restaurant 수집 갯수
+        logging.info(f"places_per_location 수 :  {places_per_location} ")
         places_data = []
         collection_date = datetime.now().strftime('%Y-%m-%d')  # 데이터 수집 날짜 추가
 
@@ -108,14 +109,14 @@ def fetch_places_data(**context):
                     details_response.raise_for_status()  # HTTP 에러 발생 시 예외 발생
                     place_details = details_response.json()
                     place_name = place_details['result']['name']
-                    place_address = place_details['result'].get('formatted_address', 'N/A')
-                    place_rating = place_details['result'].get('rating', 'N/A')
-                    place_user_ratings_total = place_details['result'].get('user_ratings_total', 'N/A')
+                    place_address = place_details['result'].get('formatted_address', None)
+                    place_rating = place_details['result'].get('rating', None)
+                    place_user_ratings_total = place_details['result'].get('user_ratings_total', None)
                     place_reviews = place_details['result'].get('reviews', [])
                     place_lat = place_details['result']['geometry']['location']['lat']
                     place_lng = place_details['result']['geometry']['location']['lng']
                     place_types = ', '.join(place_details['result'].get('types', []))
-                    place_opening_hours = place_details['result'].get('opening_hours', {}).get('weekday_text', 'N/A')
+                    place_opening_hours = place_details['result'].get('opening_hours', {}).get('weekday_text', None)
 
                     place_opening_hours_str = place_opening_hours if place_opening_hours else ''
                     place_review = place_reviews[0]['text'] if place_reviews else 'No reviews'
