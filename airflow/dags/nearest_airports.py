@@ -121,6 +121,8 @@ def preprocess_redshift_table():
                 id VARCHAR(255),
                 title VARCHAR(255),
                 country VARCHAR(255),
+                start_date VARCHAR(255),
+                end_date VARCHAR(255),
                 airport_code VARCHAR(10),
                 airport_name VARCHAR(255)
             );
