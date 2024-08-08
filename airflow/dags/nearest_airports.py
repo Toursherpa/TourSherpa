@@ -171,11 +171,11 @@ load_to_redshift_task = S3ToRedshiftOperator(
     task_id='load_to_redshift',
     schema=Variable.get('redshift_schema_places'),
     table=Variable.get('redshift_table_nearest'),
-    s3_bucket=Variable.get('my_s3_bucket'),
+    s3_bucket=Variable.get('s3_bucket_name'),
     s3_key='source/source_flight/nearest_airports.csv',
     copy_options=['IGNOREHEADER 1', 'CSV'],
     aws_conn_id='TravelEvent_s3_conn',
-    redshift_conn_id='my_redshift_connection_id',
+    redshift_conn_id='redshift_connection',
     dag=dag,
 )
 
