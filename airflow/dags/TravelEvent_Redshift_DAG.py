@@ -23,7 +23,7 @@ def read_data_from_s3(**kwargs):
     s3_hook = S3Hook('s3_connection')
     s3_bucket_name = Variable.get('s3_bucket_name')
 
-    s3_key = f'source/source_TravelEvents/TravelEvents.csv'
+    s3_key = f'source/source_TravelEvents/{today}/TravelEvents.csv'
     if s3_hook.check_for_key(key=s3_key, bucket_name=s3_bucket_name):
         file_obj = s3_hook.get_key(key=s3_key, bucket_name=s3_bucket_name)
         file_content = file_obj.get()['Body'].read().decode('utf-8')
@@ -71,10 +71,8 @@ def transform_data(**kwargs):
 
         df['Region'] = df['Region'].apply(lambda x: extract_formatted_region(x))
         df['Address'] = df['Address'].apply(lambda x: extract_formatted_address(x))
-        df['Title'] = df['Title'].apply(lambda x: x[:1000])  # Title 컬럼을 최대 1000자로 제한
-        df['Description'] = df['Description'].apply(lambda x: x[:5000])  # Description 컬럼을 최대 5000자로 제한
-        df['LocationID'] = df['LocationID'].apply(lambda x: x[:1000])  # LocationID 컬럼을 최대 1000자로 제한
-        df['Address'] = df['Address'].apply(lambda x: x[:2000])  # Address 컬럼을 최대 2000자로 제한
+
+        df['Description'] = df['Description'].apply(lambda x: remove_source_info(x))
 
         transformed_data = df.to_dict(orient='records')
     else:
@@ -82,7 +80,10 @@ def transform_data(**kwargs):
 
     kwargs['ti'].xcom_push(key='transformed_data', value=transformed_data)
 
-
+def remove_source_info(description):
+    pattern = r'^Sourced from predicthq\.com - '
+    return re.sub(pattern, '', description)
+    
 def generate_and_save_data(**kwargs):
     transformed_data = kwargs['ti'].xcom_pull(key='transformed_data', task_ids='transform_data')
     redshift_conn_id = 'redshift_connection'
