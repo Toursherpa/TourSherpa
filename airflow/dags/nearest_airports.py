@@ -84,6 +84,8 @@ def find_nearest_airports(**context):
                     'id': event['id'],
                     'title': event['title'],
                     'country': event['country'],
+                    'start_date': str(event['start_local'])[: 10],
+                    'end_date': str(event_df['end_local'][i])[: 10],
                     'airport_code': nearest_airport['airport_code'],
                     'airport_name': nearest_airport['airport_name']
                 })
@@ -119,6 +121,8 @@ def preprocess_redshift_table():
                 id VARCHAR(255),
                 title VARCHAR(255),
                 country VARCHAR(255),
+                start_date VARCHAR(255),
+                end_date VARCHAR(255),
                 airport_code VARCHAR(10),
                 airport_name VARCHAR(255)
             );
