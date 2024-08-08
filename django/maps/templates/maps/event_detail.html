@@ -22,29 +22,59 @@
     <div class="card mt-4">
         <div class="card-header">
             <i class="fas fa-table me-1"></i>
-            출발 항공권
+            인천국제공항(ICN) -> {{ nearest_airport.airport_name }}({{ nearest_airport.airport_code }}) {{ flight_state }}
         </div>
         <div class="card-body">
             <table class="table table-striped datatablesSimple">
                 <thead>
                     <tr>
-                        <th>Airline</th>
-                        <th>Departure</th>
-                        <th>Departure Time</th>
-                        <th>Arrival</th>
-                        <th>Arrival Time</th>
-                        <th>Duration</th>
-                        <th>Seats</th>
-                        <th>Price</th>
+                        <th>항공사</th>
+                        <th>출발 시간</th>
+                        <th>도착 시간</th>
+                        <th>소요 시간</th>
+                        <th>남은 좌석 수</th>
+                        <th>평균 가격 (원)</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for f in flight_to %}
                     <tr>
-                        <td>{{ f.airline_code }}</td>
-                        <td>{{ f.departure }}</td>
+                        <td>
+                            <a class="nav-link" href="https://www.skyscanner.co.kr/transport/flights/ICN/{{ f.arrival }}/{{ f.departure_date }}/?adults=1&airlines={{ f.airline_code }}&departure-times={{ f.departure_min }}-{{ f.departure_min }}&preferdirects=true" target="_blank" rel="noopener noreferrer">{{ f.airline_name }}({{ f.airline_code }})</a>
+                        </td>
                         <td>{{ f.departure_at }}</td>
-                        <td>{{ f.arrival }}</td>
+                        <td>{{ f.arrival_at }}</td>
+                        <td>{{ f.duration }}</td>
+                        <td>{{ f.seats }}</td>
+                        <td>{{ f.price }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="card mt-4">
+        <div class="card-header">
+            <i class="fas fa-table me-1"></i>
+            {{ nearest_airport.airport_name }}({{ nearest_airport.airport_code }}) -> 인천국제공항(ICN) {{ flight_state }}
+        </div>
+        <div class="card-body">
+            <table class="table table-striped datatablesSimple">
+                <thead>
+                    <tr>
+                        <th>항공사</th>
+                        <th>출발 시간</th>
+                        <th>도착 시간</th>
+                        <th>소요 시간</th>
+                        <th>남은 좌석 수</th>
+                        <th>평균 가격 (원)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for f in flight_from %}
+                    <tr>
+                        <td>{{ f.airline_code }}</td>
+                        <td>{{ f.departure_at }}</td>
                         <td>{{ f.arrival_at }}</td>
                         <td>{{ f.duration }}</td>
                         <td>{{ f.seats }}</td>
