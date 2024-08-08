@@ -15,6 +15,8 @@ import requests
 import json
 from json.decoder import JSONDecodeError
 from datetime import datetime, timedelta
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
 
 country_list = {'오스트리아': 'AT', '호주': 'AU', '캐나다': 'CA', '중국': 'CN', '독일': 'DE', '스페인': 'ES', '프랑스': 'FR', '영국': 'GB',
                 '인도네시아': 'ID', '인도': 'IN', '이탈리아': 'IT', '일본': 'JP', '말레이시아': 'MY', '네덜란드': 'NL', '대만': 'TW',
@@ -99,13 +101,21 @@ def event_detail(request, country, event_id):
     hotels_data = get_object_or_404(HotelsForEvent, EventID=event_id)
     nearest_airport = get_object_or_404(NearestAirport, id=event_id)
     flight_to = ''
+    flight_from = ''
+    flight_state = ''
 
     if event.TimeStart != 'NaN':
-        start_date = (datetime.strptime(event.TimeStart, "%Y-%m-%dT%H:%M:%S") - timedelta(days=3)).strftime('%Y-%m-%d')
-        end_date = (datetime.strptime(event.TimeEnd, "%Y-%m-%dT%H:%M:%S")).strftime('%Y-%m-%d')
+        to_start_date = (datetime.strptime(event.TimeStart, "%Y-%m-%dT%H:%M:%S") - timedelta(days=3)).strftime('%Y-%m-%d')
+        to_end_date = (datetime.strptime(event.TimeEnd, "%Y-%m-%dT%H:%M:%S")).strftime('%Y-%m-%d')
+        from_start_date = (datetime.strptime(event.TimeStart, "%Y-%m-%dT%H:%M:%S") + timedelta(days=1)).strftime('%Y-%m-%d')
+        from_end_date = (datetime.strptime(event.TimeEnd, "%Y-%m-%dT%H:%M:%S") + timedelta(days=4)).strftime('%Y-%m-%d')
 
-        flight_to = FlightTo.objects.filter(departure_at__range=[start_date, end_date],
+        flight_to = FlightTo.objects.filter(departure_at__range=[to_start_date, to_end_date],
                                             arrival=nearest_airport.airport_code)
+        flight_from = FlightFrom.objects.filter(departure_at__range=[from_start_date, from_end_date],
+                                            departure=nearest_airport.airport_code)
+    else:
+        flight_state = " [아직 행사 일정이 정해지지 않았습니다!]"
 
     # Google_Place_Hotels를 쉼표로 구분된 문자열로 가정하고 리스트로 변환
     google_place_hotels = hotels_data.Google_Place_Hotels.split(',') if hotels_data.Google_Place_Hotels else ['None']
@@ -118,7 +128,10 @@ def event_detail(request, country, event_id):
         'event': event,
         'country': country,
         'hotel_list': hotel_list,
-        'flight_to': flight_to
+        'nearest_airport': nearest_airport,
+        'flight_to': flight_to,
+        'flight_from': flight_from,
+        'flight_state': flight_state,
     }
     return render(request, 'maps/event_detail.html', context)
 
@@ -137,7 +150,31 @@ def hotel_detail(request, hotel_name):
     return render(request, 'maps/hotel_detail.html', context)
 
 
-# 체크인/ 체크아웃 데이터를 받아 예약가능 여부 확인 및 상세정보
+@csrf_exempt
+def check_availability(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        api_key = ""
+        site_id = ''
+        hotel_id = int(float(data['hotel_id']))  # 문자열을 정수로 변환하기 전에 float으로 변환
+        check_in_date = data['check_in_date']
+        check_out_date = data['check_out_date']
+
+        result = check_hotel_availability(api_key, site_id, hotel_id, check_in_date, check_out_date)
+        if isinstance(result, list) and len(result) > 0:
+            landing_url = result[0].get('landingURL', '')
+            return JsonResponse({'landingURL': landing_url, 'hotelId': hotel_id, 'check_in_date': check_in_date, 'check_out_date': check_out_date})
+        else:
+            return JsonResponse({
+                'error': 'No available rooms found for the specified dates.',
+                'hotelId': hotel_id,
+                'check_in_date': check_in_date,
+                'check_out_date': check_out_date,
+                'result': result
+            })
+    return JsonResponse({'error': 'Invalid request method.'})    
+#체크인/ 체크아웃 데이터를 받아 예약가능 여부 확인 및 상세정보    
+
 def check_hotel_availability(api_key, site_id, hotel_id, check_in_date, check_out_date):
     url = "http://affiliateapi7643.agoda.com/affiliateservice/lt_v1"
 
