@@ -29,3 +29,5 @@ django/data/db/base/4/3602_vm
 airflow/tmp/Accommodations.csv
 airflow/tmp/hotel_list.csv
 *.csv
+/airflow/tmp
+/airflow/tmp
