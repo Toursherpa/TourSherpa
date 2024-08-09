@@ -85,7 +85,7 @@ def find_nearest_airports(**context):
                     'title': event['title'],
                     'country': event['country'],
                     'start_date': str(event['start_local'])[: 10],
-                    'end_date': str(event_df['end_local'][i])[: 10],
+                    'end_date': str(event['end_local'])[: 10],
                     'airport_code': nearest_airport['airport_code'],
                     'airport_name': nearest_airport['airport_name']
                 })
