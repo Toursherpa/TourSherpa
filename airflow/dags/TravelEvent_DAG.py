@@ -110,7 +110,7 @@ def read_data_from_s3(**kwargs):
     s3_hook = S3Hook('s3_connection')
     s3_bucket_name = Variable.get('s3_bucket_name')
 
-    s3_key = f'source/source_TravelEvents/{yesterday_str}/UP_TravelEvents.csv'
+    s3_key = f'source/source_TravelEvents/{yesterday_str}/TravelEvents.csv'
     if s3_hook.check_for_key(key=s3_key, bucket_name=s3_bucket_name):
         file_obj = s3_hook.get_key(key=s3_key, bucket_name=s3_bucket_name)
         file_content = file_obj.get()['Body'].read().decode('utf-8')
@@ -190,7 +190,7 @@ dag = DAG(
     'update_TravelEvents_Dags',
     default_args=default_args,
     description='A DAG to update parking data every days and save it to S3',
-    schedule_interval='@daily',
+    schedule_interval='0 3 * * *', 
     catchup=False,
 )
 
