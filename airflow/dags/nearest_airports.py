@@ -118,9 +118,10 @@ def preprocess_redshift_table():
         redshift_conn = redshift_hook.get_conn()
         cursor = redshift_conn.cursor()
 
-        cursor.execute(
-            f"DROP TABLE IF EXISTS public.nearest_airports;")
-        cursor.execute(f"""
+        cursor.execute("DROP TABLE IF EXISTS public.nearest_airports;")
+        redshift_conn.commit()
+        
+        cursor.execute("""
             CREATE TABLE public.nearest_airports (
                 id VARCHAR(255),
                 title VARCHAR(255),
@@ -132,6 +133,9 @@ def preprocess_redshift_table():
             );
         """)
         redshift_conn.commit()
+
+        redshift_conn.close()
+        
         logging.info(f"Redshift table nearest_airports has been dropped and recreated.")
 
     except Exception as e:
@@ -182,8 +186,8 @@ load_to_redshift_task = S3ToRedshiftOperator(
     s3_bucket=Variable.get('s3_bucket_name'),
     s3_key='source/source_flight/nearest_airports.csv',
     copy_options=['IGNOREHEADER 1', 'CSV'],
-    aws_conn_id='TravelEvent_s3_conn',
-    redshift_conn_id='my_redshift_connection_id',
+    aws_conn_id='s3_connection',
+    redshift_conn_id='redshift_connection',
     dag=dag,
 )
 
