@@ -89,6 +89,8 @@ def find_latest_google_hotels_file(ti, aws_conn_id, s3_bucket):
     logging.info(f"find_latest_google_hotels_file 완료 - 마지막 업데이트 날짜: {last_update}")
     ti.xcom_push(key='last_update', value=last_update)
 
+import os
+
 def merge_up_travel_events(ti, aws_conn_id, s3_bucket, current_date):
     logging.info("merge_up_travel_events 시작")
     last_update = ti.xcom_pull(key='last_update', task_ids='find_latest_google_hotels_file')
@@ -128,8 +130,16 @@ def merge_up_travel_events(ti, aws_conn_id, s3_bucket, current_date):
 
         combined_df = pd.concat(events_dataframes) if events_dataframes else pd.DataFrame()
 
-    combined_df_path = f'/tmp/{current_date}/combined_up_travel_events.csv'
+    # combined_df_path 변수를 먼저 정의합니다
+    combined_df_path = f'/tmp/{current_date.strftime("%Y-%m-%d")}/combined_up_travel_events.csv'
+    
+    # 디렉터리가 없는 경우 생성
+    combined_df_dir = os.path.dirname(combined_df_path)
+    os.makedirs(combined_df_dir, exist_ok=True)
+
     combined_df.to_csv(combined_df_path, index=False)
+    logging.info(f"변경된 항목 {len(combined_df)}개")
+
     logging.info(f"combined_up_travel_events.csv 파일이 {combined_df_path}에 저장되었습니다.")
     ti.xcom_push(key='combined_df_path', value=combined_df_path)
 
