@@ -12,7 +12,7 @@ import time
 import logging
 from airflow.utils.task_group import TaskGroup
 
-BATCH_SIZE = 50  # 한 번에 처리할 위치의 수
+BATCH_SIZE = 30  # 한 번에 처리할 위치의 수
 
 def download_csv_from_s3(aws_conn_id, s3_bucket, local_path, s3_key):
     logging.info(f"download_csv_from_s3 시작 - S3 Bucket: {s3_bucket}, Key: {s3_key}, Local Path: {local_path}")
@@ -131,7 +131,7 @@ def merge_up_travel_events(ti, aws_conn_id, s3_bucket, current_date):
         combined_df = pd.concat(events_dataframes) if events_dataframes else pd.DataFrame()
 
     # combined_df_path 변수를 먼저 정의합니다
-    combined_df_path = f'/tmp/{current_date.strftime("%Y-%m-%d")}/combined_up_travel_events.csv'
+    combined_df_path = f'/tmp/{datetime.utcnow().strftime("%Y-%m-%d")}/combined_up_travel_events.csv'
     
     # 디렉터리가 없는 경우 생성
     combined_df_dir = os.path.dirname(combined_df_path)
@@ -157,6 +157,10 @@ def fetch_hotel_for_location_batch(locations, google_api_key, current_date):
             logging.warning(f"위치 {location}에서 호텔 정보를 가져오는 중 오류 발생: {e}")
 
     result_df = pd.DataFrame(google_hotels)
+
+    # 중복 제거: 'place_id' 열을 기준으로 중복된 행 제거
+    result_df = result_df.drop_duplicates(subset=['place_id'])
+
     result_df_path = f'/tmp/{current_date}/google_hotels_batch_{locations[0][0]}_{locations[0][1]}.csv'
     result_df.to_csv(result_df_path, index=False)
     logging.info(f"google_hotels_batch_{locations[0][0]}_{locations[0][1]}.csv 파일이 {result_df_path}에 저장되었습니다.")
@@ -184,9 +188,21 @@ def merge_final_results(current_date, aws_conn_id, s3_bucket):
     except AirflowException:
         logging.info(f"{last_hotels_s3_key} 파일을 찾지 못했으므로 병합을 생략합니다.")
 
+    # 중복 제거: 특정 열에서 중복된 행을 제거합니다.
+    combined_df = combined_df.drop_duplicates(subset=['place_id'])
+
     final_result_path = '/tmp/google_hotels.csv'
     combined_df.to_csv(final_result_path, index=False)
     logging.info(f"google_hotels.csv 파일이 {final_result_path}에 저장되었습니다.")
+
+    # 청크 파일 삭제
+    for file_path in google_hotels_files:
+        try:
+            os.remove(file_path)
+            logging.info(f"청크 파일 {file_path}이 성공적으로 삭제되었습니다.")
+        except Exception as e:
+            logging.warning(f"청크 파일 {file_path}을 삭제하는 중 오류 발생: {e}")
+
 
 def upload_final_result(current_date, aws_conn_id, s3_bucket):
     logging.info(f"upload_final_result 시작 - Current Date: {current_date}")
