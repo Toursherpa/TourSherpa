@@ -6,10 +6,11 @@ from airflow.operators.python_operator import PythonOperator
 from airflow.providers.amazon.aws.hooks.s3 import S3Hook
 from airflow.providers.amazon.aws.transfers.s3_to_redshift import S3ToRedshiftOperator
 from airflow.hooks.postgres_hook import PostgresHook
-from datetime import timedelta
+from datetime import timedelta, datetime
 from airflow.utils.dates import days_ago
 from airflow.models import Variable
 from io import StringIO
+import pytz
 
 '''
 geodesic 라이브러리 설치 필요
@@ -21,6 +22,10 @@ geodesic 라이브러리 설치 필요
 04. S3적재, Redshift COPY
 '''
 
+kst = pytz.timezone('Asia/Seoul')
+utc_now = datetime.utcnow()
+kst_now = utc_now.astimezone(kst)
+today = kst_now.strftime('%Y-%m-%d')
 
 def read_data_from_s3(**context):
     logging.info("Starting read_data_from_s3")
@@ -28,7 +33,7 @@ def read_data_from_s3(**context):
         s3_hook = S3Hook(aws_conn_id='s3_connection')
         bucket_name = Variable.get('s3_bucket_name')
 
-        events_key = 'source/source_TravelEvents/TravelEvents.csv'
+        events_key = f'source/source_TravelEvents/{today}/TravelEvents.csv'
         airports_key = 'source/source_flight/flight_airport.csv'
 
         events_file_obj = s3_hook.get_key(key=events_key, bucket_name=bucket_name)
