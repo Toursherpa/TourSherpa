@@ -92,7 +92,7 @@
         data: {
             labels: {{ regions_data.labels|safe }},
             datasets: [{
-                label: "Number of Events",
+                label: "행사 수",
                 backgroundColor: [
                     'rgba(0, 0, 128, 0.8)',      
                     'rgba(0, 77, 153, 0.8)',     
@@ -141,7 +141,7 @@
       data: {
         labels: {{ categories_data.labels|safe }},
         datasets: [{
-          label: "Number of Events",
+          label: "행사 수",
           data: {{ categories_data.datasets.0.data|safe }},
           backgroundColor: ['#007bff', '#dc3545', '#ffc107', '#28a745'],
         }],
