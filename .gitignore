@@ -1,4 +1,8 @@
-/logs/
+airflow/logs/
+django/logs/
+django/Lib/
+django/Scripts/
+django/Include/
 /temp/
 *.pid
 *.db
@@ -7,3 +11,21 @@ webserver_config.py
 *.sh
 *.out
 *.cfg
+<<<<<<< Updated upstream
+/airflow/logs
+<<<<<<< HEAD
+=======
+*.log
+django/project_structure.txt
+>>>>>>> Stashed changes
+=======
+>>>>>>> parent of 2d4f54a (템플릿 업데이트)
+django/__init__.py
+/.idea/
+
+django/data/db/base/4/3602_vm
+*.xml
+/django/data
+airflow/tmp/Accommodations.csv
+airflow/tmp/hotel_list.csv
+*.csv
