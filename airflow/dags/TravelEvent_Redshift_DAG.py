@@ -107,8 +107,6 @@ def transform_data(**kwargs):
         print("Title")
         df['Description'] = df['Description'].apply(lambda x: translate_to_korean(x))
         print("Description")
-        df['Address'] = df['Address'].apply(lambda x: translate_to_korean(x))
-        print("Address")
         df['Region'] = df['Region'].apply(lambda x: translate_to_korean(x))
         print("Region")
 
