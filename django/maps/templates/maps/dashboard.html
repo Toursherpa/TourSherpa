@@ -63,8 +63,8 @@
                         <div class="card-body" onclick="redirectToEventDetail('{% url 'event_detail' country=event.Country event_id=event.EventID %}');">
                             <h5 class="card-title">{{ event.Title }}</h5>
                             <h6 class="card-subtitle mb-2 text-muted">{{ event.Category }}</h6>
-                            <p class="card-text"><strong>Date:</strong> {{ event.TimeStart }} <br> ~ {{ event.TimeEnd }} </p>
-                            <p class="card-text"><strong>Country:</strong> {{ event.Country }}</p>
+                            <p class="card-text"><strong>개최일: </strong> {{ event.TimeStart }} <br> ~ {{ event.TimeEnd }} </p>
+                            <p class="card-text"><strong>나라: </strong> {{ event.Country }}</p>
                             <p class="card-text">{{ event.Description }}</p>
                         </div>
                     </div>
@@ -86,8 +86,8 @@
                         <div class="card-body" onclick="redirectToEventDetail('{% url 'event_detail' country=recent_event.Country event_id=recent_event.EventID %}');">
                                 <h5 class="card-title">{{ recent_event.Title }}</h5>
                                 <h6 class="card-subtitle mb-2 text-muted">{{ recent_event.Category }}</h6>
-                            <p class="card-text"><strong>Date:</strong> {{ recent_event.TimeStart }} <br> ~ {{ recent_event.TimeEnd }} </p>
-                                <p class="card-text"><strong>Country:</strong> {{ recent_event.Country }}</p>
+                                <p class="card-text"><strong>개최일: </strong> {{ recent_event.TimeStart }} <br> ~ {{ recent_event.TimeEnd }} </p>
+                                <p class="card-text"><strong>나라: </strong> {{ recent_event.Country }}</p>
                                 <p class="card-text">{{ recent_event.Description }}</p>
                             </div>
                         </div>
@@ -109,8 +109,8 @@
                             <div class="card-body" onclick="redirectToEventDetail('{% url 'event_detail' country=earliest_end_event.Country event_id=earliest_end_event.EventID %}');">
                                 <h5 class="card-title">{{ earliest_end_event.Title }}</h5>
                                 <h6 class="card-subtitle mb-2 text-muted">{{ earliest_end_event.Category }}</h6>
-                            <p class="card-text"><strong>Date:</strong> {{ earliest_end_event.TimeStart }} <br> ~ {{ earliest_end_event.TimeEnd }} </p>
-                                <p class="card-text"><strong>Country:</strong> {{ earliest_end_event.Country }}</p>
+                            <p class="card-text"><strong>개최일: </strong> {{ earliest_end_event.TimeStart }} <br> ~ {{ earliest_end_event.TimeEnd }} </p>
+                                <p class="card-text"><strong>나라: </strong> {{ earliest_end_event.Country }}</p>
                                 <p class="card-text">{{ earliest_end_event.Description }}</p>
                             </div>
                         </div>
