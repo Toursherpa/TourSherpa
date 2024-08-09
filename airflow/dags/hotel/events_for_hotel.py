@@ -3,48 +3,65 @@ import pandas as pd
 from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
 from airflow.hooks.postgres_hook import PostgresHook
-def calculate_distance(lon1, lat1, lon2, lat2):
+from airflow.hooks.S3_hook import S3Hook
 
+today_date = datetime.utcnow().strftime('%Y-%m-%d')
+
+# Function to calculate the distance between two coordinates
+def calculate_distance(lon1, lat1, lon2, lat2):
     return ((lon2 - lon1)**2 + (lat2 - lat1)**2)**0.5
 
+# Function to find events within a 10km radius of hotels
 def find_events():
-    print("반경 10km 이내의 이벤트 찾기 시작...")
-    # 숙소 데이터 로드 (hotel_id, longitude, latitude만 포함)
-    accommodations_df = pd.read_csv('/tmp/Accommodations.csv', usecols=['name', 'place_id','location'] )
-    events_df = pd.read_csv('/tmp/TravelEvents.csv')
-    
-    # 숙소 데이터프레임에 이벤트 ID를 저장할 새로운 열 추가
-    accommodations_df['event_ids'] = ''
-    # 숙소 데이터프레임에 위치 정보 파싱
-    accommodations_df['longitude'] = accommodations_df['location'].apply(lambda x: float(x.strip('[]').split(', ')[0]))
-    accommodations_df['latitude'] = accommodations_df['location'].apply(lambda x: float(x.strip('[]').split(', ')[1]))
-    # 이벤트 데이터프레임에서 위치 정보 파싱
+    print("Starting to find events within a 10km radius...")
+
+    # Load hotel data
+    hotels_df = pd.read_csv(f'/tmp/{today_date}/Updated_hotels.csv', usecols=['name', 'place_id', 'location'])
+    events_df = pd.read_csv(f'/tmp/{today_date}/TravelEvents.csv')
+
+    # Add a new column for event IDs in the hotel dataframe
+    hotels_df['event_ids'] = ''
+
+    # Parse location data in hotel and event dataframes
+    hotels_df['longitude'] = hotels_df['location'].apply(lambda x: float(x.strip('[]').split(', ')[0]))
+    hotels_df['latitude'] = hotels_df['location'].apply(lambda x: float(x.strip('[]').split(', ')[1]))
     events_df['longitude'] = events_df['location'].apply(lambda x: float(x.strip('[]').split(', ')[0]))
     events_df['latitude'] = events_df['location'].apply(lambda x: float(x.strip('[]').split(', ')[1]))
 
-    # 'id' 열이 있는지 확인
+    # Check if 'id' column exists in event dataframe
     if 'id' not in events_df.columns:
-        raise KeyError("TravelEvents.csv 파일에 'id' 열이 없습니다. 올바른 열 이름을 사용하고 있는지 확인하세요.")
-    
-    # 각 숙소에 대해 반경 10km 이내의 이벤트 찾기
-    for index, accommodation in accommodations_df.iterrows():
-        nearby_events = []
-        for _, event in events_df.iterrows():
-            distance = calculate_distance(accommodation['longitude'], accommodation['latitude'], event['longitude'], event['latitude'])
-            if distance <= 0.1:  # 단순한 거리 계산이므로 10km에 해당하는 임의의 기준값 0.1 사용
-                nearby_events.append(event['id'])
-        if nearby_events:
-            accommodations_df.at[index, 'event_ids'] = ','.join(map(str, nearby_events))
-        else:
-            accommodations_df.at[index, 'event_ids'] = ''
+        raise KeyError("The 'id' column is missing in TravelEvents.csv. Please ensure the correct column name is used.")
 
-    # 업데이트된 숙소 데이터를 새로운 CSV 파일에 저장
-    accommodations_df=accommodations_df.drop(columns=['longitude', 'latitude'])
-    accommodations_df.to_csv('/tmp/Updated_Accommodations_with_Events.csv', index=False)
-    print("이벤트 ID가 포함된 업데이트된 CSV 파일이 저장되었습니다.")
-    
-    
-def create_schema_table(**kwargs):
+    # Find events within a 10km radius for each hotel
+    for index, accommodation in hotels_df.iterrows():
+        nearby_events = [
+            event['id'] for _, event in events_df.iterrows()
+            if calculate_distance(accommodation['longitude'], accommodation['latitude'], event['longitude'], event['latitude']) <= 0.1
+        ]
+        hotels_df.at[index, 'event_ids'] = ','.join(map(str, nearby_events)) if nearby_events else ''
+
+    # Save the updated hotel data to a new CSV file
+    updated_file_path = f'/tmp/{today_date}/Updated_hotels_with_Events.csv'
+    hotels_df.drop(columns=['longitude', 'latitude'], inplace=True)
+    hotels_df.to_csv(updated_file_path, index=False)
+    print("Updated CSV file with event IDs saved.")
+
+    # Upload the file to S3
+    upload_to_s3(updated_file_path, 'team-hori-2-bucket', f'source/source_TravelEvents/{today_date}/Updated_hotels_with_Events.csv')
+
+def upload_to_s3(file_path, bucket_name, s3_key):
+    """Upload a file to S3."""
+    hook = S3Hook(aws_conn_id='s3_connection')
+    hook.load_file(
+        filename=file_path,
+        key=s3_key,
+        bucket_name=bucket_name,
+        replace=True
+    )
+    print(f"File uploaded to S3 at {s3_key}")
+
+# Function to create the schema and table in Redshift
+def create_schema_table():
     redshift_conn_id = 'redshift_connection'
     table_name = 'events_for_hotel'
     schema_name = 'hotel'
@@ -52,34 +69,32 @@ def create_schema_table(**kwargs):
     redshift_hook = PostgresHook(postgres_conn_id=redshift_conn_id)
     conn = redshift_hook.get_conn()
     cursor = conn.cursor()
-    drop_table= f"DROP TABLE IF EXISTS {schema_name}.{table_name};"
     
-    # Define the table schema
+    # Define the table schema and drop if exists
     create_table_sql = f"""
-
+    DROP TABLE IF EXISTS {schema_name}.{table_name};
     CREATE TABLE IF NOT EXISTS {schema_name}.{table_name} (
         Google_Place_Id VARCHAR(512) PRIMARY KEY,
         HOTELNAME VARCHAR(512),
         EventID VARCHAR(65535)
     );
-
     """
-    cursor.execute(drop_table)
     cursor.execute(create_table_sql)
     conn.commit()
     cursor.close()
     conn.close()
-    
-    
-def update_table(**kwargs):
+
+# Function to update the table in Redshift with new data
+def update_table():
     redshift_conn_id = 'redshift_connection'
     table_name = 'hotel.events_for_hotel'
+    
     redshift_hook = PostgresHook(postgres_conn_id=redshift_conn_id)
     conn = redshift_hook.get_conn()
     cursor = conn.cursor()
-    hotel_df=pd.read_csv('/tmp/Updated_Accommodations_with_Events.csv', usecols=(['place_id', 'name','event_ids']))
+    
+    hotel_df = pd.read_csv(f'/tmp/{today_date}/Updated_hotels_with_Events.csv', usecols=['place_id', 'name', 'event_ids'])
     hotel_df['place_id'] = hotel_df['place_id'].astype(str)
-    print(hotel_df)
     
     for index, row in hotel_df.iterrows():
         # Check if the record exists
@@ -92,18 +107,19 @@ def update_table(**kwargs):
                 UPDATE {table_name}
                 SET EventID = %s, Google_Place_Id = %s
                 WHERE HOTELNAME = %s
-            """, (row['event_ids'],row['place_id'],row['name']))
+            """, (row['event_ids'], row['place_id'], row['name']))
         else:
             # Insert the new record
             cursor.execute(f"""
-                INSERT INTO {table_name} (EventID,HOTELNAME, Google_Place_Id)
-                VALUES (%s, %s,%s)
-            """, (row['event_ids'],row['name'], row['place_id']))
+                INSERT INTO {table_name} (EventID, HOTELNAME, Google_Place_Id)
+                VALUES (%s, %s, %s)
+            """, (row['event_ids'], row['name'], row['place_id']))
     
     conn.commit()
     cursor.close()
     conn.close()
 
+# Default arguments for the DAG
 default_args = {
     'owner': 'airflow',
     'depends_on_past': False,
@@ -115,14 +131,16 @@ default_args = {
     'retry_delay': timedelta(minutes=5),
 }
 
+# Define the DAG
 dag = DAG(
-    'accommodations_with_events',
+    'hotels_with_events',
     default_args=default_args,
-    description='숙소 반경 10km 내 이벤트 찾기 및 업데이트된 CSV 저장',
+    description='Find events within a 10km radius of hotels and update CSV and Redshift',
     schedule_interval=timedelta(days=1),
     catchup=False,
 )
 
+# Define the tasks
 t1 = PythonOperator(
     task_id='find_events',
     python_callable=find_events,
@@ -132,13 +150,14 @@ t1 = PythonOperator(
 t2 = PythonOperator(
     task_id='create_schema_table',
     python_callable=create_schema_table,
-    provide_context=True,
     dag=dag,
 )
 
 t3 = PythonOperator(
     task_id='update_table',
     python_callable=update_table,
-    provide_context=True,
     dag=dag,
 )
+
+# Set the task dependencies
+t1 >> t2 >> t3
