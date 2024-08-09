@@ -12,6 +12,8 @@ import time
 import logging
 from airflow.utils.task_group import TaskGroup
 
+BATCH_SIZE = 50  # 한 번에 처리할 위치의 수
+
 def download_csv_from_s3(aws_conn_id, s3_bucket, local_path, s3_key):
     logging.info(f"download_csv_from_s3 시작 - S3 Bucket: {s3_bucket}, Key: {s3_key}, Local Path: {local_path}")
     hook = S3Hook(aws_conn_id=aws_conn_id)
@@ -129,23 +131,25 @@ def merge_up_travel_events(ti, aws_conn_id, s3_bucket, current_date):
     combined_df_path = f'/tmp/{current_date}/combined_up_travel_events.csv'
     combined_df.to_csv(combined_df_path, index=False)
     logging.info(f"combined_up_travel_events.csv 파일이 {combined_df_path}에 저장되었습니다.")
+    ti.xcom_push(key='combined_df_path', value=combined_df_path)
 
-def fetch_hotel_for_location(location, google_api_key, current_date):
-    logging.info(f"fetch_hotel_for_location 시작 - Location: {location}")
+def fetch_hotel_for_location_batch(locations, google_api_key, current_date):
+    logging.info(f"fetch_hotel_for_location_batch 시작 - Batch Size: {len(locations)}")
     google_hotels = []
 
-    try:
-        hotels = fetch_hotel_info(location, google_api_key)
-        for hotel in hotels:
-            hotel['location'] = location
-            google_hotels.append(hotel)
-    except Exception as e:
-        logging.warning(f"위치 {location}에서 호텔 정보를 가져오는 중 오류 발생: {e}")
+    for location in locations:
+        try:
+            hotels = fetch_hotel_info(location, google_api_key)
+            for hotel in hotels:
+                hotel['location'] = location
+                google_hotels.append(hotel)
+        except Exception as e:
+            logging.warning(f"위치 {location}에서 호텔 정보를 가져오는 중 오류 발생: {e}")
 
     result_df = pd.DataFrame(google_hotels)
-    result_df_path = f'/tmp/{current_date}/google_hotels_{location[0]}_{location[1]}.csv'
+    result_df_path = f'/tmp/{current_date}/google_hotels_batch_{locations[0][0]}_{locations[0][1]}.csv'
     result_df.to_csv(result_df_path, index=False)
-    logging.info(f"google_hotels_{location[0]}_{location[1]}.csv 파일이 {result_df_path}에 저장되었습니다.")
+    logging.info(f"google_hotels_batch_{locations[0][0]}_{locations[0][1]}.csv 파일이 {result_df_path}에 저장되었습니다.")
 
 def merge_final_results(current_date, aws_conn_id, s3_bucket):
     logging.info(f"merge_final_results 시작 - Current Date: {current_date}")
@@ -226,19 +230,19 @@ with TaskGroup("fetch_hotel_info_group", dag=dag) as fetch_hotel_info_group:
     combined_df_path = f'/tmp/{datetime.utcnow().strftime("%Y-%m-%d")}/combined_up_travel_events.csv'
     combined_df = pd.read_csv(combined_df_path)
     
-    for i, loc_str in enumerate(combined_df['location']):
-        location = ast.literal_eval(loc_str)
+    locations = [ast.literal_eval(loc_str) for loc_str in combined_df['location']]
+    
+    for i in range(0, len(locations), BATCH_SIZE):
+        batch = locations[i:i + BATCH_SIZE]
         
         PythonOperator(
-            task_id=f'fetch_hotel_for_location_{i}',
-            python_callable=fetch_hotel_for_location,
+            task_id=f'fetch_hotel_for_location_batch_{i // BATCH_SIZE}',
+            python_callable=fetch_hotel_for_location_batch,
             op_kwargs={
-                'location': location,
+                'locations': batch,
                 'google_api_key': Variable.get("GOOGLE_API_KEY"),
                 'current_date': datetime.utcnow().strftime("%Y-%m-%d")
             },
-            # max_active_tis_per_dag로 동시에 실행되는 작업 수를 제한
-            max_active_tis_per_dag=20  # 이 값을 필요에 따라 조정하세요.
         )
 
 merge_final_results_task = PythonOperator(
