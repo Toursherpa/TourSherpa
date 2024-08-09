@@ -38,6 +38,17 @@
                 </div>
             </div>
         </div>
+        <div class="col-lg-12">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-chart-bar me-1"></i>
+                    항공권이 가장 싼 국가
+                </div>
+                <div class="card-body">
+                    <canvas id="FlightCountryBarChart" width="100%" height="30"></canvas>
+                </div>
+            </div>
+        </div>
     </div>
     <div class="card mb-4">
         <div class="card-header">
@@ -53,7 +64,6 @@
                             <h5 class="card-title">{{ event.Title }}</h5>
                             <h6 class="card-subtitle mb-2 text-muted">{{ event.Category }}</h6>
                             <p class="card-text"><strong>Date:</strong> {{ event.TimeStart }} <br> ~ {{ event.TimeEnd }} </p>
-                            <p class="card-text"> {{ event.TimeStart }} </p>
                             <p class="card-text"><strong>Country:</strong> {{ event.Country }}</p>
                             <p class="card-text">{{ event.Description }}</p>
                         </div>
@@ -125,7 +135,7 @@
         data: {
             labels: {{ categories_data.labels|safe }},
             datasets: [{
-                label: "Number of Events",
+                label: "행사 수",
                 backgroundColor: 'rgba(75, 192, 192, 0.2)',
                 borderColor: 'rgba(75, 192, 192, 1)',
                 borderWidth: 1,
@@ -161,11 +171,47 @@
         data: {
             labels: {{ countries_data.labels|safe }},
             datasets: [{
-                label: "Number of Events",
+                label: "행사 수",
                 backgroundColor: 'rgba(54, 162, 235, 0.2)',
                 borderColor: 'rgba(54, 162, 235, 1)',
                 borderWidth: 1,
                 data: {{ countries_data.datasets.0.data|safe }},
+            }],
+        },
+        options: {
+            scales: {
+                xAxes: [{
+                    ticks: {
+                        maxTicksLimit: 6
+                    }
+                }],
+                yAxes: [{
+                    barThickness: 30,
+                    ticks: {
+                        min: 0,
+                        max: maxEventCountryData + 10,
+                        maxTicksLimit: 5
+                    }
+                }],
+            },
+            legend: {
+                display: false
+            }
+        }
+    });
+
+    var maxFlightCountryData = Math.max.apply(null, {{ flights_data.datasets.0.data|safe }});
+    var Flightctx = document.getElementById("FlightCountryBarChart");
+    var FlightBarChart = new Chart(Flightctx, {
+        type: 'horizontalBar',
+        data: {
+            labels: {{ flights_data.labels|safe }},
+            datasets: [{
+                label: "편도 평균값",
+                backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1,
+                data: {{ flights_data.datasets.0.data|safe }},
             }],
         },
         options: {
