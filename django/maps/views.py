@@ -18,23 +18,38 @@ from datetime import datetime, timedelta
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
+
 country_list = {'오스트리아': 'AT', '호주': 'AU', '캐나다': 'CA', '중국': 'CN', '독일': 'DE', '스페인': 'ES', '프랑스': 'FR', '영국': 'GB',
                 '인도네시아': 'ID', '인도': 'IN', '이탈리아': 'IT', '일본': 'JP', '말레이시아': 'MY', '네덜란드': 'NL', '대만': 'TW',
                 '미국': 'US'}
 
+def translate_country(event_list, country_name_map):
+    for event in event_list:
+        event.Country = country_name_map.get(event.Country, event.Country)
+        event.TimeStartFormatted = format_date(event.TimeStart)
+        event.TimeEndFormatted = format_date(event.TimeEnd)
+def format_date(date_str):
+    # '2024-07-26T00:00:00' 형식의 문자열을 datetime 객체로 변환
+    dt = datetime.fromisoformat(date_str)
+    # 원하는 형식으로 변환
+    return dt.strftime('%Y-%m-%d %H:%M')
 
 def dashboard(request):
     top_events = TravelEvent.objects.order_by('-Rank', '-PhqAttendance')[:3]
-    countries = TravelEvent.objects.values('Country').annotate(total_events=Count('EventID')).order_by('-total_events')[
-                :5]
+    countries = TravelEvent.objects.values('Country').annotate(total_events=Count('EventID')).order_by('-total_events')[:5]
     categories = TravelEvent.objects.values('Category').annotate(total_events=Count('EventID'))
     recent_events = TravelEvent.objects.exclude(TimeStart='none').order_by('TimeStart')[:3]
     earliest_end_events = TravelEvent.objects.exclude(TimeEnd='none').order_by('TimeEnd')[:3]
+    country_name_map = {code: name for name, code in country_list.items()}
+
+    translate_country(top_events, country_name_map)
+    translate_country(recent_events, country_name_map)
+    translate_country(earliest_end_events, country_name_map)
 
     flights_data = get_average_price_per_country()
 
     countries_data = {
-        'labels': [country['Country'] for country in countries],
+        'labels': [country_name_map.get(country['Country'], country['Country']) for country in countries],
         'datasets': [{
             'label': 'Number of Events',
             'backgroundColor': 'rgba(0, 128, 255, 0.2)',  # 색상 예시, 원하는 대로 수정 가능
@@ -252,8 +267,8 @@ def get_average_price_per_country():
         'labels': list(top_countries_data.keys()),
         'datasets': [{
             'label': 'Average Price',
-            'backgroundColor': 'rgba(0, 128, 255, 0.2)',  # 색상 예시
-            'borderColor': 'rgba(0, 128, 255, 1)',  # 색상 예시
+            'backgroundColor': 'rgba(255, 99, 132, 0.2)',  # 색상 예시, 원하는 대로 수정 가능
+            'borderColor': 'rgba(255, 99, 132, 1)',
             'data': list(top_countries_data.values()),
         }]
     }
