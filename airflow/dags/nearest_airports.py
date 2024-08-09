@@ -23,12 +23,11 @@ geodesic 라이브러리 설치 필요
 '''
 
 kst = pytz.timezone('Asia/Seoul')
-utc_now = datetime.utcnow()
-kst_now = utc_now.astimezone(kst)
-today = kst_now.strftime('%Y-%m-%d')
 
-def read_data_from_s3(**context):
-    logging.info("Starting read_data_from_s3")
+def read_data_from_s3(macros, **context):
+    today = (macros.datetime.now().astimezone(kst)).strftime('%Y-%m-%d')
+
+    logging.info(f"Starting read_data_from_s3 {today}")
     try:
         s3_hook = S3Hook(aws_conn_id='s3_connection')
         bucket_name = Variable.get('s3_bucket_name')
@@ -120,9 +119,9 @@ def preprocess_redshift_table():
         cursor = redshift_conn.cursor()
 
         cursor.execute(
-            f"DROP TABLE IF EXISTS {Variable.get('redshift_schema_places')}.{Variable.get('redshift_table_nearest')};")
+            f"DROP TABLE IF EXISTS public.nearest_airports;")
         cursor.execute(f"""
-            CREATE TABLE {Variable.get('redshift_schema_places')}.{Variable.get('redshift_table_nearest')} (
+            CREATE TABLE public.nearest_airports (
                 id VARCHAR(255),
                 title VARCHAR(255),
                 country VARCHAR(255),
@@ -133,7 +132,7 @@ def preprocess_redshift_table():
             );
         """)
         redshift_conn.commit()
-        logging.info(f"Redshift table {Variable.get('redshift_table_nearest')} has been dropped and recreated.")
+        logging.info(f"Redshift table nearest_airports has been dropped and recreated.")
 
     except Exception as e:
         logging.error(f"Error in preprocess_redshift_table: {e}")
@@ -142,7 +141,7 @@ def preprocess_redshift_table():
 
 default_args = {
     'owner': 'airflow',
-    'start_date': days_ago(1),
+    'start_date': datetime(2024, 8, 9, tzinfo=kst),
     'retries': 1,
     'retry_delay': timedelta(minutes=5),
 }
@@ -151,7 +150,7 @@ dag = DAG(
     'nearest_airports_dag',
     default_args=default_args,
     description='Find nearest airports for events, save to S3 and Redshift',
-    schedule_interval='@daily',
+    schedule_interval='0 0 * * *',
     catchup=False,
 )
 
@@ -178,9 +177,9 @@ preprocess_redshift_task = PythonOperator(
 
 load_to_redshift_task = S3ToRedshiftOperator(
     task_id='load_to_redshift',
-    schema=Variable.get('redshift_schema_places'),
-    table=Variable.get('redshift_table_nearest'),
-    s3_bucket=Variable.get('my_s3_bucket'),
+    schema='public',
+    table='nearest_airports',
+    s3_bucket=Variable.get('s3_bucket_name'),
     s3_key='source/source_flight/nearest_airports.csv',
     copy_options=['IGNOREHEADER 1', 'CSV'],
     aws_conn_id='TravelEvent_s3_conn',
