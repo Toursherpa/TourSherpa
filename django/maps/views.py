@@ -4,7 +4,7 @@ import csv
 import pandas as pd
 from django.http import HttpResponse
 from django_filters.views import FilterView
-from django.db.models import Count
+from django.db.models import Count, Avg
 from .models import HotelsForEvent, EventsForHotel, TravelEvent, HotelList, FlightTo, FlightFrom, Airline, Airport, \
     NearestAirport
 from .forms import EventFilterForm
@@ -31,6 +31,8 @@ def dashboard(request):
     recent_events = TravelEvent.objects.exclude(TimeStart='none').order_by('TimeStart')[:3]
     earliest_end_events = TravelEvent.objects.exclude(TimeEnd='none').order_by('TimeEnd')[:3]
 
+    flights_data = get_average_price_per_country()
+
     countries_data = {
         'labels': [country['Country'] for country in countries],
         'datasets': [{
@@ -51,6 +53,7 @@ def dashboard(request):
         }]
     }
     context = {
+        'flights_data': flights_data,
         'categories_data': categories_data,
         'countries_data': countries_data,
         'top_events': top_events,
@@ -211,3 +214,49 @@ def check_hotel_availability(api_key, site_id, hotel_id, check_in_date, check_ou
             return "No available rooms found for the specified dates."
     else:
         return f"Error: {response.status_code} - {response.text}"
+
+
+def get_average_price_per_country():
+    flight_to_avg_prices = FlightTo.objects.values('arrival').annotate(avg_price=Avg('price'))
+    flight_from_avg_prices = FlightFrom.objects.values('departure').annotate(avg_price=Avg('price'))
+
+    country_prices = {}
+
+    # FlightTo 모델을 기반으로 가격 집계
+    for flight_to in flight_to_avg_prices:
+        airport = Airport.objects.filter(airport_code=flight_to['arrival']).first()
+        if airport:
+            country = airport.country_name
+            if country not in country_prices:
+                country_prices[country] = []
+            country_prices[country].append(flight_to['avg_price'])
+
+    # FlightFrom 모델을 기반으로 가격 집계
+    for flight_from in flight_from_avg_prices:
+        airport = Airport.objects.filter(airport_code=flight_from['departure']).first()
+        if airport:
+            country = airport.country_name
+            if country not in country_prices:
+                country_prices[country] = []
+            country_prices[country].append(flight_from['avg_price'])
+
+    # 각 국가별 평균 가격 계산
+    avg_prices_per_country = {
+        country: round(sum(prices) / len(prices), 2) for country, prices in country_prices.items() if prices
+    }
+    top_countries = sorted(avg_prices_per_country.items(), key=lambda item: item[1])[:5]
+    top_countries_data = dict(top_countries)
+
+    # 데이터 변환
+    countries_data = {
+        'labels': list(top_countries_data.keys()),
+        'datasets': [{
+            'label': 'Average Price',
+            'backgroundColor': 'rgba(0, 128, 255, 0.2)',  # 색상 예시
+            'borderColor': 'rgba(0, 128, 255, 1)',  # 색상 예시
+            'data': list(top_countries_data.values()),
+        }]
+    }
+
+    return countries_data
+
