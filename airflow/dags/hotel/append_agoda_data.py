@@ -19,7 +19,7 @@ def preprocess_text(text):
 
 def download_files():
     """S3에서 파일 다운로드"""
-    print("Checking and downloading files from S3 if necessary...")
+    print("S3에서 파일을 확인하고 필요한 경우 다운로드합니다...")
     hook = S3Hook(aws_conn_id='s3_connection')
     bucket_name = 'team-hori-2-bucket'
     google_hotels_key = 'source/source_TravelEvents/google_hotels.csv'
@@ -29,6 +29,7 @@ def download_files():
     # 오늘 날짜의 디렉터리 생성
     local_dir = f'/tmp/{today_date}'
     os.makedirs(local_dir, exist_ok=True)
+    print(f"{local_dir} 디렉터리를 생성했습니다.")
 
     # 로컬 파일 경로 설정
     local_google_hotels_path = os.path.join(local_dir, 'google_hotels.csv')
@@ -39,15 +40,16 @@ def download_files():
     def download_if_needed(local_path, s3_key=None):
         if not os.path.exists(local_path) or os.path.getsize(local_path) == 0:
             if s3_key:
-                print(f"Downloading {local_path} from S3...")
+                print(f"S3에서 {local_path} 파일을 다운로드 중...")
                 s3_object = hook.get_key(s3_key, bucket_name)
                 content = s3_object.get()['Body'].read().decode('utf-8')
                 with open(local_path, 'w') as f:
                     f.write(content)
             # 파일 권한 설정
             os.chmod(local_path, stat.S_IRWXU | stat.S_IRWXG | stat.S_IROTH | stat.S_IXOTH)
+            print(f"{local_path} 파일이 성공적으로 다운로드되었습니다.")
         else:
-            print(f"{local_path} already exists and is not empty.")
+            print(f"{local_path} 파일이 이미 존재하며 비어있지 않습니다.")
 
     download_if_needed(local_google_hotels_path, s3_key=google_hotels_key)
     download_if_needed(local_hotel_list_path, s3_key=hotel_list_key)
@@ -55,23 +57,31 @@ def download_files():
 
 def calculate_distance(location1, location2):
     """두 위치 간의 거리 계산 (킬로미터 단위)"""
-    return great_circle(location1, location2).kilometers
+    distance = great_circle(location1, location2).kilometers
+    print(f"두 위치 간의 거리를 계산했습니다: {distance} km")
+    return distance
 
 def parse_location(location_str):
     """위치 문자열을 튜플로 변환 (위도, 경도)"""
     try:
         location = eval(location_str)
         if isinstance(location, list) and len(location) == 2:
-            return (float(location[1]), float(location[0]))  # (위도, 경도) 순서로 변환
+            parsed_location = (float(location[1]), float(location[0]))  # (위도, 경도) 순서로 변환
+            print(f"위치 문자열을 변환했습니다: {location_str} -> {parsed_location}")
+            return parsed_location
     except:
+        print(f"위치 문자열 변환 실패: {location_str}")
         return None
     return None
 
 def parse_location_from_lat_lon(latitude, longitude):
     """위도와 경도에서 위치 튜플 생성"""
     try:
-        return (float(latitude), float(longitude))  # (위도, 경도) 순서
+        location = (float(latitude), float(longitude))  # (위도, 경도) 순서
+        print(f"위도와 경도에서 위치 튜플을 생성했습니다: ({latitude}, {longitude}) -> {location}")
+        return location
     except:
+        print(f"위치 튜플 생성 실패: 위도={latitude}, 경도={longitude}")
         return None
 
 def exact_match(row, hotel_chunk_df):
@@ -81,6 +91,7 @@ def exact_match(row, hotel_chunk_df):
     
     # 문자열이 아닌 값이 있는 경우 원래 데이터를 반환
     if not isinstance(row['name_normalized'], str):
+        print(f"이름 필드가 유효하지 않아 원본 행을 반환합니다: {row['name']}")
         return row
     
     matching_hotels = hotel_chunk_df[hotel_chunk_df['name_normalized'] == row['name_normalized']]
@@ -88,6 +99,7 @@ def exact_match(row, hotel_chunk_df):
     if not matching_hotels.empty:
         row_location = parse_location(row['location'])
         if row_location is None:
+            print(f"위치 정보를 파싱할 수 없어 원본 행을 반환합니다: {row['location']}")
             return row
         for _, match in matching_hotels.iterrows():
             match_location = parse_location_from_lat_lon(match['latitude'], match['longitude'])
@@ -95,13 +107,16 @@ def exact_match(row, hotel_chunk_df):
                 continue
             distance = calculate_distance(row_location, match_location)
             if distance <= 2:  # 2km 이내
+                print(f"매칭된 호텔을 찾았습니다: {match['hotel_name']} (거리: {distance} km)")
                 match_row = row.to_dict()
                 match_row.update(match.to_dict())
                 return match_row  # 매칭된 호텔의 모든 정보를 추가하여 반환
+    print(f"매칭된 호텔을 찾지 못했습니다: {row['name']}")
     return row.to_dict()
 
 def process_chunk(hotel_chunk_df_path, google_hotels_df_path, chunk_index, total_chunks):
     """청크를 처리하여 호텔 ID 및 기타 정보를 매칭"""
+    print(f"{chunk_index + 1}/{total_chunks} 청크를 처리합니다...")
     google_hotels_df = pd.read_csv(google_hotels_df_path)
     hotel_chunk_df = pd.read_csv(hotel_chunk_df_path)
     
@@ -112,22 +127,23 @@ def process_chunk(hotel_chunk_df_path, google_hotels_df_path, chunk_index, total
         result_list.append(match)
         
         if i % 10 == 0:  # 진행 상황을 10개의 행마다 로그에 출력
-            print(f"Chunk {chunk_index+1}/{total_chunks}: Processed {i+1}/{total_rows} rows")
+            print(f"청크 {chunk_index+1}/{total_chunks}: {i+1}/{total_rows} 행을 처리했습니다.")
     
     result_df = pd.DataFrame(result_list)
     result_df.to_csv(f'/tmp/{today_date}/processed_chunk_{chunk_index}.csv', index=False)
     os.chmod(f'/tmp/{today_date}/processed_chunk_{chunk_index}.csv', stat.S_IRWXU | stat.S_IRWXG | stat.S_IROTH | stat.S_IXOTH)
+    print(f"{chunk_index + 1}/{total_chunks} 청크 처리가 완료되었습니다.")
 
 def process_hotels():
     """숙소 데이터를 처리하여 호텔 ID를 매칭"""
-    print("Processing google_hotels...")
+    print("Google 호텔 데이터를 처리합니다...")
     google_hotels_path = f'/tmp/{today_date}/google_hotels.csv'
     hotel_list_path = f'/tmp/{today_date}/hotel_list.csv'
     
     google_hotels_df = pd.read_csv(google_hotels_path)
     hotel_list_df = pd.read_csv(hotel_list_path, dtype=str)
 
-    print("DataFrames loaded. Starting matching process...")
+    print("데이터 프레임이 로드되었습니다. 매칭 프로세스를 시작합니다...")
 
     # hotel_list_df를 청크로 나누고 병렬 처리
     num_chunks = 50  # 병렬 처리할 청크 수
@@ -140,19 +156,24 @@ def process_hotels():
         chunk.to_csv(chunk_path, index=False)
         os.chmod(chunk_path, stat.S_IRWXU | stat.S_IRWXG | stat.S_IROTH | stat.S_IXOTH)
         chunk_paths.append(chunk_path)
+        print(f"{i+1}/{num_chunks} 청크가 파일로 저장되었습니다: {chunk_path}")
 
     total_chunks = len(hotel_chunks)
+    print(f"총 {total_chunks} 개의 청크로 분할되었습니다.")
     return total_chunks, chunk_paths
 
 def merge_chunks(total_chunks):
     """병렬 처리된 청크들을 병합"""
+    print(f"{total_chunks} 개의 청크를 병합합니다...")
     processed_chunks = [pd.read_csv(f'/tmp/{today_date}/processed_chunk_{i}.csv') for i in range(total_chunks)]
     processed_df = pd.concat(processed_chunks).drop_duplicates(subset=['place_id'], keep='first')
     processed_df.to_csv(f'/tmp/{today_date}/Updated_hotels.csv', index=False)
     os.chmod(f'/tmp/{today_date}/Updated_hotels.csv', stat.S_IRWXU | stat.S_IRWXG | stat.S_IROTH | stat.S_IXOTH)
+    print("병합이 완료되었습니다. 최종 데이터가 Updated_hotels.csv 파일에 저장되었습니다.")
 
 def upload_file():
     """처리된 파일을 S3에 업로드"""
+    print("S3에 처리된 파일을 업로드합니다...")
     hook = S3Hook(aws_conn_id='s3_connection')
     bucket_name = 'team-hori-2-bucket'
     output_key = f'source/source_TravelEvents/{today_date}Updated_hotels.csv'
@@ -168,12 +189,12 @@ def upload_file():
                 bucket_name=bucket_name,
                 replace=True
             )
-            print(f"File uploaded to S3 at {output_key}")
+            print(f"파일이 S3에 업로드되었습니다: {output_key}")
             return
         except Exception as e:
-            print(f"Error uploading file: {e}. Retrying... ({attempt + 1}/3)")
+            print(f"파일 업로드 중 오류 발생: {e}. 재시도 중... ({attempt + 1}/3)")
             attempt += 1
-    raise RuntimeError("Failed to upload file after multiple attempts.")
+    raise RuntimeError("여러 번 시도 후에도 파일 업로드에 실패했습니다.")
 
 default_args = {
     'owner': 'airflow',
