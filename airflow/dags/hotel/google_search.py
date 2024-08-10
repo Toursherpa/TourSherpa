@@ -89,7 +89,6 @@ def find_latest_google_hotels_file(ti, aws_conn_id, s3_bucket):
     logging.info(f"find_latest_google_hotels_file 완료 - 마지막 업데이트 날짜: {last_update}")
     ti.xcom_push(key='last_update', value=last_update)
 
-import os
 
 def merge_up_travel_events(ti, aws_conn_id, s3_bucket, current_date):
     logging.info("merge_up_travel_events 시작")
@@ -100,7 +99,7 @@ def merge_up_travel_events(ti, aws_conn_id, s3_bucket, current_date):
         logging.warning("최신 google_hotels.csv 파일을 찾지 못했습니다. 백업 파일을 사용합니다.")
         events_s3_key = 'source/source_TravelEvents/TravelEvents.csv'
         events_local_path = '/tmp/TravelEvents.csv'
-
+        
         try:
             download_csv_from_s3(aws_conn_id, s3_bucket, events_local_path, events_s3_key)
             combined_df = pd.read_csv(events_local_path)
@@ -175,10 +174,27 @@ def merge_final_results(current_date, aws_conn_id, s3_bucket):
         if f.startswith('google_hotels_')
     ]
     
-    combined_df = pd.concat((pd.read_csv(f) for f in google_hotels_files), ignore_index=True)
+    combined_dataframes = []
+
+    for file_path in google_hotels_files:
+        try:
+            df = pd.read_csv(file_path)
+            combined_dataframes.append(df)
+            logging.info(f"{file_path} 파일이 성공적으로 읽혔습니다.")
+        except pd.errors.EmptyDataError:
+            logging.warning(f"{file_path} 파일이 비어 있어 무시되었습니다.")
+        except Exception as e:
+            logging.warning(f"{file_path} 파일을 읽는 중 오류 발생: {e}")
+
+    if combined_dataframes:
+        combined_df = pd.concat(combined_dataframes, ignore_index=True)
+    else:
+        combined_df = pd.DataFrame() 
 
     last_hotels_s3_key = 'source/source_TravelEvents/google_hotels.csv'
     last_hotels_local_path = '/tmp/google_hotels.csv'
+
+    combined_df.to_csv(f'/tmp/{current_date}/google_hotels.csv', index=False)
 
     try:
         download_csv_from_s3(aws_conn_id, s3_bucket, last_hotels_local_path, last_hotels_s3_key)
@@ -214,6 +230,19 @@ def upload_final_result(current_date, aws_conn_id, s3_bucket):
     update_hotels_s3_key = f'source/source_TravelEvents/google_hotels.csv'
     if os.path.exists(local_hotels_path):
         upload_to_s3(local_hotels_path, s3_bucket, update_hotels_s3_key, aws_conn_id)
+
+# 기본 DAG 설정
+def fetch_hotel_info_group_task(ti, google_api_key, current_date):
+    logging.info("fetch_hotel_info_group_task 시작")
+    
+    combined_df_path = ti.xcom_pull(key='combined_df_path', task_ids='merge_up_travel_events')
+    combined_df = pd.read_csv(combined_df_path)
+    
+    locations = [ast.literal_eval(loc_str) for loc_str in combined_df['location']]
+    
+    for i in range(0, len(locations), BATCH_SIZE):
+        batch = locations[i:i + BATCH_SIZE]
+        fetch_hotel_for_location_batch(batch, google_api_key, current_date)
 
 # 기본 DAG 설정
 default_args = {
@@ -252,24 +281,16 @@ merge_up_travel_events_task = PythonOperator(
     provide_context=True  # XCom을 사용하기 위해 설정
 )
 
-with TaskGroup("fetch_hotel_info_group", dag=dag) as fetch_hotel_info_group:
-    combined_df_path = f'/tmp/{datetime.utcnow().strftime("%Y-%m-%d")}/combined_up_travel_events.csv'
-    combined_df = pd.read_csv(combined_df_path)
-    
-    locations = [ast.literal_eval(loc_str) for loc_str in combined_df['location']]
-    
-    for i in range(0, len(locations), BATCH_SIZE):
-        batch = locations[i:i + BATCH_SIZE]
-        
-        PythonOperator(
-            task_id=f'fetch_hotel_for_location_batch_{i // BATCH_SIZE}',
-            python_callable=fetch_hotel_for_location_batch,
-            op_kwargs={
-                'locations': batch,
-                'google_api_key': Variable.get("GOOGLE_API_KEY"),
-                'current_date': datetime.utcnow().strftime("%Y-%m-%d")
-            },
-        )
+fetch_hotel_info_group = PythonOperator(
+    task_id='fetch_hotel_info_group',
+    python_callable=fetch_hotel_info_group_task,
+    op_kwargs={
+        'google_api_key': Variable.get("GOOGLE_API_KEY"),
+        'current_date': datetime.utcnow().strftime("%Y-%m-%d")
+    },
+    dag=dag,
+    provide_context=True  # XCom을 사용하기 위해 설정
+)
 
 merge_final_results_task = PythonOperator(
     task_id='merge_final_results',
