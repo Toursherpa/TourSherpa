@@ -51,7 +51,6 @@ class EventsForHotel(models.Model):
 class HotelList(models.Model):
     event_id = models.CharField(max_length=512, primary_key=True)
     google_name = models.CharField(max_length=1000, blank=True, null=True)
-    google_address = models.CharField(max_length=1000, blank=True, null=True)
     google_rating = models.FloatField(blank=True, null=True)
     google_user_ratings_total = models.IntegerField(blank=True, null=True)
     google_place_id = models.CharField(max_length=512, blank=True, null=True)
