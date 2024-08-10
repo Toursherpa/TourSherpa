@@ -8,6 +8,8 @@ import pandas as pd
 from io import StringIO
 import pytz
 from airflow.hooks.postgres_hook import PostgresHook
+from googletrans import Translator
+import time
 import ast
 import re
 
