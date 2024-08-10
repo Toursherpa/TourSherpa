@@ -43,10 +43,17 @@ def fetch_hotel_info(location, google_api_key):
     page_count = 0
 
     while True:
+        logging.info(f"Google Places API 호출 중 - Location: {location}, Page Count: {page_count + 1}")
         response = requests.get(endpoint_url, params=params)
+        if response.status_code == 200:
+            logging.info(f"API 호출 성공 - 상태 코드: {response.status_code}")
+        else:
+            logging.warning(f"API 호출 실패 - 상태 코드: {response.status_code}, 응답 내용: {response.text}")
+        
         hotels.extend(response.json().get('results', []))
         next_page_token = response.json().get('next_page_token')
         if not next_page_token or page_count >= 1:
+            logging.info("더 이상의 페이지가 없거나 최대 페이지 수에 도달했습니다. 호텔 정보를 반환합니다.")
             break
         time.sleep(2)
         params['pagetoken'] = next_page_token
@@ -111,6 +118,7 @@ def merge_up_travel_events(ti, aws_conn_id, s3_bucket, current_date):
         last_update_date = datetime.strptime(last_update, '%Y-%m-%d')
         current_date = last_update_date
         events_dataframes = []
+        logging.info(f"이전 업데이트 이후의 데이터를 병합하기 시작합니다 - 시작 날짜: {last_update_date}")
 
         while current_date <= datetime.utcnow():
             date_to_try = current_date.strftime('%Y-%m-%d')
@@ -118,6 +126,7 @@ def merge_up_travel_events(ti, aws_conn_id, s3_bucket, current_date):
             events_local_path = f'/tmp/{date_to_try}/UP_TravelEvents.csv'
 
             try:
+                logging.info(f"{date_to_try} 날짜의 UP_TravelEvents.csv 파일 다운로드 시도 중...")
                 download_csv_from_s3(aws_conn_id, s3_bucket, events_local_path, events_s3_key)
                 df = pd.read_csv(events_local_path)
                 events_dataframes.append(df)
@@ -127,8 +136,14 @@ def merge_up_travel_events(ti, aws_conn_id, s3_bucket, current_date):
             
             current_date += timedelta(days=1)
 
-        combined_df = pd.concat(events_dataframes) if events_dataframes else pd.DataFrame()
+        if events_dataframes:
+            combined_df = pd.concat(events_dataframes)
+            logging.info(f"총 {len(events_dataframes)}개의 데이터프레임이 병합되었습니다.")
+        else:
+            combined_df = pd.DataFrame()
+            logging.warning("병합할 데이터프레임이 없습니다. 빈 데이터프레임을 반환합니다.")
 
+<<<<<<< Updated upstream
     # combined_df_path 변수를 먼저 정의합니다
     combined_df_path = f'/tmp/{datetime.utcnow().strftime("%Y-%m-%d")}/combined_up_travel_events.csv'
     
@@ -136,6 +151,9 @@ def merge_up_travel_events(ti, aws_conn_id, s3_bucket, current_date):
     combined_df_dir = os.path.dirname(combined_df_path)
     os.makedirs(combined_df_dir, exist_ok=True)
 
+=======
+    combined_df_path = f'/tmp/{datetime.utcnow().strftime("%Y-%m-%d")}/combined_up_travel_events.csv'
+>>>>>>> Stashed changes
     combined_df.to_csv(combined_df_path, index=False)
     logging.info(f"변경된 항목 {len(combined_df)}개")
 
@@ -146,12 +164,14 @@ def fetch_hotel_for_location_batch(locations, google_api_key, current_date):
     logging.info(f"fetch_hotel_for_location_batch 시작 - Batch Size: {len(locations)}")
     google_hotels = []
 
-    for location in locations:
+    for i, location in enumerate(locations):
         try:
+            logging.info(f"{i+1}/{len(locations)}: 위치 {location}에 대한 호텔 정보 수집 중...")
             hotels = fetch_hotel_info(location, google_api_key)
             for hotel in hotels:
                 hotel['location'] = location
                 google_hotels.append(hotel)
+            logging.info(f"{location} 위치에 대한 호텔 정보 수집 완료 - 총 {len(hotels)}개의 호텔 정보 수집")
         except Exception as e:
             logging.warning(f"위치 {location}에서 호텔 정보를 가져오는 중 오류 발생: {e}")
 
@@ -168,12 +188,14 @@ def merge_final_results(current_date, aws_conn_id, s3_bucket):
     logging.info(f"merge_final_results 시작 - Current Date: {current_date}")
 
     # TaskGroup에서 생성된 모든 CSV 파일 병합
+    current_date_str = current_date.strftime('%Y-%m-%d')  # 날짜만 사용
     google_hotels_files = [
-        os.path.join('/tmp', current_date, f) 
-        for f in os.listdir(f'/tmp/{current_date}') 
+        os.path.join('/tmp', current_date_str, f) 
+        for f in os.listdir(f'/tmp/{current_date_str}') 
         if f.startswith('google_hotels_')
     ]
     
+<<<<<<< Updated upstream
     combined_dataframes = []
 
     for file_path in google_hotels_files:
@@ -190,6 +212,27 @@ def merge_final_results(current_date, aws_conn_id, s3_bucket):
         combined_df = pd.concat(combined_dataframes, ignore_index=True)
     else:
         combined_df = pd.DataFrame() 
+=======
+    logging.info(f"총 {len(google_hotels_files)}개의 배치 파일이 발견되었습니다. 병합을 시작합니다.")
+    
+    combined_df_list = []
+    for file in google_hotels_files:
+        try:
+            if os.path.getsize(file) > 0:  # 파일이 비어있는지 확인
+                df = pd.read_csv(file)
+                combined_df_list.append(df)
+            else:
+                logging.warning(f"{file} 파일이 비어있어 건너뜁니다.")
+        except pd.errors.EmptyDataError:
+            logging.warning(f"{file} 파일에서 데이터를 읽지 못했습니다. 건너뜁니다.")
+    
+    if combined_df_list:
+        combined_df = pd.concat(combined_df_list, ignore_index=True)
+        logging.info(f"{len(combined_df_list)}개의 유효한 배치 파일을 병합했습니다.")
+    else:
+        combined_df = pd.DataFrame()  # 빈 데이터프레임으로 초기화
+        logging.warning("병합할 데이터가 없습니다. 빈 데이터프레임을 반환합니다.")
+>>>>>>> Stashed changes
 
     last_hotels_s3_key = 'source/source_TravelEvents/google_hotels.csv'
     last_hotels_local_path = '/tmp/google_hotels.csv'
@@ -197,6 +240,7 @@ def merge_final_results(current_date, aws_conn_id, s3_bucket):
     combined_df.to_csv(f'/tmp/{current_date}/google_hotels.csv', index=False)
 
     try:
+        logging.info(f"S3에서 마지막 호텔 리스트를 다운로드하여 병합합니다 - S3 Key: {last_hotels_s3_key}")
         download_csv_from_s3(aws_conn_id, s3_bucket, last_hotels_local_path, last_hotels_s3_key)
         last_hotels_df = pd.read_csv(last_hotels_local_path)
         combined_df = pd.concat([last_hotels_df, combined_df], ignore_index=True)
@@ -209,7 +253,7 @@ def merge_final_results(current_date, aws_conn_id, s3_bucket):
 
     final_result_path = '/tmp/google_hotels.csv'
     combined_df.to_csv(final_result_path, index=False)
-    logging.info(f"google_hotels.csv 파일이 {final_result_path}에 저장되었습니다.")
+    logging.info(f"최종 병합된 google_hotels.csv 파일이 {final_result_path}에 저장되었습니다.")
 
     # 청크 파일 삭제
     for file_path in google_hotels_files:
@@ -222,14 +266,22 @@ def merge_final_results(current_date, aws_conn_id, s3_bucket):
 
 def upload_final_result(current_date, aws_conn_id, s3_bucket):
     logging.info(f"upload_final_result 시작 - Current Date: {current_date}")
-    local_hotels_path = f'/tmp/{current_date}/google_hotels.csv'
-    update_hotels_s3_key = f'source/source_TravelEvents/{current_date}/google_hotels.csv'
+    current_date_str = current_date.strftime('%Y-%m-%d')
+    local_hotels_path = f'/tmp/{current_date_str}/google_hotels.csv'
+    update_hotels_s3_key = f'source/source_TravelEvents/{current_date_str}/google_hotels.csv'
     if os.path.exists(local_hotels_path):
+        logging.info(f"최종 결과 파일을 S3에 업로드합니다 - Local Path: {local_hotels_path}, S3 Key: {update_hotels_s3_key}")
         upload_to_s3(local_hotels_path, s3_bucket, update_hotels_s3_key, aws_conn_id)
+    else:
+        logging.warning(f"업로드할 파일을 찾지 못했습니다: {local_hotels_path}")
+    
     local_hotels_path = f'/tmp/google_hotels.csv'
     update_hotels_s3_key = f'source/source_TravelEvents/google_hotels.csv'
     if os.path.exists(local_hotels_path):
+        logging.info(f"최신 결과 파일을 S3에 업로드합니다 - Local Path: {local_hotels_path}, S3 Key: {update_hotels_s3_key}")
         upload_to_s3(local_hotels_path, s3_bucket, update_hotels_s3_key, aws_conn_id)
+    else:
+        logging.warning(f"업로드할 파일을 찾지 못했습니다: {local_hotels_path}")
 
 # 기본 DAG 설정
 def fetch_hotel_info_group_task(ti, google_api_key, current_date):
@@ -281,6 +333,7 @@ merge_up_travel_events_task = PythonOperator(
     provide_context=True  # XCom을 사용하기 위해 설정
 )
 
+<<<<<<< Updated upstream
 fetch_hotel_info_group = PythonOperator(
     task_id='fetch_hotel_info_group',
     python_callable=fetch_hotel_info_group_task,
@@ -291,18 +344,53 @@ fetch_hotel_info_group = PythonOperator(
     dag=dag,
     provide_context=True  # XCom을 사용하기 위해 설정
 )
+=======
+with TaskGroup("fetch_hotel_info_group", dag=dag) as fetch_hotel_info_group:
+    combined_df_path = f'/tmp/{datetime.utcnow().strftime("%Y-%m-%d")}/combined_up_travel_events.csv'
+    combined_df = pd.read_csv(combined_df_path)
+    
+    locations = [ast.literal_eval(loc_str) for loc_str in combined_df['location']]
+    
+    # 청크 파일들을 저장할 디렉토리 생성
+    current_date_str = datetime.utcnow().strftime("%Y-%m-%d")
+    output_dir = f'/tmp/{current_date_str}'
+    os.makedirs(output_dir, exist_ok=True)
+
+    # locations를 청크로 나누고 각 청크를 파일로 저장
+    for i in range(0, len(locations), BATCH_SIZE):
+        batch = locations[i:i + BATCH_SIZE]
+        batch_file_path = f'{output_dir}/locations_batch_{i // BATCH_SIZE}.csv'
+        pd.DataFrame(batch).to_csv(batch_file_path, index=False)
+    
+    # 실제 생성된 청크 파일 수를 기준으로 태스크 생성
+    chunk_files = [f for f in os.listdir(output_dir) if f.startswith('locations_batch_')]
+    for chunk_file in chunk_files:
+        task_id = chunk_file.split('.')[0]  # 파일 이름을 기반으로 태스크 ID 생성
+        batch_file_path = os.path.join(output_dir, chunk_file)
+        
+        PythonOperator(
+            task_id=task_id,
+            python_callable=fetch_hotel_for_location_batch,
+            op_kwargs={
+                'locations': pd.read_csv(batch_file_path).values.tolist(),
+                'google_api_key': Variable.get("GOOGLE_API_KEY"),
+                'current_date': current_date_str,
+            },
+            dag=dag,
+        )
+>>>>>>> Stashed changes
 
 merge_final_results_task = PythonOperator(
     task_id='merge_final_results',
     python_callable=merge_final_results,
-    op_kwargs={'current_date': datetime.utcnow().strftime("%Y-%m-%d"), 'aws_conn_id': 's3_connection', 's3_bucket': 'team-hori-2-bucket'},
+    op_kwargs={'current_date': datetime.utcnow(), 'aws_conn_id': 's3_connection', 's3_bucket': 'team-hori-2-bucket'},
     dag=dag,
 )
 
 upload_final_result_task = PythonOperator(
     task_id='upload_final_result',
     python_callable=upload_final_result,
-    op_kwargs={'current_date': datetime.utcnow().strftime("%Y-%m-%d"), 'aws_conn_id': 's3_connection', 's3_bucket': 'team-hori-2-bucket'},
+    op_kwargs={'current_date': datetime.utcnow(), 'aws_conn_id': 's3_connection', 's3_bucket': 'team-hori-2-bucket'},
     dag=dag,
 )
 
