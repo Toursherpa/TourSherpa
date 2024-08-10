@@ -1,5 +1,6 @@
 from airflow import DAG
 from airflow.operators.python import PythonOperator
+from airflow.operators.trigger_dagrun import TriggerDagRunOperator
 from airflow.hooks.S3_hook import S3Hook
 from airflow.utils.dates import days_ago
 from datetime import datetime, timedelta
@@ -8,6 +9,7 @@ from io import StringIO
 import pandas as pd
 import requests
 import pytz
+
 
 countrys=['AT', 'AU', 'CA', 'CN', 'DE', 'ES', 'FR', 'GB', 'ID', 'IN', 'IT', 'JP', 'MY', 'NL', 'TW', 'US']
 categories = [
