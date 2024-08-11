@@ -8,7 +8,7 @@ from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
 from airflow.hooks.S3_hook import S3Hook
 from airflow.utils.task_group import TaskGroup
-
+import logging
 today_date = datetime.utcnow().strftime('%Y-%m-%d')
 
 def preprocess_text(text):
@@ -117,7 +117,10 @@ def exact_match(row, hotel_chunk_df):
 def process_chunk(hotel_chunk_df_path, google_hotels_df_path, chunk_index, total_chunks):
     """청크를 처리하여 호텔 ID 및 기타 정보를 매칭"""
     print(f"{chunk_index + 1}/{total_chunks} 청크를 처리합니다...")
-    google_hotels_df = pd.read_csv(google_hotels_df_path)
+    try:
+        google_hotels_df = pd.read_csv(google_hotels_df_path)
+    except:
+        google_hotels_df = pd.DataFrame()
     hotel_chunk_df = pd.read_csv(hotel_chunk_df_path)
     
     result_list = []
@@ -139,8 +142,10 @@ def process_hotels():
     print("Google 호텔 데이터를 처리합니다...")
     google_hotels_path = f'/tmp/{today_date}/google_hotels.csv'
     hotel_list_path = f'/tmp/{today_date}/hotel_list.csv'
-    
-    google_hotels_df = pd.read_csv(google_hotels_path)
+    try:
+        google_hotels_df = pd.read_csv(google_hotels_path)
+    except:
+        google_hotels_df = pd.DataFrame()
     hotel_list_df = pd.read_csv(hotel_list_path, dtype=str)
 
     print("데이터 프레임이 로드되었습니다. 매칭 프로세스를 시작합니다...")
@@ -165,18 +170,57 @@ def process_hotels():
 def merge_chunks(total_chunks):
     """병렬 처리된 청크들을 병합"""
     print(f"{total_chunks} 개의 청크를 병합합니다...")
-    processed_chunks = [pd.read_csv(f'/tmp/{today_date}/processed_chunk_{i}.csv') for i in range(total_chunks)]
-    processed_df = pd.concat(processed_chunks).drop_duplicates(subset=['place_id'], keep='first')
-    processed_df.to_csv(f'/tmp/{today_date}/Updated_hotels.csv', index=False)
-    os.chmod(f'/tmp/{today_date}/Updated_hotels.csv', stat.S_IRWXU | stat.S_IRWXG | stat.S_IROTH | stat.S_IXOTH)
-    print("병합이 완료되었습니다. 최종 데이터가 Updated_hotels.csv 파일에 저장되었습니다.")
+    processed_chunks = []
+    
+    for i in range(total_chunks):
+        file_path = f'/tmp/{today_date}/processed_chunk_{i}.csv'
+        try:
+            if os.path.getsize(file_path) > 0:
+                df = pd.read_csv(file_path)
+                processed_chunks.append(df)
+            else:
+                logging.warning(f"{file_path} 파일이 비어 있어 건너뜁니다.")
+        except pd.errors.EmptyDataError:
+            logging.warning(f"{file_path} 파일을 읽을 수 없어 건너뜁니다.")
 
+    # 병합 작업
+    try:
+        if processed_chunks:
+            combined_df = pd.concat(processed_chunks, ignore_index=True)
+            processed_df = combined_df.drop_duplicates(subset=['place_id'], keep='first')
+        else:
+            processed_df = pd.DataFrame()
+
+        # 병합된 데이터 저장
+        output_file_path = f'/tmp/{today_date}/Updated_hotels.csv'
+        processed_df.to_csv(output_file_path, index=False)
+        os.chmod(output_file_path, stat.S_IRWXU | stat.S_IRWXG | stat.S_IROTH | stat.S_IXOTH)
+        print("병합이 완료되었습니다. 최종 데이터가 Updated_hotels.csv 파일에 저장되었습니다.")
+        
+    except Exception as e:
+        logging.error(f"병합 작업 중 오류 발생: {e}")
+        processed_df = pd.DataFrame()
+
+    # 청크 파일 삭제
+    for i in range(total_chunks):
+        processed_chunk_path = f'/tmp/{today_date}/processed_chunk_{i}.csv'
+        hotel_chunk_path = f'/tmp/{today_date}/hotel_chunk_{i}.csv'
+        try:
+            os.remove(processed_chunk_path)
+            print(f"{processed_chunk_path} 파일이 삭제되었습니다.")
+        except Exception as e:
+            logging.warning(f"{processed_chunk_path} 파일을 삭제하는 중 오류 발생: {e}")
+        try:
+            os.remove(hotel_chunk_path)
+            print(f"{hotel_chunk_path} 파일이 삭제되었습니다.")
+        except Exception as e:
+            logging.warning(f"{hotel_chunk_path} 파일을 삭제하는 중 오류 발생: {e}")
 def upload_file():
     """처리된 파일을 S3에 업로드"""
     print("S3에 처리된 파일을 업로드합니다...")
     hook = S3Hook(aws_conn_id='s3_connection')
     bucket_name = 'team-hori-2-bucket'
-    output_key = f'source/source_TravelEvents/{today_date}Updated_hotels.csv'
+    output_key = f'source/source_TravelEvents/{today_date}/Updated_hotels.csv'
     
     local_file_path = f'/tmp/{today_date}/Updated_hotels.csv'
     

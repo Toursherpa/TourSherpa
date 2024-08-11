@@ -143,7 +143,6 @@ def merge_up_travel_events(ti, aws_conn_id, s3_bucket, current_date):
             combined_df = pd.DataFrame()
             logging.warning("병합할 데이터프레임이 없습니다. 빈 데이터프레임을 반환합니다.")
 
-<<<<<<< Updated upstream
     # combined_df_path 변수를 먼저 정의합니다
     combined_df_path = f'/tmp/{datetime.utcnow().strftime("%Y-%m-%d")}/combined_up_travel_events.csv'
     
@@ -151,9 +150,7 @@ def merge_up_travel_events(ti, aws_conn_id, s3_bucket, current_date):
     combined_df_dir = os.path.dirname(combined_df_path)
     os.makedirs(combined_df_dir, exist_ok=True)
 
-=======
-    combined_df_path = f'/tmp/{datetime.utcnow().strftime("%Y-%m-%d")}/combined_up_travel_events.csv'
->>>>>>> Stashed changes
+
     combined_df.to_csv(combined_df_path, index=False)
     logging.info(f"변경된 항목 {len(combined_df)}개")
 
@@ -195,7 +192,6 @@ def merge_final_results(current_date, aws_conn_id, s3_bucket):
         if f.startswith('google_hotels_')
     ]
     
-<<<<<<< Updated upstream
     combined_dataframes = []
 
     for file_path in google_hotels_files:
@@ -212,32 +208,12 @@ def merge_final_results(current_date, aws_conn_id, s3_bucket):
         combined_df = pd.concat(combined_dataframes, ignore_index=True)
     else:
         combined_df = pd.DataFrame() 
-=======
-    logging.info(f"총 {len(google_hotels_files)}개의 배치 파일이 발견되었습니다. 병합을 시작합니다.")
-    
-    combined_df_list = []
-    for file in google_hotels_files:
-        try:
-            if os.path.getsize(file) > 0:  # 파일이 비어있는지 확인
-                df = pd.read_csv(file)
-                combined_df_list.append(df)
-            else:
-                logging.warning(f"{file} 파일이 비어있어 건너뜁니다.")
-        except pd.errors.EmptyDataError:
-            logging.warning(f"{file} 파일에서 데이터를 읽지 못했습니다. 건너뜁니다.")
-    
-    if combined_df_list:
-        combined_df = pd.concat(combined_df_list, ignore_index=True)
-        logging.info(f"{len(combined_df_list)}개의 유효한 배치 파일을 병합했습니다.")
-    else:
-        combined_df = pd.DataFrame()  # 빈 데이터프레임으로 초기화
-        logging.warning("병합할 데이터가 없습니다. 빈 데이터프레임을 반환합니다.")
->>>>>>> Stashed changes
+
 
     last_hotels_s3_key = 'source/source_TravelEvents/google_hotels.csv'
     last_hotels_local_path = '/tmp/google_hotels.csv'
 
-    combined_df.to_csv(f'/tmp/{current_date}/google_hotels.csv', index=False)
+    combined_df.to_csv(f'/tmp/{current_date_str}/google_hotels.csv', index=False)
 
     try:
         logging.info(f"S3에서 마지막 호텔 리스트를 다운로드하여 병합합니다 - S3 Key: {last_hotels_s3_key}")
@@ -333,7 +309,6 @@ merge_up_travel_events_task = PythonOperator(
     provide_context=True  # XCom을 사용하기 위해 설정
 )
 
-<<<<<<< Updated upstream
 fetch_hotel_info_group = PythonOperator(
     task_id='fetch_hotel_info_group',
     python_callable=fetch_hotel_info_group_task,
@@ -344,41 +319,7 @@ fetch_hotel_info_group = PythonOperator(
     dag=dag,
     provide_context=True  # XCom을 사용하기 위해 설정
 )
-=======
-with TaskGroup("fetch_hotel_info_group", dag=dag) as fetch_hotel_info_group:
-    combined_df_path = f'/tmp/{datetime.utcnow().strftime("%Y-%m-%d")}/combined_up_travel_events.csv'
-    combined_df = pd.read_csv(combined_df_path)
-    
-    locations = [ast.literal_eval(loc_str) for loc_str in combined_df['location']]
-    
-    # 청크 파일들을 저장할 디렉토리 생성
-    current_date_str = datetime.utcnow().strftime("%Y-%m-%d")
-    output_dir = f'/tmp/{current_date_str}'
-    os.makedirs(output_dir, exist_ok=True)
 
-    # locations를 청크로 나누고 각 청크를 파일로 저장
-    for i in range(0, len(locations), BATCH_SIZE):
-        batch = locations[i:i + BATCH_SIZE]
-        batch_file_path = f'{output_dir}/locations_batch_{i // BATCH_SIZE}.csv'
-        pd.DataFrame(batch).to_csv(batch_file_path, index=False)
-    
-    # 실제 생성된 청크 파일 수를 기준으로 태스크 생성
-    chunk_files = [f for f in os.listdir(output_dir) if f.startswith('locations_batch_')]
-    for chunk_file in chunk_files:
-        task_id = chunk_file.split('.')[0]  # 파일 이름을 기반으로 태스크 ID 생성
-        batch_file_path = os.path.join(output_dir, chunk_file)
-        
-        PythonOperator(
-            task_id=task_id,
-            python_callable=fetch_hotel_for_location_batch,
-            op_kwargs={
-                'locations': pd.read_csv(batch_file_path).values.tolist(),
-                'google_api_key': Variable.get("GOOGLE_API_KEY"),
-                'current_date': current_date_str,
-            },
-            dag=dag,
-        )
->>>>>>> Stashed changes
 
 merge_final_results_task = PythonOperator(
     task_id='merge_final_results',

@@ -1,125 +1,139 @@
 from datetime import datetime, timedelta
+import os
 import pandas as pd
+import numpy as np
 from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
 from airflow.hooks.postgres_hook import PostgresHook
 from airflow.hooks.S3_hook import S3Hook
+import logging
 
+# 현재 날짜를 지정
 today_date = datetime.utcnow().strftime('%Y-%m-%d')
 
-# Function to calculate the distance between two coordinates
+# 두 좌표 간의 거리를 계산하는 함수 (벡터화된 방식)
 def calculate_distance(lon1, lat1, lon2, lat2):
-    return ((lon2 - lon1)**2 + (lat2 - lat1)**2)**0.5
+    return np.sqrt((lon2 - lon1) ** 2 + (lat2 - lat1) ** 2)
 
-# Function to find events within a 10km radius of hotels
-def find_events():
-    print("Starting to find events within a 10km radius...")
+# 호텔 주변 10km 반경 내의 이벤트를 찾는 함수
+def find_nearby_events():
+    logging.info("10km 반경 내의 이벤트를 찾기 시작합니다...")
 
-    # Load hotel data
-    hotels_df = pd.read_csv(f'/tmp/{today_date}/Updated_hotels.csv', usecols=['name', 'place_id', 'location'])
-    events_df = pd.read_csv(f'/tmp/{today_date}/TravelEvents.csv')
+    # 호텔 및 이벤트 데이터를 로드
+    hotel_file_path = '/tmp/Updated_hotels.csv'
+    event_file_path = '/tmp/TravelEvents.csv'
+    
+    logging.info(f"호텔 데이터를 로드합니다: {hotel_file_path}")
+    hotels_df = pd.read_csv(hotel_file_path, usecols=['name', 'place_id', 'location'])
+    events_df = pd.read_csv(event_file_path)
 
-    # Add a new column for event IDs in the hotel dataframe
-    hotels_df['event_ids'] = ''
+    # 호텔 및 이벤트 위치 정보 파싱
+    logging.info("호텔 및 이벤트 데이터의 위치 정보를 파싱합니다...")
+    hotels_df[['longitude', 'latitude']] = hotels_df['location'].str.strip('[]').str.split(', ', expand=True).astype(float)
+    events_df[['longitude', 'latitude']] = events_df['location'].str.strip('[]').str.split(', ', expand=True).astype(float)
 
-    # Parse location data in hotel and event dataframes
-    hotels_df['longitude'] = hotels_df['location'].apply(lambda x: float(x.strip('[]').split(', ')[0]))
-    hotels_df['latitude'] = hotels_df['location'].apply(lambda x: float(x.strip('[]').split(', ')[1]))
-    events_df['longitude'] = events_df['location'].apply(lambda x: float(x.strip('[]').split(', ')[0]))
-    events_df['latitude'] = events_df['location'].apply(lambda x: float(x.strip('[]').split(', ')[1]))
+    # 호텔과 이벤트 간의 거리 계산
+    logging.info("호텔과 이벤트 간의 거리를 계산합니다...")
+    distances = calculate_distance(
+        hotels_df['longitude'].values[:, np.newaxis], hotels_df['latitude'].values[:, np.newaxis],
+        events_df['longitude'].values, events_df['latitude'].values
+    )
 
-    # Check if 'id' column exists in event dataframe
-    if 'id' not in events_df.columns:
-        raise KeyError("The 'id' column is missing in TravelEvents.csv. Please ensure the correct column name is used.")
+    # 각 호텔에 대해 10km 반경 내의 이벤트 찾기
+    logging.info("각 호텔에 대해 10km 반경 내의 이벤트를 식별합니다...")
+    within_radius = distances <= 0.1
 
-    # Find events within a 10km radius for each hotel
-    for index, accommodation in hotels_df.iterrows():
-        nearby_events = [
-            event['id'] for _, event in events_df.iterrows()
-            if calculate_distance(accommodation['longitude'], accommodation['latitude'], event['longitude'], event['latitude']) <= 0.1
-        ]
-        hotels_df.at[index, 'event_ids'] = ','.join(map(str, nearby_events)) if nearby_events else ''
+    hotels_df['event_ids'] = [
+        ','.join(events_df.loc[within_radius[i], 'id'].astype(str).values)
+        for i in range(len(hotels_df))
+    ]
 
-    # Save the updated hotel data to a new CSV file
-    updated_file_path = f'/tmp/{today_date}/Updated_hotels_with_Events.csv'
+    # 결과를 새 CSV 파일로 저장
+    output_dir = f'/tmp/{today_date}'
+    os.makedirs(output_dir, exist_ok=True)
+    output_file_path = f'{output_dir}/Updated_hotels_with_Events.csv'
     hotels_df.drop(columns=['longitude', 'latitude'], inplace=True)
-    hotels_df.to_csv(updated_file_path, index=False)
-    print("Updated CSV file with event IDs saved.")
+    hotels_df.to_csv(output_file_path, index=False)
+    logging.info(f"이벤트 ID가 포함된 업데이트된 CSV 파일이 저장되었습니다: {output_file_path}")
 
-    # Upload the file to S3
-    upload_to_s3(updated_file_path, 'team-hori-2-bucket', f'source/source_TravelEvents/{today_date}/Updated_hotels_with_Events.csv')
+    # S3에 파일 업로드
+    upload_to_s3(output_file_path, 'team-hori-2-bucket', f'source/source_TravelEvents/{today_date}/Updated_hotels_with_Events.csv')
 
+# S3에 파일을 업로드하는 함수
 def upload_to_s3(file_path, bucket_name, s3_key):
-    """Upload a file to S3."""
-    hook = S3Hook(aws_conn_id='s3_connection')
-    hook.load_file(
+    logging.info(f"파일을 S3에 업로드합니다: {file_path} -> s3://{bucket_name}/{s3_key}")
+    s3_hook = S3Hook(aws_conn_id='s3_connection')
+    s3_hook.load_file(
         filename=file_path,
         key=s3_key,
         bucket_name=bucket_name,
         replace=True
     )
-    print(f"File uploaded to S3 at {s3_key}")
+    logging.info(f"S3에 파일 업로드 완료: s3://{bucket_name}/{s3_key}")
 
-# Function to create the schema and table in Redshift
-def create_schema_table():
+# Redshift에 스키마와 테이블을 생성하는 함수 (없을 경우 생성)
+def create_redshift_table_if_not_exists():
+    logging.info("Redshift에 테이블이 없으면 생성합니다...")
+    
     redshift_conn_id = 'redshift_connection'
-    table_name = 'events_for_hotel'
     schema_name = 'hotel'
+    table_name = 'events_for_hotel'
     
     redshift_hook = PostgresHook(postgres_conn_id=redshift_conn_id)
-    conn = redshift_hook.get_conn()
-    cursor = conn.cursor()
     
-    # Define the table schema and drop if exists
     create_table_sql = f"""
-    DROP TABLE IF EXISTS {schema_name}.{table_name};
     CREATE TABLE IF NOT EXISTS {schema_name}.{table_name} (
         Google_Place_Id VARCHAR(512) PRIMARY KEY,
         HOTELNAME VARCHAR(512),
         EventID VARCHAR(65535)
     );
     """
-    cursor.execute(create_table_sql)
-    conn.commit()
-    cursor.close()
-    conn.close()
+    
+    with redshift_hook.get_conn() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute(create_table_sql)
+            conn.commit()
+    
+    logging.info(f"테이블이 존재하지 않을 경우 생성 완료: {schema_name}.{table_name}")
 
-# Function to update the table in Redshift with new data
-def update_table():
+# Redshift 테이블을 새로운 데이터로 업데이트하는 함수
+def update_redshift_table():
+    logging.info("Redshift 테이블을 업데이트합니다...")
+
     redshift_conn_id = 'redshift_connection'
     table_name = 'hotel.events_for_hotel'
     
-    redshift_hook = PostgresHook(postgres_conn_id=redshift_conn_id)
-    conn = redshift_hook.get_conn()
-    cursor = conn.cursor()
-    
-    hotel_df = pd.read_csv(f'/tmp/{today_date}/Updated_hotels_with_Events.csv', usecols=['place_id', 'name', 'event_ids'])
+    updated_hotels_path = f'/tmp/{today_date}/Updated_hotels_with_Events.csv'
+    hotel_df = pd.read_csv(updated_hotels_path, usecols=['place_id', 'name', 'event_ids'])
     hotel_df['place_id'] = hotel_df['place_id'].astype(str)
-    
-    for index, row in hotel_df.iterrows():
-        # Check if the record exists
-        cursor.execute(f"SELECT COUNT(*) FROM {table_name} WHERE HOTELNAME = %s", (row['name'],))
-        exists = cursor.fetchone()[0]
-        
-        if exists:
-            # Update the existing record
-            cursor.execute(f"""
-                UPDATE {table_name}
-                SET EventID = %s, Google_Place_Id = %s
-                WHERE HOTELNAME = %s
-            """, (row['event_ids'], row['place_id'], row['name']))
-        else:
-            # Insert the new record
-            cursor.execute(f"""
-                INSERT INTO {table_name} (EventID, HOTELNAME, Google_Place_Id)
-                VALUES (%s, %s, %s)
-            """, (row['event_ids'], row['name'], row['place_id']))
-    
-    conn.commit()
-    cursor.close()
-    conn.close()
 
-# Default arguments for the DAG
+    with PostgresHook(postgres_conn_id=redshift_conn_id).get_conn() as conn:
+        with conn.cursor() as cursor:
+            for index, row in hotel_df.iterrows():
+                # 존재 여부 확인
+                cursor.execute(f"SELECT COUNT(*) FROM {table_name} WHERE HOTELNAME = %s", (row['name'],))
+                exists = cursor.fetchone()[0]
+                
+                if exists:
+                    # 레코드 업데이트
+                    cursor.execute(f"""
+                        UPDATE {table_name}
+                        SET EventID = %s, Google_Place_Id = %s
+                        WHERE HOTELNAME = %s
+                    """, (row['event_ids'], row['place_id'], row['name']))
+                    logging.info(f"기존 레코드를 업데이트했습니다: {row['name']}")
+                else:
+                    # 새로운 레코드 삽입
+                    cursor.execute(f"""
+                        INSERT INTO {table_name} (EventID, HOTELNAME, Google_Place_Id)
+                        VALUES (%s, %s, %s)
+                    """, (row['event_ids'], row['name'], row['place_id']))
+                    logging.info(f"새 레코드를 삽입했습니다: {row['name']}")
+            conn.commit()
+
+    logging.info("Redshift 테이블 업데이트가 완료되었습니다.")
+
+# 기본 DAG 인수 정의
 default_args = {
     'owner': 'airflow',
     'depends_on_past': False,
@@ -131,33 +145,33 @@ default_args = {
     'retry_delay': timedelta(minutes=5),
 }
 
-# Define the DAG
+# DAG 정의
 dag = DAG(
     'hotels_with_events',
     default_args=default_args,
-    description='Find events within a 10km radius of hotels and update CSV and Redshift',
+    description='호텔 주변 10km 반경 내의 이벤트를 찾아 CSV 및 Redshift 업데이트',
     schedule_interval=timedelta(days=1),
     catchup=False,
 )
 
-# Define the tasks
-t1 = PythonOperator(
-    task_id='find_events',
-    python_callable=find_events,
+# 태스크 정의
+find_events_task = PythonOperator(
+    task_id='find_nearby_events',
+    python_callable=find_nearby_events,
     dag=dag,
 )
 
-t2 = PythonOperator(
-    task_id='create_schema_table',
-    python_callable=create_schema_table,
+create_table_task = PythonOperator(
+    task_id='create_redshift_table_if_not_exists',
+    python_callable=create_redshift_table_if_not_exists,
     dag=dag,
 )
 
-t3 = PythonOperator(
-    task_id='update_table',
-    python_callable=update_table,
+update_table_task = PythonOperator(
+    task_id='update_redshift_table',
+    python_callable=update_redshift_table,
     dag=dag,
 )
 
-# Set the task dependencies
-t1 >> t2 >> t3
+# 태스크 의존성 설정
+find_events_task >> create_table_task >> update_table_task
