@@ -41,7 +41,7 @@
 ### 1. 환경 변수 설정
 프로젝트 실행에 필요한 환경 변수는 `variables.json` 파일에 정의되어 있으며, 아래와 같은 형식으로 설정됩니다:
 
-'''json
+json
 {
     "GOOGLE_API_KEY": "YOUR_GOOGLE_API_KEY",
     "predicthq_ACCESS_TOKEN": "YOUR_PREDICTHQ_ACCESS_TOKEN",
@@ -49,7 +49,7 @@
     "redshift_table_nearest": "nearest_airports",
     "redshift_table_places": "events_places",
     "s3_bucket_name": "s3_bucket_name"
-}'''
+}
 
 2. Docker 컨테이너 실행
 
