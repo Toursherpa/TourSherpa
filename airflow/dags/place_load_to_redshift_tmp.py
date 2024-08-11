@@ -1,7 +1,6 @@
 import logging
 from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
-from airflow.providers.amazon.aws.hooks.s3 import S3Hook
 from airflow.providers.amazon.aws.transfers.s3_to_redshift import S3ToRedshiftOperator
 from airflow.hooks.postgres_hook import PostgresHook
 from datetime import datetime, timedelta
@@ -17,16 +16,17 @@ def preprocess_redshift_table():
         cursor = redshift_conn.cursor()
         
         # 기존 테이블 삭제 및 테이블 생성
-        cursor.execute(f"DROP TABLE IF EXISTS {Variable.get('redshift_schema_places')}.{Variable.get('redshift_table_places')};")
+        cursor.execute("CREATE SCHEMA IF NOT EXISTS place;")
+        cursor.execute(f"DROP TABLE IF EXISTS place.events_places_raw;")
         cursor.execute(f"""
-            CREATE TABLE {Variable.get('redshift_schema_places')}.{Variable.get('redshift_table_places')} (
+            CREATE TABLE place.events_places_raw (
                 "Event ID" VARCHAR(256),
                 "Event Title" VARCHAR(256),
                 "Location" VARCHAR(256),
                 "Place Name" VARCHAR(256),
                 "Address" VARCHAR(256),
                 "Rating" FLOAT,
-                "Number of Reviews" INT,
+                "Number of Reviews" FLOAT,
                 "Review" VARCHAR(65535),
                 "Latitude" FLOAT,
                 "Longitude" FLOAT,
@@ -36,23 +36,25 @@ def preprocess_redshift_table():
             );
         """)
         redshift_conn.commit()
-        logging.info(f"Redshift table {Variable.get('redshift_table_places')} has been dropped and recreated.")
+        logging.info(f"Redshift table public.events_places_raw has been dropped and recreated.")
         
     except Exception as e:
         logging.error(f"Error in preprocess_redshift_table: {e}")
         raise
 
+
 default_args = {
     'owner': 'airflow',
-    'start_date': days_ago(1) + timedelta(hours=5), 
+    'start_date': days_ago(1) + timedelta(hours=5),
     'retries': 0,
     'retry_delay': timedelta(minutes=5),
 }
 
+
 dag = DAG(
-    's3_to_redshift',
+    'place_load_to_redshift',
     default_args=default_args,
-    description='Load data from S3 to Redshift',
+    description='Load data from S3 to Redshift and log results',
     schedule_interval='@daily',
     catchup=False,
 )
@@ -66,14 +68,25 @@ preprocess_redshift_task = PythonOperator(
 
 load_to_redshift_task = S3ToRedshiftOperator(
     task_id='load_to_redshift',
-    schema=Variable.get('redshift_schema_places'),
-    table=Variable.get('redshift_table_places'),
+    schema='place',
+    table='events_places_raw',
     s3_bucket=Variable.get('s3_bucket_name'),
     s3_key='source/source_place/place_cafe_restaurant.csv',
-    copy_options=['IGNOREHEADER 1', 'csv'],
     aws_conn_id='s3_connection',
     redshift_conn_id='redshift_connection',
     dag=dag,
+    method = "REPLACE",
+    copy_options=[
+    "IGNOREHEADER 1",
+    "csv",
+    "NULL AS 'None'",
+    "BLANKSASNULL",
+    "EMPTYASNULL",
+    "FILLRECORD"
+]
 )
 
-preprocess_redshift_task >> load_to_redshift_task
+
+
+
+preprocess_redshift_task >> load_to_redshift_task 

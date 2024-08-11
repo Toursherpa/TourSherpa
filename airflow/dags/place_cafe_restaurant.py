@@ -164,9 +164,9 @@ def preprocess_redshift_table():
         cursor = redshift_conn.cursor()
         
         # 기존 테이블 삭제 및 테이블 생성
-        cursor.execute(f"DROP TABLE IF EXISTS {Variable.get('redshift_schema_places')}.{Variable.get('redshift_table_places')};")
+        cursor.execute(f"DROP TABLE IF EXISTS public.events_places;")
         cursor.execute(f"""
-            CREATE TABLE {Variable.get('redshift_schema_places')}.{Variable.get('redshift_table_places')} (
+            CREATE TABLE public.events_places (
                 "Event ID" VARCHAR(256),
                 "Event Title" VARCHAR(256),
                 "Location" VARCHAR(256),
