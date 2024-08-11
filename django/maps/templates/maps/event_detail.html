@@ -93,7 +93,6 @@
                 <thead>
                     <tr>
                         <th scope="col">숙소 이름</th>
-                        <th scope="col">주소</th>
                         <th scope="col">평점</th>
                         <th scope="col">총합 리뷰수</th>
                     </tr>
@@ -104,7 +103,6 @@
                         <td>
                             <a class="nav-link" href="{% url 'hotel_detail' hotel_name=hotel.google_name %}">{{ hotel.google_name }}</a>
                         </td>
-                        <td>{{ hotel.google_address }}</td>
                         <td>{{ hotel.google_rating }}</td>
                         <td>{{ hotel.google_user_ratings_total }}</td>
                     </tr>

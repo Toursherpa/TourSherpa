@@ -213,7 +213,7 @@ def merge_final_results(current_date, aws_conn_id, s3_bucket):
     last_hotels_s3_key = 'source/source_TravelEvents/google_hotels.csv'
     last_hotels_local_path = '/tmp/google_hotels.csv'
 
-    combined_df.to_csv(f'/tmp/{current_date}/google_hotels.csv', index=False)
+    combined_df.to_csv(f'/tmp/{current_date_str}/google_hotels.csv', index=False)
 
     try:
         logging.info(f"S3에서 마지막 호텔 리스트를 다운로드하여 병합합니다 - S3 Key: {last_hotels_s3_key}")

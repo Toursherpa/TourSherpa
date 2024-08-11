@@ -220,7 +220,7 @@ def upload_file():
     print("S3에 처리된 파일을 업로드합니다...")
     hook = S3Hook(aws_conn_id='s3_connection')
     bucket_name = 'team-hori-2-bucket'
-    output_key = f'source/source_TravelEvents/{today_date}Updated_hotels.csv'
+    output_key = f'source/source_TravelEvents/{today_date}/Updated_hotels.csv'
     
     local_file_path = f'/tmp/{today_date}/Updated_hotels.csv'
     
