@@ -17,7 +17,7 @@ from json.decoder import JSONDecodeError
 from datetime import datetime, timedelta
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-
+import logging
 
 country_list = {'오스트리아': 'AT', '호주': 'AU', '캐나다': 'CA', '중국': 'CN', '독일': 'DE', '스페인': 'ES', '프랑스': 'FR', '영국': 'GB',
                 '인도네시아': 'ID', '인도': 'IN', '이탈리아': 'IT', '일본': 'JP', '말레이시아': 'MY', '네덜란드': 'NL', '대만': 'TW',
@@ -153,17 +153,73 @@ def event_detail(request, country, event_id):
     }
     return render(request, 'maps/event_detail.html', context)
 
+logger = logging.getLogger('agoda')
+
+def get_agoda_hotel_image(hotel_id, api_key, site_id):
+    url = "http://affiliateapi7643.agoda.com/affiliateservice/lt_v1"
+    
+    headers = {
+        "Authorization": f"{site_id}:{api_key}",
+        "Accept-Encoding": "gzip,deflate",
+        "Content-Type": "application/json"
+    }
+    try:
+        hotel_id = int(float(hotel_id))  
+    except ValueError:
+        logger.error(f"Invalid hotel_id: {hotel_id} cannot be converted to integer.")
+    data = {
+        "criteria": {
+            "additional": {
+                "currency": "USD",
+                "language": "en-us",
+                "occupancy": {
+                    "numberOfAdult": 2,
+                    "numberOfChildren": 0
+                }
+            },
+            "checkInDate": "2024-08-15",
+            "checkOutDate": "2024-08-16",
+            "hotelId": [hotel_id]
+        }
+    }
+    
+    logger.debug(f"Sending request to Agoda API: URL={url}, Data={data}, Headers={headers}")
+    
+    response = requests.post(url, json=data, headers=headers)
+    
+    if response.status_code == 200:
+        try:
+            hotel_data = response.json()
+            logger.debug(f"Received response from Agoda API: {hotel_data}")
+            if "results" in hotel_data and len(hotel_data["results"]) > 0:
+                image_url = hotel_data["results"][0].get("imageURL")
+                logger.debug(f"Extracted image URL: {image_url}")
+                return image_url
+            else:
+                logger.warning("No results found in the API response.")
+                return None
+        except ValueError as e:
+            logger.error(f"Failed to decode JSON: {str(e)}")
+            return None
+    else:
+        logger.error(f"API request failed with status code {response.status_code}: {response.text}")
+        return None
 
 def hotel_detail(request, hotel_name):
     hotel = get_object_or_404(HotelList, google_name=hotel_name)
     events_for_hotel = get_object_or_404(EventsForHotel, HOTELNAME=hotel_name)
-
+    api_key = ''
+    site_id = ''
     events = events_for_hotel.EventID.split(',') if events_for_hotel.EventID else ['None']
     event_list = [event for event in TravelEvent.objects.filter(EventID__in=events)]
+
+    # Agoda API를 통해 호텔 이미지 가져오기
+    agoda_image_url = get_agoda_hotel_image(hotel.agoda_hotel_id,api_key, site_id)
 
     context = {
         'hotel': hotel,
         'event_list': event_list,
+        'image_url': agoda_image_url,  # 이미지 URL을 컨텍스트에 추가
     }
     return render(request, 'maps/hotel_detail.html', context)
 
