@@ -76,6 +76,10 @@ def dashboard(request):
     }
     return render(request, 'maps/dashboard.html', context)
 
+def search_results(request):
+    query = request.GET.get('q', '')  # 'q'는 검색어를 담는 파라미터 이름입니다
+    result_events = TravelEvent.objects.filter(Title__icontains=query).order_by('-Rank', '-PhqAttendance')
+    return render(request, 'maps/search_result.html', {'result_events': result_events})
 
 def country(request, country):
     country_code = country_list.get(country, '')
