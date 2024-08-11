@@ -82,7 +82,7 @@ class FlightTo(models.Model):
     seats = models.IntegerField()
     price = models.IntegerField()
     airline_name = models.CharField(max_length=100)
-    departure_date = models.CharField(max_length=50)
+    departure_date = models.IntegerField()
     departure_min = models.IntegerField()
 
     class Meta:
@@ -100,22 +100,15 @@ class FlightFrom(models.Model):
     duration = models.CharField(max_length=50)
     seats = models.IntegerField()
     price = models.IntegerField()
+    airline_name = models.CharField(max_length=100)
+    departure_date = models.IntegerField()
+    departure_min = models.IntegerField()
 
     class Meta:
         db_table = 'flight_from'
 
     def __str__(self):
         return self.airline_code or self.departure
-
-class Airline(models.Model):
-    airline_code = models.CharField(max_length=50, primary_key=True)
-    airline_name = models.CharField(max_length=50)
-
-    class Meta:
-        db_table = 'airline'
-
-    def __str__(self):
-        return self.airline_code or self.airline_name
 
 class Airport(models.Model):
     airport_code = models.CharField(max_length=50, primary_key=True)
