@@ -1,0 +1,55 @@
+{% extends 'maps/base.html' %}
+{% load static %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">검색결과</h1>
+    <div class="card mb-4">
+        <div class="card-body">
+            <table class="table table-striped datatablesSimple">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Rank</th>
+                        <th>PHQ Attendance</th>
+                        <th>Time Start</th>
+                        <th>Time End</th>
+                        <th>Address</th>
+                        <th>Region</th>
+                    </tr>
+                </thead>
+                <tfoot>
+                    <tr>
+                        <th>Title</th>
+                        <th>Rank</th>
+                        <th>PHQ Attendance</th>
+                        <th>Time Start</th>
+                        <th>Time End</th>
+                        <th>Address</th>
+                        <th>Region</th>
+                    </tr>
+                </tfoot>
+                <tbody>
+                    {% for event in result_events %}
+                    <tr>
+                        <td><a class="nav-link" href="{% url 'event_detail' country=event.Country event_id=event.EventID %}">{{ event.Title }}</a></td>
+                        <td>{{ event.Rank }}</td>
+                        <td>{{ event.PhqAttendance }}</td>
+                        <td>{{ event.TimeStart }}</td>
+                        <td>{{ event.TimeEnd }}</td>
+                        <td>{{ event.Address }}</td>
+                        <td>{{ event.Region }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/umd/simple-datatables.min.js" crossorigin="anonymous"></script>
+<script src="{% static 'maps/js/datatables-simple-demo.js' %}"></script>
+
+{% endblock %}

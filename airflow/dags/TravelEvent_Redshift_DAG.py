@@ -112,6 +112,8 @@ def transform_data(**kwargs):
         df['Region'] = df['Region'].apply(lambda x: translate_to_korean(x))
         print("Region")
 
+        df['Description'] = df['Description'].apply(lambda x: remove_source_info_empty(x))
+
         transformed_data = df.to_dict(orient='records')
     else:
         print("데이터가 올바르게 준비되지 않았습니다.")
@@ -121,6 +123,10 @@ def transform_data(**kwargs):
 def remove_source_info(description):
     pattern = r'^Sourced from predicthq\.com - '
     return re.sub(pattern, '', description)
+
+def remove_source_info_empty(description):
+    pattern = r'^predicthq.com에서 소스'
+    return re.sub(pattern, '상세정보 아직 없음.', description)
     
 def generate_and_save_data(**kwargs):
     transformed_data = kwargs['ti'].xcom_pull(key='transformed_data', task_ids='transform_data')
