@@ -49,12 +49,12 @@
     "redshift_table_nearest": "nearest_airports",
     "redshift_table_places": "events_places",
     "s3_bucket_name": "s3_bucket_name"
-}```
+}
 
-2. Docker 컨테이너 실행
+###2. Docker 컨테이너 실행
 
 프로젝트는 Docker를 통해 실행됩니다. Docker Compose 파일을 사용하여 Airflow와 Django를 구성하며, AWS에 배포된 인프라와 연결합니다.
-3. AWS 설정
+###3. AWS 설정
 
 AWS S3, RDS, 그리고 Redshift를 활용하여 데이터를 관리합니다. 아래는 주요 설정 정보입니다:
 
