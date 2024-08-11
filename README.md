@@ -49,7 +49,7 @@
     "redshift_table_nearest": "nearest_airports",
     "redshift_table_places": "events_places",
     "s3_bucket_name": "s3_bucket_name"
-}```json
+}json```
 
 
 2. Docker 컨테이너 실행
