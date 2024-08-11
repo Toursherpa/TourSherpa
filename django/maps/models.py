@@ -51,7 +51,6 @@ class EventsForHotel(models.Model):
 class HotelList(models.Model):
     event_id = models.CharField(max_length=512, primary_key=True)
     google_name = models.CharField(max_length=1000, blank=True, null=True)
-    google_address = models.CharField(max_length=1000, blank=True, null=True)
     google_rating = models.FloatField(blank=True, null=True)
     google_user_ratings_total = models.IntegerField(blank=True, null=True)
     google_place_id = models.CharField(max_length=512, blank=True, null=True)
@@ -135,6 +134,8 @@ class NearestAirport(models.Model):
     id = models.CharField(max_length=100, primary_key=True)
     title = models.CharField(max_length=100)
     country = models.CharField(max_length=100)
+    start_date = models.CharField(max_length=100)
+    end_date = models.CharField(max_length=100)
     airport_code = models.CharField(max_length=100)
     airport_name = models.CharField(max_length=100)
 

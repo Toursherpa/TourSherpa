@@ -54,6 +54,6 @@ class AirportAdmin(admin.ModelAdmin):
 
 @admin.register(NearestAirport)
 class NearestAirportAdmin(admin.ModelAdmin):
-    list_display = ('id', 'title', 'country', 'airport_code', 'airport_name')
-    search_fields = ('title', 'country', 'airport_code', 'airport_name')
+    list_display = ('id', 'title', 'country', 'start_date', 'end_date', 'airport_code', 'airport_name')
+    search_fields = ('title', 'country', 'airport_code', 'start_date', 'end_date', 'airport_name')
     list_filter = ('country', 'airport_code')
