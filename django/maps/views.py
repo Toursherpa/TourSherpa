@@ -4,7 +4,7 @@ import csv
 import pandas as pd
 from django.http import HttpResponse
 from django_filters.views import FilterView
-from django.db.models import Count
+from django.db.models import Count, Avg
 from .models import HotelsForEvent, EventsForHotel, TravelEvent, HotelList, FlightTo, FlightFrom, Airline, Airport, \
     NearestAirport
 from .forms import EventFilterForm
@@ -17,22 +17,39 @@ from json.decoder import JSONDecodeError
 from datetime import datetime, timedelta
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+import logging
 
 country_list = {'오스트리아': 'AT', '호주': 'AU', '캐나다': 'CA', '중국': 'CN', '독일': 'DE', '스페인': 'ES', '프랑스': 'FR', '영국': 'GB',
                 '인도네시아': 'ID', '인도': 'IN', '이탈리아': 'IT', '일본': 'JP', '말레이시아': 'MY', '네덜란드': 'NL', '대만': 'TW',
                 '미국': 'US'}
 
+def translate_country(event_list, country_name_map):
+    for event in event_list:
+        event.Country = country_name_map.get(event.Country, event.Country)
+        event.TimeStartFormatted = format_date(event.TimeStart)
+        event.TimeEndFormatted = format_date(event.TimeEnd)
+def format_date(date_str):
+    # '2024-07-26T00:00:00' 형식의 문자열을 datetime 객체로 변환
+    dt = datetime.fromisoformat(date_str)
+    # 원하는 형식으로 변환
+    return dt.strftime('%Y-%m-%d %H:%M')
 
 def dashboard(request):
     top_events = TravelEvent.objects.order_by('-Rank', '-PhqAttendance')[:3]
-    countries = TravelEvent.objects.values('Country').annotate(total_events=Count('EventID')).order_by('-total_events')[
-                :5]
+    countries = TravelEvent.objects.values('Country').annotate(total_events=Count('EventID')).order_by('-total_events')[:5]
     categories = TravelEvent.objects.values('Category').annotate(total_events=Count('EventID'))
     recent_events = TravelEvent.objects.exclude(TimeStart='none').order_by('TimeStart')[:3]
     earliest_end_events = TravelEvent.objects.exclude(TimeEnd='none').order_by('TimeEnd')[:3]
+    country_name_map = {code: name for name, code in country_list.items()}
+
+    translate_country(top_events, country_name_map)
+    translate_country(recent_events, country_name_map)
+    translate_country(earliest_end_events, country_name_map)
+
+    flights_data = get_average_price_per_country()
 
     countries_data = {
-        'labels': [country['Country'] for country in countries],
+        'labels': [country_name_map.get(country['Country'], country['Country']) for country in countries],
         'datasets': [{
             'label': 'Number of Events',
             'backgroundColor': 'rgba(0, 128, 255, 0.2)',  # 색상 예시, 원하는 대로 수정 가능
@@ -51,6 +68,7 @@ def dashboard(request):
         }]
     }
     context = {
+        'flights_data': flights_data,
         'categories_data': categories_data,
         'countries_data': countries_data,
         'top_events': top_events,
@@ -135,17 +153,73 @@ def event_detail(request, country, event_id):
     }
     return render(request, 'maps/event_detail.html', context)
 
+logger = logging.getLogger('agoda')
+
+def get_agoda_hotel_image(hotel_id, api_key, site_id):
+    url = "http://affiliateapi7643.agoda.com/affiliateservice/lt_v1"
+    
+    headers = {
+        "Authorization": f"{site_id}:{api_key}",
+        "Accept-Encoding": "gzip,deflate",
+        "Content-Type": "application/json"
+    }
+    try:
+        hotel_id = int(float(hotel_id))  
+    except ValueError:
+        logger.error(f"Invalid hotel_id: {hotel_id} cannot be converted to integer.")
+    data = {
+        "criteria": {
+            "additional": {
+                "currency": "USD",
+                "language": "en-us",
+                "occupancy": {
+                    "numberOfAdult": 2,
+                    "numberOfChildren": 0
+                }
+            },
+            "checkInDate": "2024-08-15",
+            "checkOutDate": "2024-08-16",
+            "hotelId": [hotel_id]
+        }
+    }
+    
+    logger.debug(f"Sending request to Agoda API: URL={url}, Data={data}, Headers={headers}")
+    
+    response = requests.post(url, json=data, headers=headers)
+    
+    if response.status_code == 200:
+        try:
+            hotel_data = response.json()
+            logger.debug(f"Received response from Agoda API: {hotel_data}")
+            if "results" in hotel_data and len(hotel_data["results"]) > 0:
+                image_url = hotel_data["results"][0].get("imageURL")
+                logger.debug(f"Extracted image URL: {image_url}")
+                return image_url
+            else:
+                logger.warning("No results found in the API response.")
+                return None
+        except ValueError as e:
+            logger.error(f"Failed to decode JSON: {str(e)}")
+            return None
+    else:
+        logger.error(f"API request failed with status code {response.status_code}: {response.text}")
+        return None
 
 def hotel_detail(request, hotel_name):
     hotel = get_object_or_404(HotelList, google_name=hotel_name)
     events_for_hotel = get_object_or_404(EventsForHotel, HOTELNAME=hotel_name)
-
+    api_key = ''
+    site_id = ''
     events = events_for_hotel.EventID.split(',') if events_for_hotel.EventID else ['None']
     event_list = [event for event in TravelEvent.objects.filter(EventID__in=events)]
+
+    # Agoda API를 통해 호텔 이미지 가져오기
+    agoda_image_url = get_agoda_hotel_image(hotel.agoda_hotel_id,api_key, site_id)
 
     context = {
         'hotel': hotel,
         'event_list': event_list,
+        'image_url': agoda_image_url,  # 이미지 URL을 컨텍스트에 추가
     }
     return render(request, 'maps/hotel_detail.html', context)
 
@@ -211,3 +285,49 @@ def check_hotel_availability(api_key, site_id, hotel_id, check_in_date, check_ou
             return "No available rooms found for the specified dates."
     else:
         return f"Error: {response.status_code} - {response.text}"
+
+
+def get_average_price_per_country():
+    flight_to_avg_prices = FlightTo.objects.values('arrival').annotate(avg_price=Avg('price'))
+    flight_from_avg_prices = FlightFrom.objects.values('departure').annotate(avg_price=Avg('price'))
+
+    country_prices = {}
+
+    # FlightTo 모델을 기반으로 가격 집계
+    for flight_to in flight_to_avg_prices:
+        airport = Airport.objects.filter(airport_code=flight_to['arrival']).first()
+        if airport:
+            country = airport.country_name
+            if country not in country_prices:
+                country_prices[country] = []
+            country_prices[country].append(flight_to['avg_price'])
+
+    # FlightFrom 모델을 기반으로 가격 집계
+    for flight_from in flight_from_avg_prices:
+        airport = Airport.objects.filter(airport_code=flight_from['departure']).first()
+        if airport:
+            country = airport.country_name
+            if country not in country_prices:
+                country_prices[country] = []
+            country_prices[country].append(flight_from['avg_price'])
+
+    # 각 국가별 평균 가격 계산
+    avg_prices_per_country = {
+        country: round(sum(prices) / len(prices), 2) for country, prices in country_prices.items() if prices
+    }
+    top_countries = sorted(avg_prices_per_country.items(), key=lambda item: item[1])[:5]
+    top_countries_data = dict(top_countries)
+
+    # 데이터 변환
+    countries_data = {
+        'labels': list(top_countries_data.keys()),
+        'datasets': [{
+            'label': 'Average Price',
+            'backgroundColor': 'rgba(255, 99, 132, 0.2)',  # 색상 예시, 원하는 대로 수정 가능
+            'borderColor': 'rgba(255, 99, 132, 1)',
+            'data': list(top_countries_data.values()),
+        }]
+    }
+
+    return countries_data
+
