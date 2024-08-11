@@ -5,8 +5,7 @@ import pandas as pd
 from django.http import HttpResponse
 from django_filters.views import FilterView
 from django.db.models import Count, Avg
-from .models import HotelsForEvent, EventsForHotel, TravelEvent, HotelList, FlightTo, FlightFrom, Airline, Airport, \
-    NearestAirport
+from .models import HotelsForEvent, EventsForHotel, TravelEvent, HotelList, FlightTo, FlightFrom, Airport, NearestAirport
 from .forms import EventFilterForm
 from collections import OrderedDict
 from chartkick.django import ColumnChart, BarChart
@@ -124,8 +123,8 @@ def event_detail(request, country, event_id):
 
     if event.TimeStart != 'NaN':
         to_start_date = (datetime.strptime(event.TimeStart, "%Y-%m-%dT%H:%M:%S") - timedelta(days=3)).strftime('%Y-%m-%d')
-        to_end_date = (datetime.strptime(event.TimeEnd, "%Y-%m-%dT%H:%M:%S")).strftime('%Y-%m-%d')
-        from_start_date = (datetime.strptime(event.TimeStart, "%Y-%m-%dT%H:%M:%S") + timedelta(days=1)).strftime('%Y-%m-%d')
+        to_end_date = (datetime.strptime(event.TimeEnd, "%Y-%m-%dT%H:%M:%S") + timedelta(days=1)).strftime('%Y-%m-%d')
+        from_start_date = (datetime.strptime(event.TimeStart, "%Y-%m-%dT%H:%M:%S")).strftime('%Y-%m-%d')
         from_end_date = (datetime.strptime(event.TimeEnd, "%Y-%m-%dT%H:%M:%S") + timedelta(days=4)).strftime('%Y-%m-%d')
 
         flight_to = FlightTo.objects.filter(departure_at__range=[to_start_date, to_end_date],

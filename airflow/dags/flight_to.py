@@ -8,14 +8,24 @@ from flight_DAG import *
 kst = pytz.timezone('Asia/Seoul')
 
 def data_to_s3(macros):
-    logging.info("Starting data_to_s3")
+    today = (macros.datetime.now().astimezone(kst)).strftime('%Y-%m-%d')
+    logging.info(f"Starting data_to_s3 {today}")
     
     try:
-        df = fetch_airport_data()
-        logging.info("finish df")
+        airport_dict = fetch_flight_date(-3, 1, today)
+        logging.info(f"finish airport_dict")
 
-        upload_to_s3(df, "airport")
-        logging.info("finish airport to s3")
+        airline_df = fetch_airline_data()
+        logging.info(f"finish airline_df")
+
+        euro = euro_data()
+        logging.info(f"finish euro")
+
+        df = fetch_flight_data(airport_dict, airline_df, euro, 0)
+        logging.info(f"finish df")
+
+        upload_to_s3(df, "flight_to")
+        logging.info(f"finish flight_to to s3")
     except Exception as e:
         logging.error(f"Error in data_to_s3: {e}")
         raise
@@ -26,17 +36,23 @@ def create_redshift_table():
         redshift_conn = redshift_hook.get_conn()
         cursor = redshift_conn.cursor()
 
-        cursor.execute("DROP TABLE IF EXISTS flight.airport;")
+        cursor.execute("DROP TABLE IF EXISTS flight.flight_to;")
         redshift_conn.commit()
         logging.info("drop table")
         
         cursor.execute("""
-            CREATE TABLE flight.airport (
-                airport_code VARCHAR(255),
-                airport_name VARCHAR(255),
-                airport_location VARCHAR(255),
-                country_code VARCHAR(255),
-                country_name VARCHAR(255)
+            CREATE TABLE flight.flight_to (
+                airline_code VARCHAR(255),
+                departure VARCHAR(255),
+                departure_at VARCHAR(255),
+                arrival VARCHAR(255),
+                arrival_at VARCHAR(255),
+                duration VARCHAR(255),
+                seats INTEGER,
+                price INTEGER,
+                airline_name VARCHAR(255),
+                departure_date INTEGER,
+                departure_min INTEGER
             );
         """)
         redshift_conn.commit()
@@ -55,7 +71,7 @@ default_args = {
 }
 
 dag = DAG(
-    'flight_airport',
+    'flight_to,
     default_args=default_args,
     schedule_interval='0 0 * * *',
     catchup=False,
@@ -78,9 +94,9 @@ create_redshift_table_task = PythonOperator(
 load_to_redshift_task = S3ToRedshiftOperator(
     task_id='load_to_redshift',
     schema='flight',
-    table='airport',
+    table='flight_to',
     s3_bucket=Variable.get('s3_bucket_name'),
-    s3_key='source/source_flight/airport.csv',
+    s3_key='source/source_flight/flight_to.csv',
     copy_options=['IGNOREHEADER 1', 'CSV'],
     aws_conn_id='s3_connection',
     redshift_conn_id='redshift_connection',

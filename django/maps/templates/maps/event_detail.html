@@ -39,7 +39,7 @@
                     {% for f in flight_to %}
                     <tr>
                         <td>
-                            <a class="nav-link" href="https://www.skyscanner.co.kr/transport/flights/ICN/{{ f.arrival }}/{{ f.departure_date }}/?adults=1&airlines={{ f.airline_code }}&departure-times={{ f.departure_min }}-{{ f.departure_min }}&preferdirects=true" target="_blank" rel="noopener noreferrer">{{ f.airline_name }}({{ f.airline_code }})</a>
+                            <a class="nav-link" href="https://www.skyscanner.co.kr/transport/flights/{{ f.departure }}/{{ f.arrival }}/{{ f.departure_date }}/?adults=1&airlines={{ f.airline_code }}&departure-times={{ f.departure_min }}-{{ f.departure_min }}&preferdirects=true" target="_blank" rel="noopener noreferrer">{{ f.airline_name }}({{ f.airline_code }})</a>
                         </td>
                         <td>{{ f.departure_at }}</td>
                         <td>{{ f.arrival_at }}</td>
@@ -72,7 +72,9 @@
                 <tbody>
                     {% for f in flight_from %}
                     <tr>
-                        <td>{{ f.airline_code }}</td>
+                        <td>
+                            <a class="nav-link" href="https://www.skyscanner.co.kr/transport/flights/{{ f.departure }}/{{ f.arrival }}/{{ f.departure_date }}/?adults=1&airlines={{ f.airline_code }}&departure-times={{ f.departure_min }}-{{ f.departure_min }}&preferdirects=true" target="_blank" rel="noopener noreferrer">{{ f.airline_name }}({{ f.airline_code }})</a>
+                        </td>
                         <td>{{ f.departure_at }}</td>
                         <td>{{ f.arrival_at }}</td>
                         <td>{{ f.duration }}</td>
