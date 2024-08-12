@@ -24,7 +24,7 @@ def data_to_s3(macros):
         df = fetch_flight_data(airport_dict, airline_df, euro, 0)
         logging.info(f"finish df")
 
-        upload_to_s3(df, "flight_to")
+        upload_to_s3(df, "flight_japan_to")
         logging.info(f"finish flight_to to s3")
     except Exception as e:
         logging.error(f"Error in data_to_s3: {e}")
@@ -36,12 +36,12 @@ def create_redshift_table():
         redshift_conn = redshift_hook.get_conn()
         cursor = redshift_conn.cursor()
 
-        cursor.execute("DROP TABLE IF EXISTS flight.flight_to;")
+        cursor.execute("DROP TABLE IF EXISTS flight.flight_japan_to;")
         redshift_conn.commit()
         logging.info("drop table")
         
         cursor.execute("""
-            CREATE TABLE flight.flight_to (
+            CREATE TABLE flight.flight_japan_to (
                 airline_code VARCHAR(255),
                 departure VARCHAR(255),
                 departure_at VARCHAR(255),
@@ -94,9 +94,9 @@ create_redshift_table_task = PythonOperator(
 load_to_redshift_task = S3ToRedshiftOperator(
     task_id='load_to_redshift',
     schema='flight',
-    table='flight_to',
+    table='flight_japan_to',
     s3_bucket=Variable.get('s3_bucket_name'),
-    s3_key='source/source_flight/flight_to.csv',
+    s3_key='source/source_flight/flight_japan_to.csv',
     copy_options=['IGNOREHEADER 1', 'CSV'],
     aws_conn_id='s3_connection',
     redshift_conn_id='redshift_connection',
