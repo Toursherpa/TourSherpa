@@ -3,6 +3,7 @@ services:
     image: apache/airflow:2.9.3
     environment:
       AIRFLOW_HOME: /opt/airflow
+      AIRFLOW_UID: 50000  # 직접 사용자 ID 지정
     entrypoint: /bin/bash -c 
     command: |
       chown -R "${AIRFLOW_UID}:0" /sources/{logs,dags,plugins} &&
