@@ -1,5 +1,6 @@
 from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
+from airflow.operators.sensors import ExternalTaskSensor
 from airflow.providers.amazon.aws.transfers.s3_to_redshift import S3ToRedshiftOperator
 from airflow.hooks.postgres_hook import PostgresHook
 import logging
