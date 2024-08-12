@@ -33,19 +33,21 @@
                         <th>소요 시간</th>
                         <th>남은 좌석 수</th>
                         <th>평균 가격 (원)</th>
+                        <th>예약 링크 (Skyscanner)</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for f in flight_to %}
                     <tr>
-                        <td>
-                            <a class="nav-link" href="https://www.skyscanner.co.kr/transport/flights/ICN/{{ f.arrival }}/{{ f.departure_date }}/?adults=1&airlines={{ f.airline_code }}&departure-times={{ f.departure_min }}-{{ f.departure_min }}&preferdirects=true" target="_blank" rel="noopener noreferrer">{{ f.airline_name }}({{ f.airline_code }})</a>
-                        </td>
+                        <td>{{ f.airline_name }}({{ f.airline_code }})</td>
                         <td>{{ f.departure_at }}</td>
                         <td>{{ f.arrival_at }}</td>
                         <td>{{ f.duration }}</td>
                         <td>{{ f.seats }}</td>
                         <td>{{ f.price }}</td>
+                        <td>
+                            <button class="btn btn-primary" onclick="window.open('https://www.skyscanner.co.kr/transport/flights/{{ f.departure }}/{{ f.arrival }}/{{ f.departure_date }}/?adults=1&airlines={{ f.airline_code }}&departure-times={{ f.departure_min }}-{{ f.departure_min }}&preferdirects=true')">예약 링크</button>
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -67,17 +69,21 @@
                         <th>소요 시간</th>
                         <th>남은 좌석 수</th>
                         <th>평균 가격 (원)</th>
+                        <th>예약 링크 (Skyscanner)</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for f in flight_from %}
+                    {% for f in flight_to %}
                     <tr>
-                        <td>{{ f.airline_code }}</td>
+                        <td>{{ f.airline_name }}({{ f.airline_code }})</td>
                         <td>{{ f.departure_at }}</td>
                         <td>{{ f.arrival_at }}</td>
                         <td>{{ f.duration }}</td>
                         <td>{{ f.seats }}</td>
                         <td>{{ f.price }}</td>
+                        <td>
+                            <button class="btn btn-primary" onclick="window.open('https://www.skyscanner.co.kr/transport/flights/{{ f.departure }}/{{ f.arrival }}/{{ f.departure_date }}/?adults=1&airlines={{ f.airline_code }}&departure-times={{ f.departure_min }}-{{ f.departure_min }}&preferdirects=true')">예약 링크</button>
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>

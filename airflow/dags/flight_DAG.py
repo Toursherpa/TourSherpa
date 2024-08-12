@@ -1,13 +1,14 @@
 from airflow.providers.amazon.aws.hooks.s3 import S3Hook
-from airflow.hooks.postgres_hook import PostgresHook
 import pandas as pd
-import boto3
 from io import StringIO
 from bs4 import BeautifulSoup
+from datetime import timedelta, datetime
 import requests
 import re
 import pytz
+import time
 from amadeus import Client, ResponseError
+from airflow.models import Variable
 
 def read_csv_from_s3(bucket_name, file_key):
     s3_hook = S3Hook(aws_conn_id='s3_connection')
@@ -25,6 +26,8 @@ def fetch_flight_date(startdelta, enddelta, today):
     df = read_csv_from_s3(bucket_name, file_key)
 
     airport_dict = {}
+
+    min_date = datetime.strptime(today, '%Y-%m-%d')
 
     for _, row in df.iterrows():
         airport_code = row['airport_code']
@@ -49,84 +52,6 @@ def fetch_flight_date(startdelta, enddelta, today):
 
     return airport_dict
 
-def fetch_flight_to(airport_dict):
-    amadeus = Client(
-        client_id = Variable.get("amadeus_id"),
-        client_secret = Variable.get("amadeus_secret")
-    )
-
-    response_list = []
-
-    for i in airport_dict:
-        for j in airport_dict[i]:
-            try:
-                response = amadeus.shopping.flight_offers_search.get(
-                    originLocationCode='ICN',
-                    destinationLocationCode=i,
-                    departureDate=j,
-                    adults=1,
-                    nonStop='true'
-                )
-            
-                response_list.append(response.data)
-
-                print("==========================================")
-                if response.data:
-                    response_list.append(response.data)
-
-                    print(response.data[0]['itineraries'][0]['segments'][0]['departure']['iataCode'])
-                    print(response.data[0]['itineraries'][0]['segments'][0]['departure']['at'])
-                else:
-                    print(i)
-                    print("비행편 없음")
-
-                time.sleep(1)
-            except ResponseError as error:
-                print(error)
-
-                return 0
-
-    return response_list
-
-def fetch_flight_from(airport_dict):
-    amadeus = Client(
-        client_id = Variable.get("amadeus_id"),
-        client_secret = Variable.get("amadeus_secret")
-    )
-
-    response_list = []
-
-    for i in airport_dict:
-        for j in airport_dict[i]:
-            try:
-                response = amadeus.shopping.flight_offers_search.get(
-                    originLocationCode=i,
-                    destinationLocationCode='ICN',
-                    departureDate=j,
-                    adults=1,
-                    nonStop='true'
-                )
-            
-                response_list.append(response.data)
-
-                print("==========================================")
-                if response.data:
-                    response_list.append(response.data)
-
-                    print(response.data[0]['itineraries'][0]['segments'][0]['departure']['iataCode'])
-                    print(response.data[0]['itineraries'][0]['segments'][0]['departure']['at'])
-                else:
-                    print(i)
-                    print("비행편 없음")
-
-                time.sleep(1)
-            except ResponseError as error:
-                print(error)
-
-                return 0
-
-    return response_list
-
 def fetch_airline_data():
     url = "https://www.airport.kr/ap/ko/dep/apAirlinesList.do"
     res = requests.get(url)
@@ -150,11 +75,68 @@ def fetch_airline_data():
 
     return pd.DataFrame(airline_list)
 
-def fetch_flight_data(response_list, airline_df):
+def euro_data():
+    url = "https://m.stock.naver.com/marketindex/exchange/FX_EURKRW"
+    res = requests.get(url)
+    soup = BeautifulSoup(res.text, 'html.parser')
+
+    euro = float(soup.find_all("strong")[1].text[: -3].replace(",", ""))
+
+    return euro
+
+def fetch_flight_data(airport_dict, airline_df, euro, check):
+    amadeus = Client(
+        client_id = Variable.get("amadeus_id"),
+        client_secret = Variable.get("amadeus_secret")
+    )
+    
+    response_list = []
+    count = 0
+
+    for i in airport_dict:
+        date_list = sorted(list(airport_dict[i]))
+
+        for j in date_list:
+            count += 1
+
+            if check == 0:
+                location = ['ICN', i]
+            else:
+                location = [i, 'ICN']
+
+            while True:
+                try:
+                    response = amadeus.shopping.flight_offers_search.get(
+                        originLocationCode=location[0],
+                        destinationLocationCode=location[1],
+                        departureDate=j,
+                        adults=1,
+                        nonStop='true'
+                    )
+
+                    print("==========================================")
+                    if response.data:
+                        response_list.append(response.data)
+
+                        print(response.data[0]['itineraries'][0]['segments'][0]['arrival']['iataCode'], response.data[0]['itineraries'][0]['segments'][0]['departure']['iataCode'], f"[{count}]")
+                        print(response.data[0]['itineraries'][0]['segments'][0]['departure']['at'])
+                    else:
+                        print(i, f"[{count}]")
+                        print("비행편 없음")
+
+                    time.sleep(1)
+
+                    break
+                except ResponseError as error:
+                    print(error)
+
+                    time.sleep(2)
+
     flight_list = []
 
     for i in response_list:
         for j in i:
+            print("==========================================")
             info_dict = dict()
         
             info_dict['airline_code'] = j['itineraries'][0]['segments'][0]['carrierCode']
@@ -165,22 +147,20 @@ def fetch_flight_data(response_list, airline_df):
             info_dict['duration'] = j['itineraries'][0]['segments'][0]['duration'][2: ].replace("H", "시간 ").replace("M", "분")
             info_dict['seats'] = j['numberOfBookableSeats']
             info_dict['price'] = j['price']['total']
-        
+            
             flight_list.append(info_dict)
+
+            print(info_dict)
 
     flight_df = pd.DataFrame(flight_list)
 
+    print("1==========================================")
+    print(flight_df)
+
     df = pd.merge(flight_df, airline_df, on='airline_code', how='inner')
 
-    url = "https://m.stock.naver.com/marketindex/exchange/FX_EURKRW"
-    res = requests.get(url)
-    soup = BeautifulSoup(res.text, 'html.parser')
-
-    er = float(soup.find_all("strong")[1].text[: -3].replace(",", ""))
-
-    df['price'] = df['price'] * er
-
-    df['price'] = df['price'].round().astype(int)
+    print("2==========================================")
+    print(df)
 
     def date_change(value):
         date = datetime.strptime(value, '%Y-%m-%dT%H:%M:%S')
@@ -192,13 +172,19 @@ def fetch_flight_data(response_list, airline_df):
 
     departure_date = []
     departure_min = []
+    price_won = []
 
     for i in range(len(df)):
         departure_date.append(date_change(df['departure_at'][i]))
         departure_min.append(min_change(df['departure_at'][i]))
+        price_won.append(int(float(df['price'][i]) * euro))
 
     df['departure_date'] = departure_date
     df['departure_min'] = departure_min
+    df['price'] = price_won
+
+    print("3==========================================")
+    print(df)
 
     return df
 
@@ -258,7 +244,7 @@ def fetch_airport_data():
     for i, v in enumerate(airport_list):
         address = v['airport_name']
 
-        lat, lng = get_lat_lng(address, api_key)
+        lat, lng = get_lat_lng(address)
         airport_list[i]['airport_location'] = [lat, lng]
 
     return pd.DataFrame(airport_list)
