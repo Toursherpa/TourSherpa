@@ -3,13 +3,15 @@ import pandas as pd
 from geopy.distance import geodesic
 from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
+from airflow.sensors.external_task import ExternalTaskSensor
 from airflow.providers.amazon.aws.hooks.s3 import S3Hook
 from airflow.providers.amazon.aws.transfers.s3_to_redshift import S3ToRedshiftOperator
 from airflow.hooks.postgres_hook import PostgresHook
-from datetime import timedelta
+from datetime import timedelta, datetime
 from airflow.utils.dates import days_ago
 from airflow.models import Variable
 from io import StringIO
+import pytz
 
 '''
 geodesic 라이브러리 설치 필요
@@ -21,14 +23,17 @@ geodesic 라이브러리 설치 필요
 04. S3적재, Redshift COPY
 '''
 
+kst = pytz.timezone('Asia/Seoul')
 
-def read_data_from_s3(**context):
-    logging.info("Starting read_data_from_s3")
+def read_data_from_s3(macros, **context):
+    today = (macros.datetime.now().astimezone(kst)).strftime('%Y-%m-%d')
+
+    logging.info(f"Starting read_data_from_s3 {today}")
     try:
         s3_hook = S3Hook(aws_conn_id='s3_connection')
         bucket_name = Variable.get('s3_bucket_name')
 
-        events_key = 'source/source_TravelEvents/TravelEvents.csv'
+        events_key = f'source/source_TravelEvents/{today}/TravelEvents.csv'
         airports_key = 'source/source_flight/flight_airport.csv'
 
         events_file_obj = s3_hook.get_key(key=events_key, bucket_name=bucket_name)
@@ -84,6 +89,8 @@ def find_nearest_airports(**context):
                     'id': event['id'],
                     'title': event['title'],
                     'country': event['country'],
+                    'start_date': str(event['start_local'])[: 10],
+                    'end_date': str(event['end_local'])[: 10],
                     'airport_code': nearest_airport['airport_code'],
                     'airport_name': nearest_airport['airport_name']
                 })
@@ -112,19 +119,25 @@ def preprocess_redshift_table():
         redshift_conn = redshift_hook.get_conn()
         cursor = redshift_conn.cursor()
 
-        cursor.execute(
-            f"DROP TABLE IF EXISTS {Variable.get('redshift_schema_places')}.{Variable.get('redshift_table_nearest')};")
-        cursor.execute(f"""
-            CREATE TABLE {Variable.get('redshift_schema_places')}.{Variable.get('redshift_table_nearest')} (
+        cursor.execute("DROP TABLE IF EXISTS public.nearest_airports;")
+        redshift_conn.commit()
+        
+        cursor.execute("""
+            CREATE TABLE public.nearest_airports (
                 id VARCHAR(255),
                 title VARCHAR(255),
                 country VARCHAR(255),
+                start_date VARCHAR(255),
+                end_date VARCHAR(255),
                 airport_code VARCHAR(10),
                 airport_name VARCHAR(255)
             );
         """)
         redshift_conn.commit()
-        logging.info(f"Redshift table {Variable.get('redshift_table_nearest')} has been dropped and recreated.")
+
+        redshift_conn.close()
+        
+        logging.info(f"Redshift table nearest_airports has been dropped and recreated.")
 
     except Exception as e:
         logging.error(f"Error in preprocess_redshift_table: {e}")
@@ -133,7 +146,7 @@ def preprocess_redshift_table():
 
 default_args = {
     'owner': 'airflow',
-    'start_date': days_ago(1),
+    'start_date': datetime(2024, 8, 9, tzinfo=kst),
     'retries': 1,
     'retry_delay': timedelta(minutes=5),
 }
@@ -142,8 +155,28 @@ dag = DAG(
     'nearest_airports_dag',
     default_args=default_args,
     description='Find nearest airports for events, save to S3 and Redshift',
-    schedule_interval='@daily',
+    schedule_interval=None,
     catchup=False,
+)
+
+wait_for_event_task = ExternalTaskSensor(
+    task_id='wait_for_event_task',
+    external_dag_id='update_TravelEvents_Dags',
+    external_task_id='upload_TravelEvents_data', 
+    mode='poke',
+    timeout=600,
+    poke_interval=60,
+    dag=dag,
+)
+
+wait_for_airport_task = ExternalTaskSensor(
+    task_id='wait_for_airport_task',
+    external_dag_id='flight_airport',
+    external_task_id='data_to_s3', 
+    mode='poke',
+    timeout=600,
+    poke_interval=60,
+    dag=dag,
 )
 
 read_data_from_s3_task = PythonOperator(
@@ -169,14 +202,14 @@ preprocess_redshift_task = PythonOperator(
 
 load_to_redshift_task = S3ToRedshiftOperator(
     task_id='load_to_redshift',
-    schema=Variable.get('redshift_schema_places'),
-    table=Variable.get('redshift_table_nearest'),
-    s3_bucket=Variable.get('my_s3_bucket'),
+    schema='public',
+    table='nearest_airports',
+    s3_bucket=Variable.get('s3_bucket_name'),
     s3_key='source/source_flight/nearest_airports.csv',
     copy_options=['IGNOREHEADER 1', 'CSV'],
-    aws_conn_id='TravelEvent_s3_conn',
-    redshift_conn_id='my_redshift_connection_id',
+    aws_conn_id='s3_connection',
+    redshift_conn_id='redshift_connection',
     dag=dag,
 )
 
-read_data_from_s3_task >> find_nearest_airports_task >> preprocess_redshift_task >> load_to_redshift_task
+wait_for_event_task >> wait_for_airport_task >> read_data_from_s3_task >> find_nearest_airports_task >> preprocess_redshift_task >> load_to_redshift_task
