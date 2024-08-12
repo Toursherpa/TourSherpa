@@ -3,7 +3,7 @@ import pandas as pd
 from geopy.distance import geodesic
 from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
-from airflow.operators.sensors import ExternalTaskSensor
+from airflow.sensors.external_task import ExternalTaskSensor
 from airflow.providers.amazon.aws.hooks.s3 import S3Hook
 from airflow.providers.amazon.aws.transfers.s3_to_redshift import S3ToRedshiftOperator
 from airflow.hooks.postgres_hook import PostgresHook
