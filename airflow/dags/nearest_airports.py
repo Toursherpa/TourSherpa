@@ -3,6 +3,7 @@ import pandas as pd
 from geopy.distance import geodesic
 from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
+from airflow.operators.sensors import ExternalTaskSensor
 from airflow.providers.amazon.aws.hooks.s3 import S3Hook
 from airflow.providers.amazon.aws.transfers.s3_to_redshift import S3ToRedshiftOperator
 from airflow.hooks.postgres_hook import PostgresHook
@@ -154,8 +155,28 @@ dag = DAG(
     'nearest_airports_dag',
     default_args=default_args,
     description='Find nearest airports for events, save to S3 and Redshift',
-    schedule_interval='0 0 * * *',
+    schedule_interval=None,
     catchup=False,
+)
+
+wait_for_event_task = ExternalTaskSensor(
+    task_id='wait_for_event_task',
+    external_dag_id='update_TravelEvents_Dags',
+    external_task_id='upload_TravelEvents_data', 
+    mode='poke',
+    timeout=600,
+    poke_interval=60,
+    dag=dag,
+)
+
+wait_for_airport_task = ExternalTaskSensor(
+    task_id='wait_for_airport_task',
+    external_dag_id='flight_airport',
+    external_task_id='data_to_s3', 
+    mode='poke',
+    timeout=600,
+    poke_interval=60,
+    dag=dag,
 )
 
 read_data_from_s3_task = PythonOperator(
@@ -191,4 +212,4 @@ load_to_redshift_task = S3ToRedshiftOperator(
     dag=dag,
 )
 
-read_data_from_s3_task >> find_nearest_airports_task >> preprocess_redshift_task >> load_to_redshift_task
+wait_for_event_task >> wait_for_airport_task >> read_data_from_s3_task >> find_nearest_airports_task >> preprocess_redshift_task >> load_to_redshift_task
