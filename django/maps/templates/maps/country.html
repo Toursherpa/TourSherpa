@@ -1,6 +1,6 @@
 {% extends 'maps/base.html' %}
 {% load static %}
-
+{% load custom_filters %}
 {% block title %}Dashboard{% endblock %}
 
 {% block content %}
@@ -40,24 +40,24 @@
             <table class="table table-striped datatablesSimple">
                 <thead>
                     <tr>
-                        <th>Title</th>
-                        <th>Rank</th>
-                        <th>PHQ Attendance</th>
-                        <th>Time Start</th>
-                        <th>Time End</th>
-                        <th>Address</th>
-                        <th>Region</th>
+                        <th>행사명</th>
+                        <th>유명도</th>
+                        <th>예상 참석자 수</th>
+                        <th>시작 시간</th>
+                        <th>종료 시간</th>
+                        <th>주소</th>
+                        <th>지역</th>
                     </tr>
                 </thead>
                 <tfoot>
                     <tr>
-                        <th>Title</th>
-                        <th>Rank</th>
-                        <th>PHQ Attendance</th>
-                        <th>Time Start</th>
-                        <th>Time End</th>
-                        <th>Address</th>
-                        <th>Region</th>
+                        <th>행사명</th>
+                        <th>유명도</th>
+                        <th>예상 참석자 수</th>
+                        <th>시작 시간</th>
+                        <th>종료 시간</th>
+                        <th>주소</th>
+                        <th>지역</th>
                     </tr>
                 </tfoot>
                 <tbody>
@@ -66,8 +66,8 @@
                         <td><a class="nav-link" href="{% url 'event_detail' country=country event_id=event.EventID %}">{{ event.Title }}</a></td>
                         <td>{{ event.Rank }}</td>
                         <td>{{ event.PhqAttendance }}</td>
-                        <td>{{ event.TimeStart }}</td>
-                        <td>{{ event.TimeEnd }}</td>
+                        <td>{{ event.TimeStart|format_date_str }}</td>
+                        <td>{{ event.TimeEnd|format_date_str }}</td>
                         <td>{{ event.Address }}</td>
                         <td>{{ event.Region }}</td>
                     </tr>
