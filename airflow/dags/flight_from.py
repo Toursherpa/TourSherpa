@@ -1,5 +1,6 @@
 from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
+from airflow.sensors.external_task import ExternalTaskSensor
 from airflow.providers.amazon.aws.transfers.s3_to_redshift import S3ToRedshiftOperator
 from airflow.hooks.postgres_hook import PostgresHook
 import logging
@@ -8,14 +9,24 @@ from flight_DAG import *
 kst = pytz.timezone('Asia/Seoul')
 
 def data_to_s3(macros):
-    logging.info("Starting data_to_s3")
+    today = (macros.datetime.now().astimezone(kst)).strftime('%Y-%m-%d')
+    logging.info(f"Starting data_to_s3 {today}")
     
     try:
-        df = fetch_airport_data()
+        airport_dict = fetch_flight_date(0, 4, today)
+        logging.info("finish airport_dict")
+
+        airline_df = fetch_airline_data()
+        logging.info("finish airline_df")
+
+        euro = euro_data()
+        logging.info("finish euro")
+
+        df = fetch_flight_data(airport_dict, airline_df, euro, 1)
         logging.info("finish df")
 
-        upload_to_s3(df, "airport")
-        logging.info("finish airport to s3")
+        upload_to_s3(df, "flight_japan_from")
+        logging.info("finish flight_from to s3")
     except Exception as e:
         logging.error(f"Error in data_to_s3: {e}")
         raise
@@ -26,17 +37,23 @@ def create_redshift_table():
         redshift_conn = redshift_hook.get_conn()
         cursor = redshift_conn.cursor()
 
-        cursor.execute("DROP TABLE IF EXISTS flight.airport;")
+        cursor.execute("DROP TABLE IF EXISTS flight.flight_japan_from;")
         redshift_conn.commit()
         logging.info("drop table")
         
         cursor.execute("""
-            CREATE TABLE flight.airport (
-                airport_code VARCHAR(255),
-                airport_name VARCHAR(255),
-                airport_location VARCHAR(255),
-                country_code VARCHAR(255),
-                country_name VARCHAR(255)
+            CREATE TABLE flight.flight_japan_from (
+                airline_code VARCHAR(255),
+                departure VARCHAR(255),
+                departure_at VARCHAR(255),
+                arrival VARCHAR(255),
+                arrival_at VARCHAR(255),
+                duration VARCHAR(255),
+                seats INTEGER,
+                price INTEGER,
+                airline_name VARCHAR(255),
+                departure_date INTEGER,
+                departure_min INTEGER
             );
         """)
         redshift_conn.commit()
@@ -55,10 +72,20 @@ default_args = {
 }
 
 dag = DAG(
-    'flight_airport',
+    'flight_from',
     default_args=default_args,
-    schedule_interval='0 0 * * *',
+    schedule_interval=None,
     catchup=False,
+)
+
+wait_for_nearest_task = ExternalTaskSensor(
+    task_id='wait_for_nearest_task',
+    external_dag_id='nearest_airports_dag',
+    external_task_id='find_nearest_airports', 
+    mode='poke',
+    timeout=600,
+    poke_interval=60,
+    dag=dag,
 )
 
 data_to_s3_task = PythonOperator(
@@ -78,13 +105,13 @@ create_redshift_table_task = PythonOperator(
 load_to_redshift_task = S3ToRedshiftOperator(
     task_id='load_to_redshift',
     schema='flight',
-    table='airport',
+    table='flight_japan_from',
     s3_bucket=Variable.get('s3_bucket_name'),
-    s3_key='source/source_flight/airport.csv',
+    s3_key='source/source_flight/flight_japan_from.csv',
     copy_options=['IGNOREHEADER 1', 'CSV'],
     aws_conn_id='s3_connection',
     redshift_conn_id='redshift_connection',
     dag=dag,
 )
 
-data_to_s3_task >> create_redshift_table_task >> load_to_redshift_task
+wait_for_nearest_task >> data_to_s3_task >> create_redshift_table_task >> load_to_redshift_task
