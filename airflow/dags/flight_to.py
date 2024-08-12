@@ -72,7 +72,7 @@ default_args = {
 }
 
 dag = DAG(
-    'flight_to,
+    'flight_to',
     default_args=default_args,
     schedule_interval=None,
     catchup=False,
