@@ -8,6 +8,8 @@ import pandas as pd
 from io import StringIO
 import pytz
 from airflow.hooks.postgres_hook import PostgresHook
+from googletrans import Translator
+import time
 import ast
 import re
 
@@ -23,7 +25,7 @@ def read_data_from_s3(**kwargs):
     s3_hook = S3Hook('s3_connection')
     s3_bucket_name = Variable.get('s3_bucket_name')
 
-    s3_key = f'source/source_TravelEvents/TravelEvents.csv'
+    s3_key = f'source/source_TravelEvents/{today}/TravelEvents.csv'
     if s3_hook.check_for_key(key=s3_key, bucket_name=s3_bucket_name):
         file_obj = s3_hook.get_key(key=s3_key, bucket_name=s3_bucket_name)
         file_content = file_obj.get()['Body'].read().decode('utf-8')
@@ -68,7 +70,15 @@ def transform_data(**kwargs):
         # 필요한 컬럼만 선택하고 이름 변경
         df = df[['id', 'title', 'description', 'category', 'rank', 'phq_attendance', 'start_local', 'end_local', 'location', 'geo', 'geo', 'country', 'predicted_event_spend']]
         df.columns = ['EventID', 'Title', 'Description', 'Category', 'Rank', 'PhqAttendance', 'TimeStart', 'TimeEnd', 'LocationID', 'Address', 'Region', 'Country', 'PredictedEventSpend']
+        category_mapping = {
+            'sports': '스포츠',
+            'festivals': '축제',
+            'expos': '박람회',
+            'concerts': '콘서트'
+        }
 
+        df['Category'] = df['Category'].map(category_mapping).fillna(df['Category'])
+        df['Description'] = df['Description'].apply(lambda x: remove_source_info(x))
         df['Region'] = df['Region'].apply(lambda x: extract_formatted_region(x))
         df['Address'] = df['Address'].apply(lambda x: extract_formatted_address(x))
         df['Title'] = df['Title'].apply(lambda x: x[:1000])  # Title 컬럼을 최대 1000자로 제한
@@ -76,13 +86,48 @@ def transform_data(**kwargs):
         df['LocationID'] = df['LocationID'].apply(lambda x: x[:1000])  # LocationID 컬럼을 최대 1000자로 제한
         df['Address'] = df['Address'].apply(lambda x: x[:2000])  # Address 컬럼을 최대 2000자로 제한
 
+        def translate_to_korean(text):
+            translator = Translator()
+            try:
+                translated = translator.translate(text, dest='ko').text
+            except Exception as e:
+                print(f"번역 중 오류 발생: {e}")
+                translated = None  # 또는 필요에 따라 다른 기본값 설정
+            time.sleep(0.5)
+            return translated
+
+        # 예제 실행
+        text_to_translate = "This is a test sentence."
+        translated_text = translate_to_korean(text_to_translate)
+        if translated_text is None:
+            print("번역 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.")
+        else:
+            print(f"번역 결과: {translated_text}")
+
+        # 각 필드를 번역하고 최대 길이 제한 적용
+        df['Title'] = df['Title'].apply(lambda x: translate_to_korean(x))
+        print("Title")
+        df['Description'] = df['Description'].apply(lambda x: translate_to_korean(x))
+        print("Description")
+        df['Region'] = df['Region'].apply(lambda x: translate_to_korean(x))
+        print("Region")
+
+        df['Description'] = df['Description'].apply(lambda x: remove_source_info_empty(x))
+
         transformed_data = df.to_dict(orient='records')
     else:
         print("데이터가 올바르게 준비되지 않았습니다.")
 
     kwargs['ti'].xcom_push(key='transformed_data', value=transformed_data)
 
+def remove_source_info(description):
+    pattern = r'^Sourced from predicthq\.com - '
+    return re.sub(pattern, '', description)
 
+def remove_source_info_empty(description):
+    pattern = r'^predicthq.com에서 소스'
+    return re.sub(pattern, '상세정보 아직 없음.', description)
+    
 def generate_and_save_data(**kwargs):
     transformed_data = kwargs['ti'].xcom_pull(key='transformed_data', task_ids='transform_data')
     redshift_conn_id = 'redshift_connection'
@@ -158,7 +203,7 @@ dag = DAG(
     'update_TravelEvents_Dags_to_Redshift',
     default_args=default_args,
     description='A DAG to update Travel Events data and save it to Redshift',
-    schedule_interval='@daily',
+    schedule_interval=None,
     catchup=False,
 )
 
