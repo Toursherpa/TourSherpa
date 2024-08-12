@@ -3,15 +3,9 @@ services:
     image: apache/airflow:2.9.3
     environment:
       AIRFLOW_HOME: /opt/airflow
-      AIRFLOW_UID: 50000  # 직접 사용자 ID 지정
-    entrypoint: /bin/bash -c 
-    command: |
-      chown -R "${AIRFLOW_UID}:0" /sources/{logs,dags,plugins} &&
-      airflow db upgrade &&
-      airflow users create --username admin --password admin --firstname Admin --lastname User --role Admin --email admin@airflow.com &&
-      airflow celery worker
     volumes:
       - ./dags:/opt/airflow/dags
       - ./logs:/opt/airflow/logs
       - ./tmp:/tmp
-      - ./airflow.cfg:/opt/airflow/airflow.cfg
+      - ./airflow.cfg:/opt/airflow/airflow.cfg 
+    command: celery worker
