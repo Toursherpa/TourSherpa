@@ -94,6 +94,9 @@ def fetch_flight_data(airport_dict, airline_df, euro, check):
     count = 0
 
     for i in airport_dict:
+        if i not in ('NRT', 'KIX', 'NGO', 'FUK', 'CTS', 'OKA'):
+            continue
+            
         date_list = sorted(list(airport_dict[i]))
 
         for j in date_list:
@@ -114,15 +117,9 @@ def fetch_flight_data(airport_dict, airline_df, euro, check):
                         nonStop='true'
                     )
 
-                    print("==========================================")
                     if response.data:
                         response_list.append(response.data)
-
-                        print(response.data[0]['itineraries'][0]['segments'][0]['arrival']['iataCode'], response.data[0]['itineraries'][0]['segments'][0]['departure']['iataCode'], f"[{count}]")
-                        print(response.data[0]['itineraries'][0]['segments'][0]['departure']['at'])
                     else:
-                        print(i, f"[{count}]")
-                        print("비행편 없음")
 
                     time.sleep(1)
 
@@ -136,7 +133,6 @@ def fetch_flight_data(airport_dict, airline_df, euro, check):
 
     for i in response_list:
         for j in i:
-            print("==========================================")
             info_dict = dict()
         
             info_dict['airline_code'] = j['itineraries'][0]['segments'][0]['carrierCode']
@@ -150,17 +146,9 @@ def fetch_flight_data(airport_dict, airline_df, euro, check):
             
             flight_list.append(info_dict)
 
-            print(info_dict)
-
     flight_df = pd.DataFrame(flight_list)
 
-    print("1==========================================")
-    print(flight_df)
-
     df = pd.merge(flight_df, airline_df, on='airline_code', how='inner')
-
-    print("2==========================================")
-    print(df)
 
     def date_change(value):
         date = datetime.strptime(value, '%Y-%m-%dT%H:%M:%S')
@@ -182,9 +170,6 @@ def fetch_flight_data(airport_dict, airline_df, euro, check):
     df['departure_date'] = departure_date
     df['departure_min'] = departure_min
     df['price'] = price_won
-
-    print("3==========================================")
-    print(df)
 
     return df
 
