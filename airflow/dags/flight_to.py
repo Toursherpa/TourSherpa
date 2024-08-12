@@ -1,5 +1,6 @@
 from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
+from airflow.operators.sensors import ExternalTaskSensor
 from airflow.providers.amazon.aws.transfers.s3_to_redshift import S3ToRedshiftOperator
 from airflow.hooks.postgres_hook import PostgresHook
 import logging
@@ -73,8 +74,18 @@ default_args = {
 dag = DAG(
     'flight_to,
     default_args=default_args,
-    schedule_interval='0 0 * * *',
+    schedule_interval=None,
     catchup=False,
+)
+
+wait_for_nearest_task = ExternalTaskSensor(
+    task_id='wait_for_nearest_task',
+    external_dag_id='nearest_airports_dag',
+    external_task_id='find_nearest_airports', 
+    mode='poke',
+    timeout=600,
+    poke_interval=60,
+    dag=dag,
 )
 
 data_to_s3_task = PythonOperator(
@@ -103,4 +114,4 @@ load_to_redshift_task = S3ToRedshiftOperator(
     dag=dag,
 )
 
-data_to_s3_task >> create_redshift_table_task >> load_to_redshift_task
+wait_for_nearest_task >> data_to_s3_task >> create_redshift_table_task >> load_to_redshift_task
