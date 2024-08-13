@@ -126,6 +126,8 @@ def fetch_flight_data(airport_dict, airline_df, euro, check):
                         nonStop='true'
                     )
 
+                    logging.info(f'[{count}]')
+
                     if response.data:
                         response_list.append(response.data)
 
