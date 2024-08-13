@@ -241,4 +241,10 @@ trigger_fourth_dag = TriggerDagRunOperator(
     dag=dag,
 )
 
-fetch_and_upload_task >> read_data_from_s3_task >> update_combined_df >> upload_to_s3_task >> trigger_second_dag >> trigger_third_dag >> trigger_fourth_dag
+trigger_fifth_dag = TriggerDagRunOperator(
+    task_id='trigger_fifth_dag',
+    trigger_dag_id='google_hotel_list',  # 다섯 번째 DAG의 ID
+    dag=dag,
+)
+
+fetch_and_upload_task >> read_data_from_s3_task >> update_combined_df >> upload_to_s3_task >> trigger_second_dag >> trigger_third_dag >> trigger_fourth_dag >> trigger_fifth_dag
