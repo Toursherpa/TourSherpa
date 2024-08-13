@@ -25,6 +25,7 @@ geodesic 라이브러리 설치 필요
 
 kst = pytz.timezone('Asia/Seoul')
 
+
 def read_data_from_s3(macros, **context):
     today = (macros.datetime.now().astimezone(kst)).strftime('%Y-%m-%d')
 
@@ -121,7 +122,7 @@ def preprocess_redshift_table():
 
         cursor.execute("DROP TABLE IF EXISTS public.nearest_airports;")
         redshift_conn.commit()
-        
+
         cursor.execute("""
             CREATE TABLE public.nearest_airports (
                 id VARCHAR(255),
@@ -136,7 +137,7 @@ def preprocess_redshift_table():
         redshift_conn.commit()
 
         redshift_conn.close()
-        
+
         logging.info(f"Redshift table nearest_airports has been dropped and recreated.")
 
     except Exception as e:
@@ -157,26 +158,6 @@ dag = DAG(
     description='Find nearest airports for events, save to S3 and Redshift',
     schedule_interval=None,
     catchup=False,
-)
-
-wait_for_event_task = ExternalTaskSensor(
-    task_id='wait_for_event_task',
-    external_dag_id='update_TravelEvents_Dags',
-    external_task_id='upload_TravelEvents_data', 
-    mode='poke',
-    timeout=600,
-    poke_interval=60,
-    dag=dag,
-)
-
-wait_for_airport_task = ExternalTaskSensor(
-    task_id='wait_for_airport_task',
-    external_dag_id='flight_airport',
-    external_task_id='data_to_s3', 
-    mode='poke',
-    timeout=600,
-    poke_interval=60,
-    dag=dag,
 )
 
 read_data_from_s3_task = PythonOperator(
@@ -212,4 +193,4 @@ load_to_redshift_task = S3ToRedshiftOperator(
     dag=dag,
 )
 
-wait_for_event_task >> wait_for_airport_task >> read_data_from_s3_task >> find_nearest_airports_task >> preprocess_redshift_task >> load_to_redshift_task
+read_data_from_s3_task >> find_nearest_airports_task >> preprocess_redshift_task >> load_to_redshift_task
