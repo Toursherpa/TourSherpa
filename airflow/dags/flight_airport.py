@@ -7,9 +7,13 @@ import logging
 from airflow.providers.amazon.aws.hooks.s3 import S3Hook
 import pandas as pd
 from io import StringIO
+from bs4 import BeautifulSoup
 from datetime import timedelta, datetime
 import requests
+import re
 import pytz
+import time
+from amadeus import Client, ResponseError
 from airflow.models import Variable
 
 kst = pytz.timezone('Asia/Seoul')
@@ -22,12 +26,6 @@ def fetch_airport_data():
             "key": Variable.get('GOOGLE_API_KEY')
         }
         response = requests.get(base_url, params=params)
-        
-        # API 요청 응답 로그 출력
-        logging.info(f"API 요청 URL: {response.url}")
-        logging.info(f"응답 코드: {response.status_code}")
-        logging.info(f"응답 내용: {response.text}")
-
         if response.status_code == 200:
             results = response.json().get("results", [])
             if results:
@@ -76,13 +74,7 @@ def fetch_airport_data():
     for i, v in enumerate(airport_list):
         address = v['airport_name']
 
-        lat_lng = get_lat_lng(address)
-        if lat_lng is None:
-            logging.warning(f"{address}에 대한 좌표를 가져오지 못했습니다.")
-            lat, lng = None, None
-        else:
-            lat, lng = lat_lng
-
+        lat, lng = get_lat_lng(address)
         airport_list[i]['airport_location'] = [lat, lng]
 
     return pd.DataFrame(airport_list)
@@ -95,19 +87,18 @@ def upload_to_s3(df, filename):
     s3_bucket_name = Variable.get('s3_bucket_name')
     s3_result_key = f'source/source_flight/{filename}.csv'
     s3_hook.load_file(filename=csv_filename, key=s3_result_key, bucket_name=s3_bucket_name, replace=True)
-    logging.info(f"S3에 {filename}.csv 파일 업로드 완료: {s3_result_key}")
 
 def data_to_s3(macros):
-    logging.info("data_to_s3 시작")
+    logging.info("Starting data_to_s3")
     
     try:
         df = fetch_airport_data()
-        logging.info("공항 데이터 프레임 생성 완료")
+        logging.info("finish df")
 
         upload_to_s3(df, "airport")
-        logging.info("공항 데이터를 S3에 업로드 완료")
+        logging.info("finish airport to s3")
     except Exception as e:
-        logging.error(f"data_to_s3 함수에서 오류 발생: {e}")
+        logging.error(f"Error in data_to_s3: {e}")
         raise
 
 def create_redshift_table():
@@ -118,7 +109,7 @@ def create_redshift_table():
 
         cursor.execute("DROP TABLE IF EXISTS flight.airport;")
         redshift_conn.commit()
-        logging.info("기존 flight.airport 테이블 삭제 완료")
+        logging.info("drop table")
         
         cursor.execute("""
             CREATE TABLE flight.airport (
@@ -130,11 +121,11 @@ def create_redshift_table():
             );
         """)
         redshift_conn.commit()
-        logging.info("flight.airport 테이블 생성 완료")
+        logging.info("create table")
 
         redshift_conn.close()
     except Exception as e:
-        logging.error(f"create_redshift_table 함수에서 오류 발생: {e}")
+        logging.error(f"Error in create_redshift_table: {e}")
         raise
 
 default_args = {
