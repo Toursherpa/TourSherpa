@@ -137,3 +137,24 @@ class NearestAirport(models.Model):
 
     def __str__(self):
         return self.id or self.airline_code
+    
+
+
+class PlaceforEvent(models.Model):
+    event_id = models.CharField(max_length=256, primary_key=True)  
+    event_title = models.CharField(max_length=256)  
+    place_name = models.CharField(max_length=256)  
+    address = models.CharField(max_length=256)  
+    rating = models.FloatField(null=True)  
+    number_of_reviews = models.IntegerField(null=True)  
+    review = models.TextField(blank=True, null=True) 
+    types = models.CharField(max_length=256, blank=True, null=True)  
+    opening_hours = models.TextField(blank=True, null=True)  
+
+
+    class Meta:
+        db_table = 'events_places_raw'  
+        #unique_together = (('event_id', 'place_name'),)  
+
+    def __str__(self):
+        return self.place_name

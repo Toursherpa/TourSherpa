@@ -1,3 +1,5 @@
+airflow/docker-compose.yml
+airflow/Dockerfile
 airflow/logs/
 django/logs/
 django/Lib/
