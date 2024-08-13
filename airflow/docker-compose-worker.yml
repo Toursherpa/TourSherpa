@@ -1,5 +1,6 @@
 services:
   airflow-worker:
+    build: .
     image: apache/airflow:2.9.3
     environment:
       AIRFLOW_HOME: /opt/airflow
