@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import  HotelsForEvent, EventsForHotel, TravelEvent, HotelList, FlightTo, FlightFrom, Airline, Airport, NearestAirport, PlaceforEvent
+from .models import  HotelsForEvent, EventsForHotel, TravelEvent, HotelList, FlightTo, FlightFrom, Airport, NearestAirport, PlaceforEvent
 
 
 
