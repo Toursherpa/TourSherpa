@@ -120,6 +120,37 @@
             </table>
         </div>
     </div>
+    <div class="card mt-4">
+        <div class="card-header">
+            <h2>근처 카페, 레스토랑</h2>
+        </div>
+        <div class="card-body">
+            <table class="table table-striped datatablesSimple">
+                <thead>
+                    <tr>
+                        <th scope="col">가게명</th>
+                        <th scope="col">분류</th>
+                        <th scope="col">평점</th>
+                        <th scope="col">주소</th>
+                        <th scope="col">리뷰수</th>
+                        <th scope="col">리뷰</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for place in place_cafe_resturant %}
+                    <tr>
+                        <td>{{ place.place_name }}</td>
+                        <td>{{ place.types }}</td>
+                        <td>{{ place.rating }}</td>
+                        <td>{{ place.address }}</td>
+                        <td>{{ place.number_of_reviews }}</td>
+                        <td>{{ place.review }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
