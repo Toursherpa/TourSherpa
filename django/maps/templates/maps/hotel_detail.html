@@ -1,6 +1,7 @@
 {% extends 'maps/base.html' %}
 {% load static %}
 
+{% load custom_filters %}
 {% block title %}Hotel Detail - {{ hotel.google_name }}{% endblock %}
 
 {% block content %}
@@ -76,8 +77,8 @@
                         <td><a class="nav-link" href="{% url 'event_detail' country=event.Country event_id=event.EventID %}">{{ event.Title }}</a></td>
                         <td>{{ event.Rank }}</td>
                         <td>{{ event.PhqAttendance }}</td>
-                        <td>{{ event.TimeStart }}</td>
-                        <td>{{ event.TimeEnd }}</td>
+                        <td>{{ event.TimeStart|format_date_str }}</td>
+                        <td>{{ event.TimeEnd|format_date_str }}</td>
                         <td>{{ event.Address }}</td>
                         <td>{{ event.Region }}</td>
                         <td><button class="btn btn-primary" onclick="showEventPopup('{{ event.Title }}', '{{ event.Rank }}', '{{ event.PhqAttendance }}', '{{ event.TimeStart }}', '{{ event.TimeEnd }}', '{{ event.Address }}', '{{ event.Region }}', '{{ hotel.agoda_hotel_id }}')">호텔 예약</button></td>
@@ -99,8 +100,6 @@
             </div>
             <div class="modal-body">
                 <p><strong>제목:</strong> <span id="modalTitle"></span></p>
-                <p><strong>순위:</strong> <span id="modalRank"></span></p>
-                <p><strong>예상 참석자 수:</strong> <span id="modalPhqAttendance"></span></p>
                 <p><strong>시작 시간:</strong> <span id="modalTimeStart"></span></p>
                 <p><strong>종료 시간:</strong> <span id="modalTimeEnd"></span></p>
                 <p><strong>주소:</strong> <span id="modalAddress"></span></p>
@@ -129,7 +128,7 @@
         margin: 0 auto;
     }
     .modal-dialog {
-        max-width: none;
+        max-width: 60%;
         width: auto;
     }
     .modal-content {
@@ -148,15 +147,19 @@
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.js"></script>
 <!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
 
 <script>
     var checkInDate, checkOutDate;
     function showEventPopup(title, rank, phqAttendance, timeStart, timeEnd, address, region, hotelId) {
+        // 포맷팅된 날짜를 변수에 저장
+        var formattedTimeStart = moment(timeStart).format('YYYY-MM-DD HH시 mm분');
+        var formattedTimeEnd = moment(timeEnd).format('YYYY-MM-DD HH시 mm분');
+
+        // HTML 요소에 포맷팅된 날짜를 설정
         document.getElementById('modalTitle').innerText = title;
-        document.getElementById('modalRank').innerText = rank;
-        document.getElementById('modalPhqAttendance').innerText = phqAttendance;
-        document.getElementById('modalTimeStart').innerText = timeStart;
-        document.getElementById('modalTimeEnd').innerText = timeEnd;
+        document.getElementById('modalTimeStart').innerText = formattedTimeStart;
+        document.getElementById('modalTimeEnd').innerText = formattedTimeEnd;
         document.getElementById('modalAddress').innerText = address;
         document.getElementById('modalRegion').innerText = region;
 
@@ -193,6 +196,7 @@
             checkHotelAvailability(checkInDate, checkOutDate, hotelId);
         });
     }
+
 
     function checkHotelAvailability(checkInDate, checkOutDate, hotelId) {
         if (!checkInDate || !checkOutDate || !hotelId) {
