@@ -224,16 +224,16 @@ dag = DAG(
     catchup=False,
 )
 
-# 선행 DAG의 완료를 감지
-wait_for_travelEvents = ExternalTaskSensor(
-    task_id='place_wait_for_travelEvents',
-    external_dag_id='update_TravelEvents_Dags',  # 선행 DAG의 ID
-    external_task_id='upload_TravelEvents_data',  # 선행 DAG의 마지막 태스크 ID
-    allowed_states=['success'],  # 성공 상태일 때 진행
-    failed_states=['failed', 'skipped'],  # 실패 시 멈춤
-    mode='poke',  # poke 모드 사용
-    timeout=600  # 최대 기다릴 시간(초)
-)
+# # 선행 DAG의 완료를 감지
+# wait_for_travelEvents = ExternalTaskSensor(
+#     task_id='place_wait_for_travelEvents',
+#     external_dag_id='update_TravelEvents_Dags',  # 선행 DAG의 ID
+#     external_task_id='upload_TravelEvents_data',  # 선행 DAG의 마지막 태스크 ID
+#     allowed_states=['success'],  # 성공 상태일 때 진행
+#     failed_states=['failed', 'skipped'],  # 실패 시 멈춤
+#     mode='poke',  # poke 모드 사용
+#     timeout=600  # 최대 기다릴 시간(초)
+# )
 
 read_events_from_s3_task = PythonOperator(
     task_id='read_UP_events_csv_from_s3',
@@ -256,4 +256,5 @@ preprocess_redshift_task = PythonOperator(
     dag=dag,
 )
 
-wait_for_nearest_task >> read_events_from_s3_task >> fetch_places_data_task >> preprocess_redshift_task
+#wait_for_nearest_task >> read_events_from_s3_task >> fetch_places_data_task >> preprocess_redshift_task
+read_events_from_s3_task >> fetch_places_data_task >> preprocess_redshift_task
