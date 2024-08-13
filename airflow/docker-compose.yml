@@ -16,11 +16,10 @@ x-airflow-common:
     AIRFLOW__LOGGING__BASE_LOG_FOLDER: /opt/airflow/logs
     AIRFLOW__LOGGING__REMOTE_LOGGING: 'false'
     _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:-}
-    TMPDIR: /tmp  # Add this line to specify the temporary directory
   volumes:
     - ${AIRFLOW_PROJ_DIR:-.}/dags:/opt/airflow/dags
     - ${AIRFLOW_PROj_DIR:-.}/logs:/opt/airflow/logs
-    - ${AIRFLOW_PROj_DIR:-.}/tmp:/opt/airflow/tmp
+    - ${AIRFLOW_PROj_DIR:-.}/tmp:/tmp
   user: "${AIRFLOW_UID:-50000}:0"
   networks:
     - default
@@ -107,7 +106,6 @@ services:
       - |
         mkdir -p /sources/logs /sources/dags /sources/plugins
         chown -R "${AIRFLOW_UID}:0" /sources/{logs,dags,plugins}
-        airflow db init
         airflow db upgrade
         airflow users create --username admin --password admin --firstname Admin --lastname User --role Admin --email admin@airflow.com
     environment:

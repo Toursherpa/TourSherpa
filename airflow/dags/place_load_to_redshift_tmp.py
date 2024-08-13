@@ -20,19 +20,19 @@ def preprocess_redshift_table():
         cursor.execute(f"DROP TABLE IF EXISTS place.events_places_raw;")
         cursor.execute(f"""
             CREATE TABLE place.events_places_raw (
-                "Event ID" VARCHAR(256),
-                "Event Title" VARCHAR(256),
+                "Event_ID" VARCHAR(256),
+                "Event_Title" VARCHAR(256),
                 "Location" VARCHAR(256),
-                "Place Name" VARCHAR(256),
+                "Place_Name" VARCHAR(256),
                 "Address" VARCHAR(256),
                 "Rating" FLOAT,
-                "Number of Reviews" FLOAT,
+                "Number_of_Reviews" FLOAT,
                 "Review" VARCHAR(65535),
                 "Latitude" FLOAT,
                 "Longitude" FLOAT,
                 "Types" VARCHAR(256),
-                "Opening Hours" VARCHAR(65535),
-                "Collection Date" DATE
+                "Opening_Hours" VARCHAR(65535),
+                "Collection_Date" DATE
             );
         """)
         redshift_conn.commit()
