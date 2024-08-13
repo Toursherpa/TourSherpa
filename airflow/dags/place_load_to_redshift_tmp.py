@@ -17,9 +17,9 @@ def preprocess_redshift_table():
         
         # 기존 테이블 삭제 및 테이블 생성
         cursor.execute("CREATE SCHEMA IF NOT EXISTS place;")
-        cursor.execute(f"DROP TABLE IF EXISTS place.events_places_raw;")
+        cursor.execute(f"DROP TABLE IF EXISTS place.events_places;")
         cursor.execute(f"""
-            CREATE TABLE place.events_places_raw (
+            CREATE TABLE place.events_places (
                 "Event_ID" VARCHAR(256),
                 "Event_Title" VARCHAR(256),
                 "Location" VARCHAR(256),
@@ -36,7 +36,7 @@ def preprocess_redshift_table():
             );
         """)
         redshift_conn.commit()
-        logging.info(f"Redshift table public.events_places_raw has been dropped and recreated.")
+        logging.info(f"Redshift table public.events_places has been dropped and recreated.")
         
     except Exception as e:
         logging.error(f"Error in preprocess_redshift_table: {e}")
@@ -69,7 +69,7 @@ preprocess_redshift_task = PythonOperator(
 load_to_redshift_task = S3ToRedshiftOperator(
     task_id='load_to_redshift',
     schema='place',
-    table='events_places_raw',
+    table='events_places',
     s3_bucket=Variable.get('s3_bucket_name'),
     s3_key='source/source_place/place_cafe_restaurant.csv',
     aws_conn_id='s3_connection',
