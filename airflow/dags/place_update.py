@@ -179,12 +179,12 @@ def preprocess_redshift_table(**context):
 
             if update_type == 2:
                 # 기존 데이터를 삭제하고 새로 추가
-                cursor.execute(f"DELETE FROM place.events_places_raw WHERE Event_ID = '{event_id}';")
+                cursor.execute(f"DELETE FROM place.events_places WHERE Event_ID = '{event_id}';")
 
             if update_type in [2, 3]:
                 # 새로운 데이터 추가
                 cursor.execute("""
-                    INSERT INTO place.events_places_raw (
+                    INSERT INTO place.events_places (
                         "Event_ID", "Event_Title", "Location", "Place_Name", "Address", "Rating", 
                         "Number_of_Reviews", "Review", "Latitude", "Longitude", "Types", 
                         "Collection_Date"
@@ -198,7 +198,7 @@ def preprocess_redshift_table(**context):
                 logging.info(f"Inserted new record for Event_ID: {event_id}")
 
         redshift_conn.commit()
-        logging.info("Redshift table place.events_places_raw has been updated with new data.")
+        logging.info("Redshift table place.events_places has been updated with new data.")
         
     except Exception as e:
         logging.error(f"Error in preprocess_redshift_table: {e}")
