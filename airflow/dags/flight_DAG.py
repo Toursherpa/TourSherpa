@@ -94,7 +94,7 @@ def fetch_flight_data(airport_dict, airline_df, euro, check):
     count = 0
 
     for i in airport_dict:
-        if i not in ('NRT', 'KIX', 'NGO', 'FUK', 'CTS', 'OKA'):
+        if i != 'BNE':
             continue
             
         date_list = sorted(list(airport_dict[i]))
