@@ -5,7 +5,8 @@ import pandas as pd
 from django.http import HttpResponse
 from django_filters.views import FilterView
 from django.db.models import Count, Avg
-from .models import HotelsForEvent, EventsForHotel, TravelEvent, HotelList, FlightTo, FlightFrom, Airport, NearestAirport
+from .models import HotelsForEvent, EventsForHotel, TravelEvent, HotelList, FlightTo, FlightFrom, Airline, Airport, \
+    NearestAirport,PlaceforEvent
 from .forms import EventFilterForm
 from collections import OrderedDict
 from chartkick.django import ColumnChart, BarChart
@@ -121,6 +122,8 @@ def event_detail(request, country, event_id):
     event = get_object_or_404(TravelEvent, EventID=event_id)
     hotels_data = get_object_or_404(HotelsForEvent, EventID=event_id)
     nearest_airport = get_object_or_404(NearestAirport, id=event_id)
+
+
     flight_to = ''
     flight_from = ''
     flight_state = ''
@@ -145,6 +148,25 @@ def event_detail(request, country, event_id):
     google_place_hotels_filtered = [hotel for hotel in google_place_hotels if '/' not in hotel]
     hotel_list = [hotel for hotel in HotelList.objects.filter(google_name__in=google_place_hotels_filtered)]
 
+
+    # place data - cafe, Restaurant
+    place_cafe_resturant = PlaceforEvent.objects.filter(event_id=event_id) 
+    
+    # 데이터 변환
+    modified_places = []
+    for place in place_cafe_resturant:
+        modified_place = {
+            'place_name': place.place_name,
+            'types': place.types,
+            'rating': place.rating,
+            'address': place.address,
+            'review': place.review,
+            # number_of_reviews를 정수로 변환
+            'number_of_reviews': int(place.number_of_reviews) if place.number_of_reviews else 0,
+        }
+        modified_places.append(modified_place)
+
+
     context = {
         'event': event,
         'country': country,
@@ -153,8 +175,11 @@ def event_detail(request, country, event_id):
         'flight_to': flight_to,
         'flight_from': flight_from,
         'flight_state': flight_state,
+        'place_cafe_resturant' : modified_places
     }
     return render(request, 'maps/event_detail.html', context)
+
+
 
 logger = logging.getLogger('agoda')
 
