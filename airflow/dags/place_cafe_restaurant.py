@@ -164,22 +164,23 @@ def preprocess_redshift_table():
         cursor = redshift_conn.cursor()
         
         # 기존 테이블 삭제 및 테이블 생성
-        cursor.execute(f"DROP TABLE IF EXISTS public.events_places;")
+        cursor.execute("CREATE SCHEMA IF NOT EXISTS place;")
+        cursor.execute(f"DROP TABLE IF EXISTS place.events_places;")
         cursor.execute(f"""
-            CREATE TABLE public.events_places (
-                "Event ID" VARCHAR(256),
-                "Event Title" VARCHAR(256),
+            CREATE TABLE place.events_places (
+                "Event_ID" VARCHAR(256),
+                "Event_Title" VARCHAR(256),
                 "Location" VARCHAR(256),
-                "Place Name" VARCHAR(256),
+                "Place_Name" VARCHAR(256),
                 "Address" VARCHAR(256),
                 "Rating" FLOAT,
-                "Number of Reviews" INT,
+                "Number_of_Reviews" INT,
                 "Review" VARCHAR(65535),
                 "Latitude" FLOAT,
                 "Longitude" FLOAT,
                 "Types" VARCHAR(256),
-                "Opening Hours" VARCHAR(65535),
-                "Collection Date" DATE
+                "Opening_Hours" VARCHAR(65535),
+                "Collection_Date" DATE
             );
         """)
         redshift_conn.commit()
@@ -231,15 +232,24 @@ preprocess_redshift_task = PythonOperator(
 
 load_to_redshift_task = S3ToRedshiftOperator(
     task_id='load_to_redshift',
-    schema=Variable.get('redshift_schema_places'),
-    table=Variable.get('redshift_table_places'),
+    schema='place',
+    table='events_places',
     s3_bucket=Variable.get('s3_bucket_name'),
     s3_key='source/source_place/place_cafe_restaurant.csv',
-    copy_options=['IGNOREHEADER 1', 'csv'],
     aws_conn_id='s3_connection',
     redshift_conn_id='redshift_connection',
     dag=dag,
+    method = "REPLACE",
+    copy_options=[
+    "IGNOREHEADER 1",
+    "csv",
+    "NULL AS 'None'",
+    "BLANKSASNULL",
+    "EMPTYASNULL",
+    "FILLRECORD"
+]
 )
+
 
 
 read_events_from_s3_task >> fetch_places_data_task >> preprocess_redshift_task >> load_to_redshift_task
