@@ -10,7 +10,6 @@ webserver_config.py
 *.pyc
 *.sh
 *.out
-*.cfg
 <<<<<<< Updated upstream
 /airflow/logs
 <<<<<<< HEAD
