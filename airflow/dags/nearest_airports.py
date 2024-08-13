@@ -3,7 +3,7 @@ import pandas as pd
 from geopy.distance import geodesic
 from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
-from airflow.sensors.external_task import ExternalTaskSensor
+from airflow.operators.trigger_dagrun import TriggerDagRunOperator
 from airflow.providers.amazon.aws.hooks.s3 import S3Hook
 from airflow.providers.amazon.aws.transfers.s3_to_redshift import S3ToRedshiftOperator
 from airflow.hooks.postgres_hook import PostgresHook
@@ -193,6 +193,17 @@ load_to_redshift_task = S3ToRedshiftOperator(
     dag=dag,
 )
 
+trigger_second_dag = TriggerDagRunOperator(
+    task_id='trigger_second_dag',
+    trigger_dag_id='flight_to',  # The ID of the second DAG
+    dag=dag,
+)
 
-read_data_from_s3_task >> find_nearest_airports_task >> preprocess_redshift_task >> load_to_redshift_task
+trigger_third_dag = TriggerDagRunOperator(
+    task_id='trigger_third_dag',
+    trigger_dag_id='flight_from',  # The ID of the third DAG
+    dag=dag,
+)
+
+read_data_from_s3_task >> find_nearest_airports_task >> preprocess_redshift_task >> load_to_redshift_task >> trigger_second_dag >> trigger_third_dag
 
