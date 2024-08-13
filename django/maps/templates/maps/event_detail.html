@@ -1,6 +1,7 @@
 {% extends 'maps/base.html' %}
 {% load static %}
 
+{% load custom_filters %}
 {% block title %}Event Detail - {{ event.Title }}{% endblock %}
 
 {% block content %}
@@ -12,8 +13,8 @@
         <div class="card-body">
             <p><strong>행사 설명:</strong> {{ event.Description }}</p>
             <p><strong>카테고리:</strong> {{ event.Category }}</p>
-            <p><strong>이벤트 시작일:</strong> {{ event.TimeStart }}</p>
-            <p><strong>이벤트 종료일:</strong> {{ event.TimeEnd }}</p>
+            <p><strong>이벤트 시작일:</strong> {{ event.TimeStart|format_date_str }}</p>
+            <p><strong>이벤트 종료일:</strong> {{ event.TimeEnd|format_date_str }}</p>
             <p><strong>개최 장소:</strong> {{ event.Address }}</p>
             <p><strong>예상 참가자 수:</strong> {{ event.PhqAttendance }}</p>
         </div>
@@ -33,6 +34,7 @@
                         <th>소요 시간</th>
                         <th>남은 좌석 수</th>
                         <th>평균 가격 (원)</th>
+                        <th>예약 링크 (Skyscanner)</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -41,11 +43,14 @@
                         <td>
                             <a class="nav-link" href="https://www.skyscanner.co.kr/transport/flights/ICN/{{ f.arrival }}/{{ f.departure_date }}/?adults=1&airlines={{ f.airline_code }}&departure-times={{ f.departure_min }}-{{ f.departure_min }}&preferdirects=true" target="_blank" rel="noopener noreferrer">{{ f.airline_name }}({{ f.airline_code }})</a>
                         </td>
-                        <td>{{ f.departure_at }}</td>
-                        <td>{{ f.arrival_at }}</td>
+                        <td>{{ f.departure_at|format_date }}</td>
+                        <td>{{ f.arrival_at|format_date }}</td>
                         <td>{{ f.duration }}</td>
                         <td>{{ f.seats }}</td>
                         <td>{{ f.price }}</td>
+                        <td>
+                            <button class="btn btn-primary" onclick="window.open('https://www.skyscanner.co.kr/transport/flights/{{ f.departure }}/{{ f.arrival }}/{{ f.departure_date }}/?adults=1&airlines={{ f.airline_code }}&departure-times={{ f.departure_min }}-{{ f.departure_min }}&preferdirects=true')">예약 링크</button>
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -67,17 +72,21 @@
                         <th>소요 시간</th>
                         <th>남은 좌석 수</th>
                         <th>평균 가격 (원)</th>
+                        <th>예약 링크 (Skyscanner)</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for f in flight_from %}
+                    {% for f in flight_to %}
                     <tr>
-                        <td>{{ f.airline_code }}</td>
-                        <td>{{ f.departure_at }}</td>
-                        <td>{{ f.arrival_at }}</td>
+                        <td>{{ f.airline_name }}({{ f.airline_code }})</td>
+                        <td>{{ f.departure_at|format_date }}</td>
+                        <td>{{ f.arrival_at|format_date }}</td>
                         <td>{{ f.duration }}</td>
                         <td>{{ f.seats }}</td>
                         <td>{{ f.price }}</td>
+                        <td>
+                            <button class="btn btn-primary" onclick="window.open('https://www.skyscanner.co.kr/transport/flights/{{ f.departure }}/{{ f.arrival }}/{{ f.departure_date }}/?adults=1&airlines={{ f.airline_code }}&departure-times={{ f.departure_min }}-{{ f.departure_min }}&preferdirects=true')">예약 링크</button>
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
