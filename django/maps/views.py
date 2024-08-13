@@ -5,7 +5,7 @@ import pandas as pd
 from django.http import HttpResponse
 from django_filters.views import FilterView
 from django.db.models import Count, Avg
-from .models import HotelsForEvent, EventsForHotel, TravelEvent, HotelList, FlightTo, FlightFrom, Airline, Airport, \
+from .models import HotelsForEvent, EventsForHotel, TravelEvent, HotelList, FlightTo, FlightFrom, Airport, \
     NearestAirport,PlaceforEvent
 from .forms import EventFilterForm
 from collections import OrderedDict
