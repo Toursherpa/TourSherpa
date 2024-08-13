@@ -77,6 +77,10 @@ def dashboard(request):
     }
     return render(request, 'maps/dashboard.html', context)
 
+def search_results(request):
+    query = request.GET.get('q', '')  # 'q'는 검색어를 담는 파라미터 이름입니다
+    result_events = TravelEvent.objects.filter(Title__icontains=query).order_by('-Rank', '-PhqAttendance')
+    return render(request, 'maps/search_result.html', {'result_events': result_events})
 
 def country(request, country):
     country_code = country_list.get(country, '')
@@ -126,8 +130,8 @@ def event_detail(request, country, event_id):
 
     if event.TimeStart != 'NaN':
         to_start_date = (datetime.strptime(event.TimeStart, "%Y-%m-%dT%H:%M:%S") - timedelta(days=3)).strftime('%Y-%m-%d')
-        to_end_date = (datetime.strptime(event.TimeEnd, "%Y-%m-%dT%H:%M:%S")).strftime('%Y-%m-%d')
-        from_start_date = (datetime.strptime(event.TimeStart, "%Y-%m-%dT%H:%M:%S") + timedelta(days=1)).strftime('%Y-%m-%d')
+        to_end_date = (datetime.strptime(event.TimeEnd, "%Y-%m-%dT%H:%M:%S") + timedelta(days=1)).strftime('%Y-%m-%d')
+        from_start_date = (datetime.strptime(event.TimeStart, "%Y-%m-%dT%H:%M:%S")).strftime('%Y-%m-%d')
         from_end_date = (datetime.strptime(event.TimeEnd, "%Y-%m-%dT%H:%M:%S") + timedelta(days=4)).strftime('%Y-%m-%d')
 
         flight_to = FlightTo.objects.filter(departure_at__range=[to_start_date, to_end_date],
