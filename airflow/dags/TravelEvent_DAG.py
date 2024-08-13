@@ -192,7 +192,7 @@ dag = DAG(
     'update_TravelEvents_Dags',
     default_args=default_args,
     description='A DAG to update parking data every days and save it to S3',
-    schedule_interval='1 15 * * *',
+    schedule_interval='1 4 * * *',
     catchup=False,
 )
 

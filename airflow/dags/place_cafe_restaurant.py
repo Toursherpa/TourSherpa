@@ -63,8 +63,7 @@ def fetch_places_data(**context):
         
         
         # 데이터 수집 설정
-        places_per_location = 3   # cafe, restaurant 수집 갯수
-        logging.info(f"places_per_location 수 :  {places_per_location} ")
+        places_per_location = 5   # cafe, restaurant 수집 갯수
         places_data = []
         collection_date = datetime.now().strftime('%Y-%m-%d')  # 데이터 수집 날짜 추가
 
@@ -109,14 +108,14 @@ def fetch_places_data(**context):
                     details_response.raise_for_status()  # HTTP 에러 발생 시 예외 발생
                     place_details = details_response.json()
                     place_name = place_details['result']['name']
-                    place_address = place_details['result'].get('formatted_address', None)
-                    place_rating = place_details['result'].get('rating', None)
-                    place_user_ratings_total = place_details['result'].get('user_ratings_total', None)
+                    place_address = place_details['result'].get('formatted_address', 'N/A')
+                    place_rating = place_details['result'].get('rating', 'N/A')
+                    place_user_ratings_total = place_details['result'].get('user_ratings_total', 'N/A')
                     place_reviews = place_details['result'].get('reviews', [])
                     place_lat = place_details['result']['geometry']['location']['lat']
                     place_lng = place_details['result']['geometry']['location']['lng']
                     place_types = ', '.join(place_details['result'].get('types', []))
-                    place_opening_hours = place_details['result'].get('opening_hours', {}).get('weekday_text', None)
+                    place_opening_hours = place_details['result'].get('opening_hours', {}).get('weekday_text', 'N/A')
 
                     place_opening_hours_str = place_opening_hours if place_opening_hours else ''
                     place_review = place_reviews[0]['text'] if place_reviews else 'No reviews'
@@ -164,23 +163,22 @@ def preprocess_redshift_table():
         cursor = redshift_conn.cursor()
         
         # 기존 테이블 삭제 및 테이블 생성
-        cursor.execute("CREATE SCHEMA IF NOT EXISTS place;")
-        cursor.execute(f"DROP TABLE IF EXISTS place.events_places;")
+        cursor.execute(f"DROP TABLE IF EXISTS {Variable.get('redshift_schema_places')}.{Variable.get('redshift_table_places')};")
         cursor.execute(f"""
-            CREATE TABLE place.events_places (
-                "Event_ID" VARCHAR(256),
-                "Event_Title" VARCHAR(256),
+            CREATE TABLE {Variable.get('redshift_schema_places')}.{Variable.get('redshift_table_places')} (
+                "Event ID" VARCHAR(256),
+                "Event Title" VARCHAR(256),
                 "Location" VARCHAR(256),
-                "Place_Name" VARCHAR(256),
+                "Place Name" VARCHAR(256),
                 "Address" VARCHAR(256),
                 "Rating" FLOAT,
-                "Number_of_Reviews" INT,
+                "Number of Reviews" INT,
                 "Review" VARCHAR(65535),
                 "Latitude" FLOAT,
                 "Longitude" FLOAT,
                 "Types" VARCHAR(256),
-                "Opening_Hours" VARCHAR(65535),
-                "Collection_Date" DATE
+                "Opening Hours" VARCHAR(65535),
+                "Collection Date" DATE
             );
         """)
         redshift_conn.commit()
@@ -232,24 +230,15 @@ preprocess_redshift_task = PythonOperator(
 
 load_to_redshift_task = S3ToRedshiftOperator(
     task_id='load_to_redshift',
-    schema='place',
-    table='events_places',
+    schema=Variable.get('redshift_schema_places'),
+    table=Variable.get('redshift_table_places'),
     s3_bucket=Variable.get('s3_bucket_name'),
     s3_key='source/source_place/place_cafe_restaurant.csv',
+    copy_options=['IGNOREHEADER 1', 'csv'],
     aws_conn_id='s3_connection',
     redshift_conn_id='redshift_connection',
     dag=dag,
-    method = "REPLACE",
-    copy_options=[
-    "IGNOREHEADER 1",
-    "csv",
-    "NULL AS 'None'",
-    "BLANKSASNULL",
-    "EMPTYASNULL",
-    "FILLRECORD"
-]
 )
-
 
 
 read_events_from_s3_task >> fetch_places_data_task >> preprocess_redshift_task >> load_to_redshift_task
