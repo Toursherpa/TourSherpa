@@ -4,20 +4,23 @@ from airflow.providers.amazon.aws.transfers.s3_to_redshift import S3ToRedshiftOp
 from airflow.hooks.postgres_hook import PostgresHook
 import logging
 from flight_DAG import *
+import pytz
+from datetime import datetime, timedelta
+from airflow.models import Variable
 
 kst = pytz.timezone('Asia/Seoul')
 
 def data_to_s3(macros):
-    logging.info("Starting data_to_s3")
+    logging.info("데이터를 S3로 업로드 시작")
     
     try:
         df = fetch_airport_data()
-        logging.info("finish df")
+        logging.info("데이터 프레임 생성 완료")
 
         upload_to_s3(df, "airport")
-        logging.info("finish airport to s3")
+        logging.info("공항 데이터를 S3로 업로드 완료")
     except Exception as e:
-        logging.error(f"Error in data_to_s3: {e}")
+        logging.error(f"data_to_s3 함수에서 오류 발생: {e}")
         raise
 
 def create_redshift_table():
@@ -26,9 +29,9 @@ def create_redshift_table():
         redshift_conn = redshift_hook.get_conn()
         cursor = redshift_conn.cursor()
 
-        cursor.execute("DROP TABLE IF EXISTS flight.airport;")
+        cursor.execute("기존 flight.airport 테이블 삭제")
         redshift_conn.commit()
-        logging.info("drop table")
+        logging.info("테이블 삭제 완료")
         
         cursor.execute("""
             CREATE TABLE flight.airport (
@@ -40,11 +43,11 @@ def create_redshift_table():
             );
         """)
         redshift_conn.commit()
-        logging.info("create table")
+        logging.info("테이블 생성 완료")
 
         redshift_conn.close()
     except Exception as e:
-        logging.error(f"Error in create_redshift_table: {e}")
+        logging.error(f"create_redshift_table 함수에서 오류 발생: {e}")
         raise
 
 default_args = {
