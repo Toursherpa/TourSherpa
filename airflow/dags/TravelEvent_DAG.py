@@ -10,7 +10,6 @@ import pandas as pd
 import requests
 import pytz
 
-
 countrys=['AT', 'AU', 'CA', 'CN', 'DE', 'ES', 'FR', 'GB', 'ID', 'IN', 'IT', 'JP', 'MY', 'NL', 'TW', 'US']
 categories = [
     "expos",
@@ -19,6 +18,7 @@ categories = [
     "sports",
 ]
 
+#시간대 설정
 kst = pytz.timezone('Asia/Seoul')
 utc_now = datetime.utcnow()
 kst_now = utc_now.astimezone(kst)
@@ -28,6 +28,7 @@ yesterday = datetime.today() - timedelta(days=1)
 future_date_str = future_date.strftime('%Y-%m-%d')
 yesterday_str = yesterday.strftime('%Y-%m-%d')
 
+#가져올 데이터 설정
 def fetch_data_setting(country, category):
     ACCESS_TOKEN = Variable.get('predicthq_ACCESS_TOKEN')
     response1 = requests.get(
@@ -67,7 +68,7 @@ def fetch_data_setting(country, category):
     data2 = response2.json()
     return [data1, data2]
 
-
+#새로운 데이터와 새로 업데이트된 행사 데이터 가져오기
 def fetch_and_upload_data(**kwargs):
     combined_df = pd.DataFrame()
     for country in countrys:
@@ -108,6 +109,7 @@ def fetch_and_upload_data(**kwargs):
     kwargs['ti'].xcom_push(key='combined_df_path', value='/tmp/TravelEvent_data.csv')
     kwargs['ti'].xcom_push(key='combined_up_df_path', value='/tmp/UP_TravelEvent_data.csv')
 
+#전날 데이터 가져오기
 def read_data_from_s3(**kwargs):
     s3_hook = S3Hook('s3_connection')
     s3_bucket_name = Variable.get('s3_bucket_name')
@@ -123,6 +125,13 @@ def read_data_from_s3(**kwargs):
 
     kwargs['ti'].xcom_push(key='s3_data', value=transformed_data)
 
+'''
+전날 데이터와 최신 데이터로 update_type을 기반으로 한 update csv 파일 업데이트
+0-동일한 데이터, 변화 X
+1-행사 위치가 아닌 다른 데이터의 변화 O
+2-행사 위치를 포함한 데이터의 변화 O
+3-새로운 EventID 생성됨 O 
+'''
 def update_combined_df(**kwargs):
     ti = kwargs['ti']
     combined_df_path = ti.xcom_pull(task_ids='fetch_data_TravelEvents', key='combined_df_path')
@@ -163,7 +172,7 @@ def update_combined_df(**kwargs):
         print("No previous data found in S3. Skipping update.")
 
 
-
+#update csv 파일과 최신 데이터 S3에 저장
 def generate_and_save_data(**kwargs):
     csv_filename = f'/tmp/TravelEvent_data.csv'
     csv_up_filename = f'/tmp/NEWUP_TravelEvent_data.csv'
@@ -218,6 +227,7 @@ upload_to_s3_task = PythonOperator(
     dag=dag,
 )
 
+#행사 정보가 필요한 다른 Dag들 트리거로 실행
 trigger_second_dag = TriggerDagRunOperator(
     task_id='trigger_second_dag',
     trigger_dag_id='update_TravelEvents_Dags_to_Redshift',
