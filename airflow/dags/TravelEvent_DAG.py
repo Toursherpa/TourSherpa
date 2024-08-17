@@ -18,7 +18,7 @@ categories = [
     "sports",
 ]
 
-#시간대 설정
+#시간대 한국으로 설정
 kst = pytz.timezone('Asia/Seoul')
 utc_now = datetime.utcnow()
 kst_now = utc_now.astimezone(kst)
