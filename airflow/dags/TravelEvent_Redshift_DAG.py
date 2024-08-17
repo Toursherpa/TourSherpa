@@ -13,8 +13,6 @@ import time
 import ast
 import re
 
-countrys = ['AT', 'AU', 'CA', 'CN', 'DE', 'ES', 'FR', 'GB', 'ID', 'IN', 'IT', 'JP', 'MY', 'NL', 'TW', 'US']
-
 kst = pytz.timezone('Asia/Seoul')
 utc_now = datetime.utcnow()
 kst_now = utc_now.astimezone(kst)
@@ -29,7 +27,7 @@ def read_data_from_s3(**kwargs):
     if s3_hook.check_for_key(key=s3_key, bucket_name=s3_bucket_name):
         file_obj = s3_hook.get_key(key=s3_key, bucket_name=s3_bucket_name)
         file_content = file_obj.get()['Body'].read().decode('utf-8')
-        transformed_data = {'file_content': file_content}  # 사전 형태로 초기화
+        transformed_data = {'file_content': file_content}  
     else:
         print("파일을 찾을 수 없습니다. 건너뜁니다.")
         transformed_data = None
@@ -38,25 +36,21 @@ def read_data_from_s3(**kwargs):
 
 
 def extract_formatted_address(data):
-    # 문자열의 작은따옴표를 큰따옴표로 변환하여 JSON 형식에 맞게 통일
     data = str(data).replace("'", '"')
 
     match = re.search(r'"formatted_address"\s*:\s*["\'](.*?)(?<!\\)["\'],', data)
 
     if match:
-        # 주소를 반환
         return match.group(1).replace('\\"', '"')
     else:
         return "상세주소는 아직 미정입니다."
 
 def extract_formatted_region(data):
-    # 문자열의 작은따옴표를 큰따옴표로 변환하여 JSON 형식에 맞게 통일
     data = str(data).replace("'", '"')
 
     match = re.search(r'"region"\s*:\s*["\'](.*?)(?<!\\)["\']\}\}', data)
 
     if match:
-        # 주소를 반환
         return match.group(1).replace('\\"', '"')
     else:
         return "none"
@@ -67,7 +61,6 @@ def transform_data(**kwargs):
     if s3_data and 'file_content' in s3_data:
         file_content = s3_data['file_content']
         df = pd.read_csv(StringIO(file_content))
-        # 필요한 컬럼만 선택하고 이름 변경
         df = df[['id', 'title', 'description', 'category', 'rank', 'phq_attendance', 'start_local', 'end_local', 'location', 'geo', 'geo', 'country', 'predicted_event_spend']]
         df.columns = ['EventID', 'Title', 'Description', 'Category', 'Rank', 'PhqAttendance', 'TimeStart', 'TimeEnd', 'LocationID', 'Address', 'Region', 'Country', 'PredictedEventSpend']
         category_mapping = {
@@ -81,10 +74,10 @@ def transform_data(**kwargs):
         df['Description'] = df['Description'].apply(lambda x: remove_source_info(x))
         df['Region'] = df['Region'].apply(lambda x: extract_formatted_region(x))
         df['Address'] = df['Address'].apply(lambda x: extract_formatted_address(x))
-        df['Title'] = df['Title'].apply(lambda x: x[:1000])  # Title 컬럼을 최대 1000자로 제한
-        df['Description'] = df['Description'].apply(lambda x: x[:5000])  # Description 컬럼을 최대 5000자로 제한
-        df['LocationID'] = df['LocationID'].apply(lambda x: x[:1000])  # LocationID 컬럼을 최대 1000자로 제한
-        df['Address'] = df['Address'].apply(lambda x: x[:2000])  # Address 컬럼을 최대 2000자로 제한
+        df['Title'] = df['Title'].apply(lambda x: x[:1000]) 
+        df['Description'] = df['Description'].apply(lambda x: x[:5000]) 
+        df['LocationID'] = df['LocationID'].apply(lambda x: x[:1000])  
+        df['Address'] = df['Address'].apply(lambda x: x[:2000])
 
         def translate_to_korean(text):
             translator = Translator()
@@ -92,11 +85,10 @@ def transform_data(**kwargs):
                 translated = translator.translate(text, dest='ko').text
             except Exception as e:
                 print(f"번역 중 오류 발생: {e}")
-                translated = None  # 또는 필요에 따라 다른 기본값 설정
+                translated = None 
             time.sleep(0.5)
             return translated
 
-        # 예제 실행
         text_to_translate = "This is a test sentence."
         translated_text = translate_to_korean(text_to_translate)
         if translated_text is None:
@@ -104,7 +96,6 @@ def transform_data(**kwargs):
         else:
             print(f"번역 결과: {translated_text}")
 
-        # 각 필드를 번역하고 최대 길이 제한 적용
         df['Title'] = df['Title'].apply(lambda x: translate_to_korean(x))
         print("Title")
         df['Description'] = df['Description'].apply(lambda x: translate_to_korean(x))
@@ -137,7 +128,6 @@ def generate_and_save_data(**kwargs):
     conn = redshift_hook.get_conn()
     cursor = conn.cursor()
 
-    # Define the table schema
     create_table_sql = f"""
     CREATE TABLE {redshift_table} (
         EventID VARCHAR(256) PRIMARY KEY,
@@ -145,9 +135,9 @@ def generate_and_save_data(**kwargs):
         Description VARCHAR(3000),
         Category VARCHAR(256),
         Rank INT,
-        PhqAttendance BIGINT, -- 숫자를 저장할 수 있는 더 큰 범위의 타입으로 변경
-        TimeStart VARCHAR(50), -- ISO 8601 형식의 문자열
-        TimeEnd VARCHAR(50), -- ISO 8601 형식의 문자열
+        PhqAttendance BIGINT, 
+        TimeStart VARCHAR(50), 
+        TimeEnd VARCHAR(50), 
         LocationID VARCHAR(50),
         Address TEXT,
         Region TEXT,
@@ -156,15 +146,12 @@ def generate_and_save_data(**kwargs):
     );
     """
 
-    # Drop table if it exists
     drop_table_sql = f"DROP TABLE IF EXISTS {redshift_table};"
 
     try:
-        # Drop the existing table
         cursor.execute(drop_table_sql)
         conn.commit()
 
-        # Create a new table
         cursor.execute(create_table_sql)
         conn.commit()
 
