@@ -13,12 +13,13 @@ import time
 import ast
 import re
 
+#시간대 한국으로 설정
 kst = pytz.timezone('Asia/Seoul')
 utc_now = datetime.utcnow()
 kst_now = utc_now.astimezone(kst)
 today = kst_now.strftime('%Y-%m-%d')
 
-
+#S3의 행사 데이터 가져오기
 def read_data_from_s3(**kwargs):
     s3_hook = S3Hook('s3_connection')
     s3_bucket_name = Variable.get('s3_bucket_name')
@@ -34,7 +35,7 @@ def read_data_from_s3(**kwargs):
 
     kwargs['ti'].xcom_push(key='s3_data', value=transformed_data)
 
-
+#json형식 데이터에서 정규표준식으로 주소 추출하기
 def extract_formatted_address(data):
     data = str(data).replace("'", '"')
 
@@ -45,6 +46,7 @@ def extract_formatted_address(data):
     else:
         return "상세주소는 아직 미정입니다."
 
+#json형식 데이터에서 정규표준식으로 지역역 추출하기
 def extract_formatted_region(data):
     data = str(data).replace("'", '"')
 
@@ -55,6 +57,7 @@ def extract_formatted_region(data):
     else:
         return "none"
 
+#가져온 S3 데이터 변환하기
 def transform_data(**kwargs):
     s3_data = kwargs['ti'].xcom_pull(key='s3_data', task_ids='read_data_from_s3')
 
@@ -79,6 +82,7 @@ def transform_data(**kwargs):
         df['LocationID'] = df['LocationID'].apply(lambda x: x[:1000])  
         df['Address'] = df['Address'].apply(lambda x: x[:2000])
 
+        #가져온 데이터 한국어로 번역하기
         def translate_to_korean(text):
             translator = Translator()
             try:
@@ -111,6 +115,7 @@ def transform_data(**kwargs):
 
     kwargs['ti'].xcom_push(key='transformed_data', value=transformed_data)
 
+#소스 출처 표시 제거
 def remove_source_info(description):
     pattern = r'^Sourced from predicthq\.com - '
     return re.sub(pattern, '', description)
@@ -118,7 +123,8 @@ def remove_source_info(description):
 def remove_source_info_empty(description):
     pattern = r'^predicthq.com에서 소스'
     return re.sub(pattern, '상세정보 아직 없음.', description)
-    
+
+#Redshift에 테이블 로드드
 def generate_and_save_data(**kwargs):
     transformed_data = kwargs['ti'].xcom_pull(key='transformed_data', task_ids='transform_data')
     redshift_conn_id = 'redshift_connection'
