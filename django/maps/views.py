@@ -23,23 +23,22 @@ country_list = {'오스트리아': 'AT', '호주': 'AU', '캐나다': 'CA', '중
                 '인도네시아': 'ID', '인도': 'IN', '이탈리아': 'IT', '일본': 'JP', '말레이시아': 'MY', '네덜란드': 'NL', '대만': 'TW',
                 '미국': 'US'}
 
+#국가코드 데이터 국가명으로 변환
 def translate_country(event_list, country_name_map):
     for event in event_list:
         event.Country = country_name_map.get(event.Country, event.Country)
         event.TimeStartFormatted = format_date(event.TimeStart)
         event.TimeEndFormatted = format_date(event.TimeEnd)
-def format_date(date_str):
-    # '2024-07-26T00:00:00' 형식의 문자열을 datetime 객체로 변환
-    dt = datetime.fromisoformat(date_str)
-    # 원하는 형식으로 변환
-    return dt.strftime('%Y-%m-%d %H:%M')
 
 def dashboard(request):
+    #가장 인기 있는 top_events 추출
     top_events = TravelEvent.objects.order_by('-Rank', '-PhqAttendance')[:3]
+    #가장 일찍 열린 recent_events 추출
+    recent_events = TravelEvent.objects.exclude(TimeStart='none').order_by('TimeStart')[:3]
+    #가장 빨리 끝나는 earliest_end_events 추출
+    earliest_end_events = TravelEvent.objects.exclude(TimeEnd='none').order_by('TimeEnd')[:3]
     countries = TravelEvent.objects.values('Country').annotate(total_events=Count('EventID')).order_by('-total_events')[:5]
     categories = TravelEvent.objects.values('Category').annotate(total_events=Count('EventID'))
-    recent_events = TravelEvent.objects.exclude(TimeStart='none').order_by('TimeStart')[:3]
-    earliest_end_events = TravelEvent.objects.exclude(TimeEnd='none').order_by('TimeEnd')[:3]
     country_name_map = {code: name for name, code in country_list.items()}
 
     translate_country(top_events, country_name_map)
@@ -48,22 +47,23 @@ def dashboard(request):
 
     flights_data = get_average_price_per_country()
 
+    #국가별 행사수 데이터
     countries_data = {
         'labels': [country_name_map.get(country['Country'], country['Country']) for country in countries],
         'datasets': [{
             'label': 'Number of Events',
-            'backgroundColor': 'rgba(0, 128, 255, 0.2)',  # 색상 예시, 원하는 대로 수정 가능
-            'borderColor': 'rgba(0, 128, 255, 1)',  # 색상 예시, 원하는 대로 수정 가능
+            'backgroundColor': 'rgba(0, 128, 255, 0.2)', 
+            'borderColor': 'rgba(0, 128, 255, 1)', 
             'data': [country['total_events'] for country in countries],
         }]
     }
-    # BarChart 생성
+    #카테고리별 행사수 데이터
     categories_data = {
         'labels': [category['Category'] for category in categories],
         'datasets': [{
             'label': 'Number of Events',
-            'backgroundColor': 'rgba(255, 99, 132, 0.2)',  # 색상 예시, 원하는 대로 수정 가능
-            'borderColor': 'rgba(255, 99, 132, 1)',  # 색상 예시, 원하는 대로 수정 가능
+            'backgroundColor': 'rgba(255, 99, 132, 0.2)', 
+            'borderColor': 'rgba(255, 99, 132, 1)',  
             'data': [category['total_events'] for category in categories],
         }]
     }
@@ -78,34 +78,36 @@ def dashboard(request):
     return render(request, 'maps/dashboard.html', context)
 
 def search_results(request):
-    query = request.GET.get('q', '')  # 'q'는 검색어를 담는 파라미터 이름입니다
+    query = request.GET.get('q', '')  # 검색어를 담는 파라미터 'q' 지정
     result_events = TravelEvent.objects.filter(Title__icontains=query).order_by('-Rank', '-PhqAttendance')
     return render(request, 'maps/search_result.html', {'result_events': result_events})
 
 def country(request, country):
     country_code = country_list.get(country, '')
     queryset = TravelEvent.objects.filter(Country=country_code)
-
+    #해당 국가 행사들 데이터 추출출
     country_events = TravelEvent.objects.filter(Country=country_code).order_by('-Rank', '-PhqAttendance')
 
     top_regions = queryset.values('Region').annotate(total_events=Count('EventID')).order_by('-total_events')[:5]
     categories = queryset.values('Category').annotate(total_events=Count('EventID'))
 
+    #지역별 행사수 데이터
     regions_data = {
         'labels': [region['Region'] for region in top_regions],
         'datasets': [{
             'label': 'Number of Events',
-            'backgroundColor': 'rgba(255, 99, 132, 0.2)',  # 색상 예시, 원하는 대로 수정 가능
-            'borderColor': 'rgba(255, 99, 132, 1)',  # 색상 예시, 원하는 대로 수정 가능
+            'backgroundColor': 'rgba(255, 99, 132, 0.2)', 
+            'borderColor': 'rgba(255, 99, 132, 1)', 
             'data': [region['total_events'] for region in top_regions],
         }]
     }
+    #카테고리별 행사수 데이터
     categories_data = {
         'labels': [category['Category'] for category in categories],
         'datasets': [{
             'label': 'Number of Events',
-            'backgroundColor': 'rgba(255, 99, 132, 0.2)',  # 색상 예시, 원하는 대로 수정 가능
-            'borderColor': 'rgba(255, 99, 132, 1)',  # 색상 예시, 원하는 대로 수정 가능
+            'backgroundColor': 'rgba(255, 99, 132, 0.2)',
+            'borderColor': 'rgba(255, 99, 132, 1)',
             'data': [category['total_events'] for category in categories],
         }]
     }

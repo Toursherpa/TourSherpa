@@ -13,14 +13,13 @@ import time
 import ast
 import re
 
-countrys = ['AT', 'AU', 'CA', 'CN', 'DE', 'ES', 'FR', 'GB', 'ID', 'IN', 'IT', 'JP', 'MY', 'NL', 'TW', 'US']
-
+#시간대 한국으로 설정
 kst = pytz.timezone('Asia/Seoul')
 utc_now = datetime.utcnow()
 kst_now = utc_now.astimezone(kst)
 today = kst_now.strftime('%Y-%m-%d')
 
-
+#S3의 행사 데이터 가져오기
 def read_data_from_s3(**kwargs):
     s3_hook = S3Hook('s3_connection')
     s3_bucket_name = Variable.get('s3_bucket_name')
@@ -29,45 +28,42 @@ def read_data_from_s3(**kwargs):
     if s3_hook.check_for_key(key=s3_key, bucket_name=s3_bucket_name):
         file_obj = s3_hook.get_key(key=s3_key, bucket_name=s3_bucket_name)
         file_content = file_obj.get()['Body'].read().decode('utf-8')
-        transformed_data = {'file_content': file_content}  # 사전 형태로 초기화
+        transformed_data = {'file_content': file_content}  
     else:
         print("파일을 찾을 수 없습니다. 건너뜁니다.")
         transformed_data = None
 
     kwargs['ti'].xcom_push(key='s3_data', value=transformed_data)
 
-
+#json형식 데이터에서 정규표준식으로 주소 추출하기
 def extract_formatted_address(data):
-    # 문자열의 작은따옴표를 큰따옴표로 변환하여 JSON 형식에 맞게 통일
     data = str(data).replace("'", '"')
 
     match = re.search(r'"formatted_address"\s*:\s*["\'](.*?)(?<!\\)["\'],', data)
 
     if match:
-        # 주소를 반환
         return match.group(1).replace('\\"', '"')
     else:
         return "상세주소는 아직 미정입니다."
 
+#json형식 데이터에서 정규표준식으로 지역역 추출하기
 def extract_formatted_region(data):
-    # 문자열의 작은따옴표를 큰따옴표로 변환하여 JSON 형식에 맞게 통일
     data = str(data).replace("'", '"')
 
     match = re.search(r'"region"\s*:\s*["\'](.*?)(?<!\\)["\']\}\}', data)
 
     if match:
-        # 주소를 반환
         return match.group(1).replace('\\"', '"')
     else:
         return "none"
 
+#가져온 S3 데이터 변환하기
 def transform_data(**kwargs):
     s3_data = kwargs['ti'].xcom_pull(key='s3_data', task_ids='read_data_from_s3')
 
     if s3_data and 'file_content' in s3_data:
         file_content = s3_data['file_content']
         df = pd.read_csv(StringIO(file_content))
-        # 필요한 컬럼만 선택하고 이름 변경
         df = df[['id', 'title', 'description', 'category', 'rank', 'phq_attendance', 'start_local', 'end_local', 'location', 'geo', 'geo', 'country', 'predicted_event_spend']]
         df.columns = ['EventID', 'Title', 'Description', 'Category', 'Rank', 'PhqAttendance', 'TimeStart', 'TimeEnd', 'LocationID', 'Address', 'Region', 'Country', 'PredictedEventSpend']
         category_mapping = {
@@ -81,22 +77,22 @@ def transform_data(**kwargs):
         df['Description'] = df['Description'].apply(lambda x: remove_source_info(x))
         df['Region'] = df['Region'].apply(lambda x: extract_formatted_region(x))
         df['Address'] = df['Address'].apply(lambda x: extract_formatted_address(x))
-        df['Title'] = df['Title'].apply(lambda x: x[:1000])  # Title 컬럼을 최대 1000자로 제한
-        df['Description'] = df['Description'].apply(lambda x: x[:5000])  # Description 컬럼을 최대 5000자로 제한
-        df['LocationID'] = df['LocationID'].apply(lambda x: x[:1000])  # LocationID 컬럼을 최대 1000자로 제한
-        df['Address'] = df['Address'].apply(lambda x: x[:2000])  # Address 컬럼을 최대 2000자로 제한
+        df['Title'] = df['Title'].apply(lambda x: x[:1000]) 
+        df['Description'] = df['Description'].apply(lambda x: x[:5000]) 
+        df['LocationID'] = df['LocationID'].apply(lambda x: x[:1000])  
+        df['Address'] = df['Address'].apply(lambda x: x[:2000])
 
+        #가져온 데이터 한국어로 번역하기
         def translate_to_korean(text):
             translator = Translator()
             try:
                 translated = translator.translate(text, dest='ko').text
             except Exception as e:
                 print(f"번역 중 오류 발생: {e}")
-                translated = None  # 또는 필요에 따라 다른 기본값 설정
+                translated = None 
             time.sleep(0.5)
             return translated
 
-        # 예제 실행
         text_to_translate = "This is a test sentence."
         translated_text = translate_to_korean(text_to_translate)
         if translated_text is None:
@@ -104,7 +100,6 @@ def transform_data(**kwargs):
         else:
             print(f"번역 결과: {translated_text}")
 
-        # 각 필드를 번역하고 최대 길이 제한 적용
         df['Title'] = df['Title'].apply(lambda x: translate_to_korean(x))
         print("Title")
         df['Description'] = df['Description'].apply(lambda x: translate_to_korean(x))
@@ -120,6 +115,7 @@ def transform_data(**kwargs):
 
     kwargs['ti'].xcom_push(key='transformed_data', value=transformed_data)
 
+#소스 출처 표시 제거
 def remove_source_info(description):
     pattern = r'^Sourced from predicthq\.com - '
     return re.sub(pattern, '', description)
@@ -127,7 +123,8 @@ def remove_source_info(description):
 def remove_source_info_empty(description):
     pattern = r'^predicthq.com에서 소스'
     return re.sub(pattern, '상세정보 아직 없음.', description)
-    
+
+#Redshift에 테이블 로드드
 def generate_and_save_data(**kwargs):
     transformed_data = kwargs['ti'].xcom_pull(key='transformed_data', task_ids='transform_data')
     redshift_conn_id = 'redshift_connection'
@@ -137,7 +134,6 @@ def generate_and_save_data(**kwargs):
     conn = redshift_hook.get_conn()
     cursor = conn.cursor()
 
-    # Define the table schema
     create_table_sql = f"""
     CREATE TABLE {redshift_table} (
         EventID VARCHAR(256) PRIMARY KEY,
@@ -145,9 +141,9 @@ def generate_and_save_data(**kwargs):
         Description VARCHAR(3000),
         Category VARCHAR(256),
         Rank INT,
-        PhqAttendance BIGINT, -- 숫자를 저장할 수 있는 더 큰 범위의 타입으로 변경
-        TimeStart VARCHAR(50), -- ISO 8601 형식의 문자열
-        TimeEnd VARCHAR(50), -- ISO 8601 형식의 문자열
+        PhqAttendance BIGINT, 
+        TimeStart VARCHAR(50), 
+        TimeEnd VARCHAR(50), 
         LocationID VARCHAR(50),
         Address TEXT,
         Region TEXT,
@@ -156,15 +152,12 @@ def generate_and_save_data(**kwargs):
     );
     """
 
-    # Drop table if it exists
     drop_table_sql = f"DROP TABLE IF EXISTS {redshift_table};"
 
     try:
-        # Drop the existing table
         cursor.execute(drop_table_sql)
         conn.commit()
 
-        # Create a new table
         cursor.execute(create_table_sql)
         conn.commit()
 

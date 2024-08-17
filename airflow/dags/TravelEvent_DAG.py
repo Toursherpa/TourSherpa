@@ -10,7 +10,6 @@ import pandas as pd
 import requests
 import pytz
 
-
 countrys=['AT', 'AU', 'CA', 'CN', 'DE', 'ES', 'FR', 'GB', 'ID', 'IN', 'IT', 'JP', 'MY', 'NL', 'TW', 'US']
 categories = [
     "expos",
@@ -19,6 +18,7 @@ categories = [
     "sports",
 ]
 
+#시간대 한국으로 설정
 kst = pytz.timezone('Asia/Seoul')
 utc_now = datetime.utcnow()
 kst_now = utc_now.astimezone(kst)
@@ -28,6 +28,7 @@ yesterday = datetime.today() - timedelta(days=1)
 future_date_str = future_date.strftime('%Y-%m-%d')
 yesterday_str = yesterday.strftime('%Y-%m-%d')
 
+#가져올 데이터 설정
 def fetch_data_setting(country, category):
     ACCESS_TOKEN = Variable.get('predicthq_ACCESS_TOKEN')
     response1 = requests.get(
@@ -67,7 +68,7 @@ def fetch_data_setting(country, category):
     data2 = response2.json()
     return [data1, data2]
 
-
+#새로운 데이터와 새로 업데이트된 행사 데이터 가져오기
 def fetch_and_upload_data(**kwargs):
     combined_df = pd.DataFrame()
     for country in countrys:
@@ -79,7 +80,7 @@ def fetch_and_upload_data(**kwargs):
 
     if not combined_df.empty:
         combined_df = combined_df.sort_values(by=['rank', 'predicted_event_spend'], ascending=[False, False])
-        combined_df['update_type'] = 0  # Add update_type column with value 0
+        combined_df['update_type'] = 0  
         combined_df.to_csv(f'/tmp/TravelEvent_data.csv', index=False, encoding='utf-8-sig')
     else:
         combined_df.to_csv(f'/tmp/TravelEvent_data.csv', index=False, encoding='utf-8-sig')
@@ -97,7 +98,7 @@ def fetch_and_upload_data(**kwargs):
 
     if not combined_up_df.empty:
         combined_up_df = combined_up_df.sort_values(by=['rank', 'predicted_event_spend'], ascending=[False, False])
-        combined_up_df['update_type'] = 1  # Add update_type column with value 1
+        combined_up_df['update_type'] = 1 
         combined_up_df.to_csv(f'/tmp/UP_TravelEvent_data.csv', index=False, encoding='utf-8-sig')
     else:
         combined_up_df.to_csv(f'/tmp/UP_TravelEvent_data.csv', index=False, encoding='utf-8-sig')
@@ -108,6 +109,7 @@ def fetch_and_upload_data(**kwargs):
     kwargs['ti'].xcom_push(key='combined_df_path', value='/tmp/TravelEvent_data.csv')
     kwargs['ti'].xcom_push(key='combined_up_df_path', value='/tmp/UP_TravelEvent_data.csv')
 
+#전날 데이터 가져오기
 def read_data_from_s3(**kwargs):
     s3_hook = S3Hook('s3_connection')
     s3_bucket_name = Variable.get('s3_bucket_name')
@@ -116,19 +118,25 @@ def read_data_from_s3(**kwargs):
     if s3_hook.check_for_key(key=s3_key, bucket_name=s3_bucket_name):
         file_obj = s3_hook.get_key(key=s3_key, bucket_name=s3_bucket_name)
         file_content = file_obj.get()['Body'].read().decode('utf-8')
-        transformed_data = {'file_content': file_content}  # 사전 형태로 초기화
+        transformed_data = {'file_content': file_content}  
     else:
         print("파일을 찾을 수 없습니다. 건너뜁니다.")
         transformed_data = None
 
     kwargs['ti'].xcom_push(key='s3_data', value=transformed_data)
 
+'''
+전날 데이터와 최신 데이터로 update_type을 기반으로 한 update csv 파일 업데이트
+0-동일한 데이터, 변화 X
+1-행사 위치가 아닌 다른 데이터의 변화 O
+2-행사 위치를 포함한 데이터의 변화 O
+3-새로운 EventID 생성됨 O 
+'''
 def update_combined_df(**kwargs):
     ti = kwargs['ti']
     combined_df_path = ti.xcom_pull(task_ids='fetch_data_TravelEvents', key='combined_df_path')
     combined_up_df_path = ti.xcom_pull(task_ids='fetch_data_TravelEvents', key='combined_up_df_path')
 
-    # Load combined_df and combined_up_df from XCom paths
     combined_df = pd.read_csv(combined_df_path)
     combined_up_df = pd.read_csv(combined_up_df_path)
 
@@ -137,22 +145,19 @@ def update_combined_df(**kwargs):
     if s3_data and 'file_content' in s3_data:
         file_content = s3_data['file_content']
         pre_df = pd.read_csv(StringIO(file_content))
-        pre_df['update_type'] = 0  # Ensure that 'update_type' is set to 0 in pre_df
+        pre_df['update_type'] = 0  
 
-        # Identify new data in combined_df
         combined_ids = set(combined_df['id'])
         pre_ids = set(pre_df['id'])
         new_data = combined_df[combined_df['id'].isin(combined_ids - pre_ids)]
         new_data['update_type'] = 3
 
-        # Merge combined_up_df with pre_df on 'id' to find discrepancies
         merged_df = pd.merge(combined_up_df, pre_df[['id', 'location']], on='id', how='left', suffixes=('', '_pre'))
         merged_df['update_type'] = merged_df.apply(
             lambda row: 2 if row['location'] != row['location_pre'] else row['update_type'],
             axis=1
         )
 
-        # Combine updated data with new_data
         updated_combined_up_df = pd.concat([merged_df, new_data], ignore_index=True)
         if not updated_combined_up_df.empty:
             updated_combined_up_df = updated_combined_up_df.sort_values(by=['rank', 'predicted_event_spend'],
@@ -167,10 +172,10 @@ def update_combined_df(**kwargs):
         print("No previous data found in S3. Skipping update.")
 
 
-
+#update csv 파일과 최신 데이터 S3에 저장
 def generate_and_save_data(**kwargs):
     csv_filename = f'/tmp/TravelEvent_data.csv'
-    csv_up_filename = f'/tmp/NEWUP_TravelEvent_data.csv'  # Connection ID of your S3 connection in Airflow
+    csv_up_filename = f'/tmp/NEWUP_TravelEvent_data.csv'
     s3_bucket_name = Variable.get('s3_bucket_name')
     s3_key = f'source/source_TravelEvents/{today}/TravelEvents.csv'
     s3_up_key = f'source/source_TravelEvents/{today}/UP_TravelEvents.csv'
@@ -187,7 +192,6 @@ default_args = {
     'retry_delay': timedelta(minutes=1),
 }
 
-# Define the DAG
 dag = DAG(
     'update_TravelEvents_Dags',
     default_args=default_args,
@@ -223,27 +227,28 @@ upload_to_s3_task = PythonOperator(
     dag=dag,
 )
 
+#행사 정보가 필요한 다른 Dag들 트리거로 실행
 trigger_second_dag = TriggerDagRunOperator(
     task_id='trigger_second_dag',
-    trigger_dag_id='update_TravelEvents_Dags_to_Redshift',  # The ID of the second DAG
+    trigger_dag_id='update_TravelEvents_Dags_to_Redshift',
     dag=dag,
 )
 
 trigger_third_dag = TriggerDagRunOperator(
     task_id='trigger_third_dag',
-    trigger_dag_id='nearest_airports_dag',  # The ID of the third DAG
+    trigger_dag_id='nearest_airports_dag',
     dag=dag,
 )
 
 trigger_fourth_dag = TriggerDagRunOperator(
     task_id='trigger_fourth_dag',
-    trigger_dag_id='place_update',  # 네 번째 DAG의 ID
+    trigger_dag_id='place_update',
     dag=dag,
 )
 
 trigger_fifth_dag = TriggerDagRunOperator(
     task_id='trigger_fifth_dag',
-    trigger_dag_id='google_hotel_list',  # 다섯 번째 DAG의 ID
+    trigger_dag_id='google_hotel_list',
     dag=dag,
 )
 
