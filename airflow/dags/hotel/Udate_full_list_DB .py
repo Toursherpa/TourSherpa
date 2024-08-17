@@ -7,7 +7,6 @@ from airflow.hooks.postgres_hook import PostgresHook
 import logging
 import os
 
-# 기본 DAG 설정
 
 def update_table(**kwargs):
     redshift_conn_id = 'redshift_connection'
@@ -16,10 +15,8 @@ def update_table(**kwargs):
     conn = redshift_hook.get_conn()
     cursor = conn.cursor()
     
-    # 파일 경로 설정
     file_path = f'/tmp/{datetime.utcnow().strftime("%Y-%m-%d")}/Updated_hotels.csv'
 
-    # 파일이 존재하는지 확인
     try:
         hotel_df = pd.read_csv(file_path, usecols=[
         'hotel_id', 'chain_id', 'chain_name', 'hotel_name', 'city', 'star_rating', 

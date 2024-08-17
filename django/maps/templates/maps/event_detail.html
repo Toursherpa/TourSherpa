@@ -32,7 +32,7 @@
                         <th>출발 시간</th>
                         <th>도착 시간</th>
                         <th>소요 시간</th>
-                        <th>남은 좌석 수</th>
+                        <th>예약 가능한 좌석</th>
                         <th>평균 가격 (원)</th>
                         <th>예약 링크 (Skyscanner)</th>
                     </tr>
@@ -40,9 +40,7 @@
                 <tbody>
                     {% for f in flight_to %}
                     <tr>
-                        <td>
-                            <a class="nav-link" href="https://www.skyscanner.co.kr/transport/flights/ICN/{{ f.arrival }}/{{ f.departure_date }}/?adults=1&airlines={{ f.airline_code }}&departure-times={{ f.departure_min }}-{{ f.departure_min }}&preferdirects=true" target="_blank" rel="noopener noreferrer">{{ f.airline_name }}({{ f.airline_code }})</a>
-                        </td>
+                        <td>{{ f.airline_name }}({{ f.airline_code }})</td>
                         <td>{{ f.departure_at|format_date }}</td>
                         <td>{{ f.arrival_at|format_date }}</td>
                         <td>{{ f.duration }}</td>
@@ -70,13 +68,13 @@
                         <th>출발 시간</th>
                         <th>도착 시간</th>
                         <th>소요 시간</th>
-                        <th>남은 좌석 수</th>
+                        <th>예약 가능한 좌석</th>
                         <th>평균 가격 (원)</th>
                         <th>예약 링크 (Skyscanner)</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for f in flight_to %}
+                    {% for f in flight_from %}
                     <tr>
                         <td>{{ f.airline_name }}({{ f.airline_code }})</td>
                         <td>{{ f.departure_at|format_date }}</td>
