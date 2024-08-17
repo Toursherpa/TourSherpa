@@ -79,7 +79,7 @@ def fetch_and_upload_data(**kwargs):
 
     if not combined_df.empty:
         combined_df = combined_df.sort_values(by=['rank', 'predicted_event_spend'], ascending=[False, False])
-        combined_df['update_type'] = 0  # Add update_type column with value 0
+        combined_df['update_type'] = 0  
         combined_df.to_csv(f'/tmp/TravelEvent_data.csv', index=False, encoding='utf-8-sig')
     else:
         combined_df.to_csv(f'/tmp/TravelEvent_data.csv', index=False, encoding='utf-8-sig')
@@ -97,7 +97,7 @@ def fetch_and_upload_data(**kwargs):
 
     if not combined_up_df.empty:
         combined_up_df = combined_up_df.sort_values(by=['rank', 'predicted_event_spend'], ascending=[False, False])
-        combined_up_df['update_type'] = 1  # Add update_type column with value 1
+        combined_up_df['update_type'] = 1 
         combined_up_df.to_csv(f'/tmp/UP_TravelEvent_data.csv', index=False, encoding='utf-8-sig')
     else:
         combined_up_df.to_csv(f'/tmp/UP_TravelEvent_data.csv', index=False, encoding='utf-8-sig')
@@ -116,7 +116,7 @@ def read_data_from_s3(**kwargs):
     if s3_hook.check_for_key(key=s3_key, bucket_name=s3_bucket_name):
         file_obj = s3_hook.get_key(key=s3_key, bucket_name=s3_bucket_name)
         file_content = file_obj.get()['Body'].read().decode('utf-8')
-        transformed_data = {'file_content': file_content}  # 사전 형태로 초기화
+        transformed_data = {'file_content': file_content}  
     else:
         print("파일을 찾을 수 없습니다. 건너뜁니다.")
         transformed_data = None
@@ -128,7 +128,6 @@ def update_combined_df(**kwargs):
     combined_df_path = ti.xcom_pull(task_ids='fetch_data_TravelEvents', key='combined_df_path')
     combined_up_df_path = ti.xcom_pull(task_ids='fetch_data_TravelEvents', key='combined_up_df_path')
 
-    # Load combined_df and combined_up_df from XCom paths
     combined_df = pd.read_csv(combined_df_path)
     combined_up_df = pd.read_csv(combined_up_df_path)
 
@@ -137,22 +136,19 @@ def update_combined_df(**kwargs):
     if s3_data and 'file_content' in s3_data:
         file_content = s3_data['file_content']
         pre_df = pd.read_csv(StringIO(file_content))
-        pre_df['update_type'] = 0  # Ensure that 'update_type' is set to 0 in pre_df
+        pre_df['update_type'] = 0  
 
-        # Identify new data in combined_df
         combined_ids = set(combined_df['id'])
         pre_ids = set(pre_df['id'])
         new_data = combined_df[combined_df['id'].isin(combined_ids - pre_ids)]
         new_data['update_type'] = 3
 
-        # Merge combined_up_df with pre_df on 'id' to find discrepancies
         merged_df = pd.merge(combined_up_df, pre_df[['id', 'location']], on='id', how='left', suffixes=('', '_pre'))
         merged_df['update_type'] = merged_df.apply(
             lambda row: 2 if row['location'] != row['location_pre'] else row['update_type'],
             axis=1
         )
 
-        # Combine updated data with new_data
         updated_combined_up_df = pd.concat([merged_df, new_data], ignore_index=True)
         if not updated_combined_up_df.empty:
             updated_combined_up_df = updated_combined_up_df.sort_values(by=['rank', 'predicted_event_spend'],
@@ -170,7 +166,7 @@ def update_combined_df(**kwargs):
 
 def generate_and_save_data(**kwargs):
     csv_filename = f'/tmp/TravelEvent_data.csv'
-    csv_up_filename = f'/tmp/NEWUP_TravelEvent_data.csv'  # Connection ID of your S3 connection in Airflow
+    csv_up_filename = f'/tmp/NEWUP_TravelEvent_data.csv'
     s3_bucket_name = Variable.get('s3_bucket_name')
     s3_key = f'source/source_TravelEvents/{today}/TravelEvents.csv'
     s3_up_key = f'source/source_TravelEvents/{today}/UP_TravelEvents.csv'
@@ -187,7 +183,6 @@ default_args = {
     'retry_delay': timedelta(minutes=1),
 }
 
-# Define the DAG
 dag = DAG(
     'update_TravelEvents_Dags',
     default_args=default_args,
@@ -225,25 +220,25 @@ upload_to_s3_task = PythonOperator(
 
 trigger_second_dag = TriggerDagRunOperator(
     task_id='trigger_second_dag',
-    trigger_dag_id='update_TravelEvents_Dags_to_Redshift',  # The ID of the second DAG
+    trigger_dag_id='update_TravelEvents_Dags_to_Redshift',
     dag=dag,
 )
 
 trigger_third_dag = TriggerDagRunOperator(
     task_id='trigger_third_dag',
-    trigger_dag_id='nearest_airports_dag',  # The ID of the third DAG
+    trigger_dag_id='nearest_airports_dag',
     dag=dag,
 )
 
 trigger_fourth_dag = TriggerDagRunOperator(
     task_id='trigger_fourth_dag',
-    trigger_dag_id='place_update',  # 네 번째 DAG의 ID
+    trigger_dag_id='place_update',
     dag=dag,
 )
 
 trigger_fifth_dag = TriggerDagRunOperator(
     task_id='trigger_fifth_dag',
-    trigger_dag_id='google_hotel_list',  # 다섯 번째 DAG의 ID
+    trigger_dag_id='google_hotel_list',
     dag=dag,
 )
 
