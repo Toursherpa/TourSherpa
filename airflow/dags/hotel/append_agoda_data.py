@@ -26,17 +26,14 @@ def download_files():
     hotel_list_key = 'source/source_TravelEvents/hotel_list.csv'
     events_key = 'source/source_TravelEvents/TravelEvents.csv'
 
-    # 오늘 날짜의 디렉터리 생성
     local_dir = f'/tmp/{today_date}'
     os.makedirs(local_dir, exist_ok=True)
     print(f"{local_dir} 디렉터리를 생성했습니다.")
 
-    # 로컬 파일 경로 설정
     local_google_hotels_path = os.path.join(local_dir, 'google_hotels.csv')
     local_hotel_list_path = os.path.join(local_dir, 'hotel_list.csv')
     local_events_path = os.path.join(local_dir, 'TravelEvents.csv')
 
-    # 파일이 없거나 손상된 경우 다운로드
     def download_if_needed(local_path, s3_key=None):
         if not os.path.exists(local_path) or os.path.getsize(local_path) == 0:
             if s3_key:
@@ -45,7 +42,6 @@ def download_files():
                 content = s3_object.get()['Body'].read().decode('utf-8')
                 with open(local_path, 'w') as f:
                     f.write(content)
-            # 파일 권한 설정
             os.chmod(local_path, stat.S_IRWXU | stat.S_IRWXG | stat.S_IROTH | stat.S_IXOTH)
             print(f"{local_path} 파일이 성공적으로 다운로드되었습니다.")
         else:
@@ -89,7 +85,6 @@ def exact_match(row, hotel_chunk_df):
     hotel_chunk_df['name_normalized'] = hotel_chunk_df['hotel_name'].apply(preprocess_text)
     row['name_normalized'] = preprocess_text(row['name'])
     
-    # 문자열이 아닌 값이 있는 경우 원래 데이터를 반환
     if not isinstance(row['name_normalized'], str):
         print(f"이름 필드가 유효하지 않아 원본 행을 반환합니다: {row['name']}")
         return row
@@ -150,11 +145,9 @@ def process_hotels():
 
     print("데이터 프레임이 로드되었습니다. 매칭 프로세스를 시작합니다...")
 
-    # hotel_list_df를 청크로 나누고 병렬 처리
     num_chunks = 50  # 병렬 처리할 청크 수
     hotel_chunks = np.array_split(hotel_list_df, num_chunks)
 
-    # 각 청크를 파일로 저장
     chunk_paths = []
     for i, chunk in enumerate(hotel_chunks):
         chunk_path = f'/tmp/{today_date}/hotel_chunk_{i}.csv'
@@ -183,7 +176,6 @@ def merge_chunks(total_chunks):
         except pd.errors.EmptyDataError:
             logging.warning(f"{file_path} 파일을 읽을 수 없어 건너뜁니다.")
 
-    # 병합 작업
     try:
         if processed_chunks:
             combined_df = pd.concat(processed_chunks, ignore_index=True)
@@ -191,7 +183,6 @@ def merge_chunks(total_chunks):
         else:
             processed_df = pd.DataFrame()
 
-        # 병합된 데이터 저장
         output_file_path = f'/tmp/{today_date}/Updated_hotels.csv'
         processed_df.to_csv(output_file_path, index=False)
         os.chmod(output_file_path, stat.S_IRWXU | stat.S_IRWXG | stat.S_IROTH | stat.S_IXOTH)
@@ -201,7 +192,6 @@ def merge_chunks(total_chunks):
         logging.error(f"병합 작업 중 오류 발생: {e}")
         processed_df = pd.DataFrame()
 
-    # 청크 파일 삭제
     for i in range(total_chunks):
         processed_chunk_path = f'/tmp/{today_date}/processed_chunk_{i}.csv'
         hotel_chunk_path = f'/tmp/{today_date}/hotel_chunk_{i}.csv'
@@ -290,5 +280,4 @@ t4 = PythonOperator(
     dag=dag,
 )
 
-# 다운로드 -> 청크 생성 및 병렬 처리 태스크 생성 -> 병합 -> 업로드
 t1 >> t2 >> create_processing_tasks(50, [f'/tmp/{today_date}/hotel_chunk_{i}.csv' for i in range(50)]) >> t3 >> t4

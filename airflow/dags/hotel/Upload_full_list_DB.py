@@ -6,7 +6,6 @@ from datetime import datetime, timedelta
 from airflow.hooks.postgres_hook import PostgresHook
 import logging
 
-# 기본 DAG 설정
 def create_schema_table(**kwargs):
     redshift_conn_id = 'redshift_connection'
     table_name = 'hotel_list'
@@ -17,7 +16,6 @@ def create_schema_table(**kwargs):
     cursor = conn.cursor()
     drop_table = f"DROP TABLE IF EXISTS {schema_name}.{table_name};"
     
-    # Define the table schema
     create_table_sql = f"""
     CREATE TABLE IF NOT EXISTS {schema_name}.{table_name} (
         event_id VARCHAR(512) PRIMARY KEY,  -- Increased length
