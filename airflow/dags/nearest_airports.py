@@ -8,28 +8,18 @@ from airflow.providers.amazon.aws.hooks.s3 import S3Hook
 from airflow.providers.amazon.aws.transfers.s3_to_redshift import S3ToRedshiftOperator
 from airflow.hooks.postgres_hook import PostgresHook
 from datetime import timedelta, datetime
-from airflow.utils.dates import days_ago
 from airflow.models import Variable
 from io import StringIO
 import pytz
 
-'''
-geodesic 라이브러리 설치 필요
-
-행사 기준으로 가장 가까운 나라의 공항을 찾아주는 알고리즘 적용 -> 테이블 생성
-01. S3에서 TravelEvents.csv, flight_airport.csv파일 불러오기
-02. country 컬럼값으로 동일한 국가 내에서 가까운 공항 탐색, 위도 경도 활용 (geodesic)
-03. 테이블 생성
-04. S3적재, Redshift COPY
-'''
-
+# 한국 시간대 설정
 kst = pytz.timezone('Asia/Seoul')
 
-
+# S3에서 데이터를 읽어오는 함수
 def read_data_from_s3(macros, **context):
     today = (macros.datetime.now().astimezone(kst)).strftime('%Y-%m-%d')
-
     logging.info(f"Starting read_data_from_s3 {today}")
+
     try:
         s3_hook = S3Hook(aws_conn_id='s3_connection')
         bucket_name = Variable.get('s3_bucket_name')
@@ -46,10 +36,8 @@ def read_data_from_s3(macros, **context):
         event_df = pd.read_csv(StringIO(events_file_content))
         airport_df = pd.read_csv(StringIO(airports_file_content))
 
-        event_df[['lon', 'lat']] = pd.DataFrame(event_df['location'].apply(lambda x: eval(x)).tolist(),
-                                                index=event_df.index)
-        airport_df[['airport_lat', 'airport_lon']] = pd.DataFrame(
-            airport_df['airport_location'].apply(lambda x: eval(x)).tolist(), index=airport_df.index)
+        event_df[['lon', 'lat']] = pd.DataFrame(event_df['location'].apply(lambda x: eval(x)).tolist(), index=event_df.index)
+        airport_df[['airport_lat', 'airport_lon']] = pd.DataFrame(airport_df['airport_location'].apply(lambda x: eval(x)).tolist(), index=airport_df.index)
 
         context['ti'].xcom_push(key='event_df', value=event_df.to_dict(orient='records'))
         context['ti'].xcom_push(key='airport_df', value=airport_df.to_dict(orient='records'))
@@ -57,9 +45,10 @@ def read_data_from_s3(macros, **context):
 
     except Exception as e:
         logging.error(f"Error in read_data_from_s3: {e}")
+
         raise
 
-
+# 가장 가까운 공항을 찾는 함수
 def find_nearest_airports(**context):
     try:
         event_df = pd.DataFrame(context['ti'].xcom_pull(key='event_df'))
@@ -68,7 +57,6 @@ def find_nearest_airports(**context):
         def find_nearest_airport(event_lat, event_lon, event_country, airport_df):
             min_distance = float('inf')
             nearest_airport = None
-
             country_airports = airport_df[airport_df['country_code'] == event_country]
 
             for _, airport in country_airports.iterrows():
@@ -83,8 +71,10 @@ def find_nearest_airports(**context):
             return nearest_airport
 
         results = []
+
         for _, event in event_df.iterrows():
             nearest_airport = find_nearest_airport(event['lat'], event['lon'], event['country'], airport_df)
+
             if nearest_airport is not None:
                 results.append({
                     'id': event['id'],
@@ -97,23 +87,22 @@ def find_nearest_airports(**context):
                 })
 
         result_df = pd.DataFrame(results)
-
-        result_df = pd.DataFrame(results)
         csv_filename = '/tmp/nearest_airports.csv'
+
         result_df.to_csv(csv_filename, index=False, encoding='utf-8-sig')
 
         s3_hook = S3Hook('s3_connection')
         s3_result_key = 'source/source_flight/nearest_airports.csv'
         s3_bucket_name = Variable.get('s3_bucket_name')
         s3_hook.load_file(filename=csv_filename, key=s3_result_key, bucket_name=s3_bucket_name, replace=True)
-
         logging.info("Nearest airports data has been calculated and uploaded to S3.")
 
     except Exception as e:
         logging.error(f"Error in find_nearest_airports: {e}")
+
         raise
 
-
+# Redshift에 테이블을 생성하는 함수
 def preprocess_redshift_table():
     try:
         redshift_hook = PostgresHook(postgres_conn_id='redshift_connection')
@@ -135,16 +124,15 @@ def preprocess_redshift_table():
             );
         """)
         redshift_conn.commit()
-
         redshift_conn.close()
-
         logging.info(f"Redshift table nearest_airports has been dropped and recreated.")
 
     except Exception as e:
         logging.error(f"Error in preprocess_redshift_table: {e}")
+
         raise
 
-
+# DAG 기본 설정
 default_args = {
     'owner': 'airflow',
     'start_date': datetime(2024, 8, 9, tzinfo=kst),
@@ -152,6 +140,7 @@ default_args = {
     'retry_delay': timedelta(minutes=5),
 }
 
+# DAG 정의
 dag = DAG(
     'nearest_airports_dag',
     default_args=default_args,
@@ -160,6 +149,7 @@ dag = DAG(
     catchup=False,
 )
 
+# 태스크 정의
 read_data_from_s3_task = PythonOperator(
     task_id='read_data_from_s3',
     python_callable=read_data_from_s3,
@@ -205,5 +195,5 @@ trigger_third_dag = TriggerDagRunOperator(
     dag=dag,
 )
 
+# 태스크 실행 순서 설정
 read_data_from_s3_task >> find_nearest_airports_task >> preprocess_redshift_task >> load_to_redshift_task >> trigger_second_dag >> trigger_third_dag
-

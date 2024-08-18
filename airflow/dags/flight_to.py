@@ -1,40 +1,38 @@
-from airflow import DAG
-from airflow.operators.python_operator import PythonOperator
-from airflow.providers.amazon.aws.transfers.s3_to_redshift import S3ToRedshiftOperator
-from airflow.hooks.postgres_hook import PostgresHook
 import logging
-
-from airflow.providers.amazon.aws.hooks.s3 import S3Hook
 import pandas as pd
 from io import StringIO
-from bs4 import BeautifulSoup
-from datetime import timedelta, datetime
+from datetime import datetime, timedelta
+import pytz
 import requests
 import re
-import pytz
 import time
-from amadeus import Client, ResponseError
+from airflow import DAG
+from airflow.operators.python_operator import PythonOperator
+from airflow.providers.amazon.aws.hooks.s3 import S3Hook
+from airflow.providers.amazon.aws.transfers.s3_to_redshift import S3ToRedshiftOperator
+from airflow.hooks.postgres_hook import PostgresHook
 from airflow.models import Variable
+from amadeus import Client, ResponseError
+from bs4 import BeautifulSoup
 
+# 한국 시간대 설정
 kst = pytz.timezone('Asia/Seoul')
 
+# S3에서 데이터를 읽어오는 함수
 def read_csv_from_s3(bucket_name, file_key):
     s3_hook = S3Hook(aws_conn_id='s3_connection')
-
     file_obj = s3_hook.get_key(key=file_key, bucket_name=bucket_name)
     file_content = file_obj.get()['Body'].read().decode('utf-8')
 
     return pd.read_csv(StringIO(file_content))
 
+# 공항별 항공권 날짜 구하는 함수
 def fetch_flight_date(startdelta, enddelta, today):
     s3_hook = S3Hook(aws_conn_id='s3_connection')
     bucket_name = Variable.get('s3_bucket_name')
-    file_key = 'source/source_flight/nearest_airports.csv'
-
+    file_key = 'source/source_flight/airports.csv'
     df = read_csv_from_s3(bucket_name, file_key)
-
     airport_dict = {}
-
     min_date = datetime.strptime(today, '%Y-%m-%d')
 
     for _, row in df.iterrows():
@@ -60,16 +58,15 @@ def fetch_flight_date(startdelta, enddelta, today):
 
     return airport_dict
 
+# 항공사 데이터 가져오는 함수
 def fetch_airline_data():
     url = "https://www.airport.kr/ap/ko/dep/apAirlinesList.do"
     res = requests.get(url)
     soup = BeautifulSoup(res.text, 'html.parser')
-
     airline_list = []
 
     for i in soup.find_all("tr")[16: ]:
         info_dict = dict()
-
         info_dict['airline_code'] = re.sub(r'[\n\r\t ]', '', i.find_all("td")[4].text)
         info_dict['airline_name'] = re.sub(r'[\n\r\t ]', '', i.find_all("td")[0].text)
 
@@ -83,28 +80,25 @@ def fetch_airline_data():
 
     return pd.DataFrame(airline_list)
 
+# 유로 환율 가져오는 함수
 def euro_data():
     url = "https://m.stock.naver.com/marketindex/exchange/FX_EURKRW"
     res = requests.get(url)
     soup = BeautifulSoup(res.text, 'html.parser')
-
     euro = float(soup.find_all("strong")[1].text[: -3].replace(",", ""))
 
     return euro
 
+# 항공권 데이터 가져오는 함수
 def fetch_flight_data(airport_dict, airline_df, euro, check):
     amadeus = Client(
         client_id = Variable.get("amadeus_id"),
         client_secret = Variable.get("amadeus_secret")
     )
-    
     response_list = []
     count = 0
 
     for i in airport_dict:
-        if i != 'BNE':
-            continue
-            
         date_list = sorted(list(airport_dict[i]))
 
         for j in date_list:
@@ -124,7 +118,6 @@ def fetch_flight_data(airport_dict, airline_df, euro, check):
                         adults=1,
                         nonStop='true'
                     )
-
                     logging.info(f'[{count}]')
 
                     if response.data:
@@ -143,7 +136,6 @@ def fetch_flight_data(airport_dict, airline_df, euro, check):
     for i in response_list:
         for j in i:
             info_dict = dict()
-        
             info_dict['airline_code'] = j['itineraries'][0]['segments'][0]['carrierCode']
             info_dict['departure'] = j['itineraries'][0]['segments'][0]['departure']['iataCode']
             info_dict['departure_at'] = j['itineraries'][0]['segments'][0]['departure']['at']
@@ -156,7 +148,6 @@ def fetch_flight_data(airport_dict, airline_df, euro, check):
             flight_list.append(info_dict)
 
     flight_df = pd.DataFrame(flight_list)
-
     df = pd.merge(flight_df, airline_df, on='airline_code', how='inner')
 
     def date_change(value):
@@ -182,8 +173,10 @@ def fetch_flight_data(airport_dict, airline_df, euro, check):
 
     return df
 
+# S3에 데이터를 업로드하는 함수
 def upload_to_s3(df, filename):
     csv_filename = f'/tmp/{filename}.csv'
+
     df.to_csv(csv_filename, index=False, encoding='utf-8-sig')
 
     s3_hook = S3Hook(aws_conn_id='s3_connection')
@@ -191,6 +184,7 @@ def upload_to_s3(df, filename):
     s3_result_key = f'source/source_flight/{filename}.csv'
     s3_hook.load_file(filename=csv_filename, key=s3_result_key, bucket_name=s3_bucket_name, replace=True)
 
+# 전체 데이터를 S3에 저장하는 함수
 def data_to_s3(macros):
     today = (macros.datetime.now().astimezone(kst)).strftime('%Y-%m-%d')
     logging.info(f"Starting data_to_s3 {today}")
@@ -208,24 +202,26 @@ def data_to_s3(macros):
         df = fetch_flight_data(airport_dict, airline_df, euro, 0)
         logging.info(f"finish df")
 
-        upload_to_s3(df, "flight_to_test")
+        upload_to_s3(df, "flight_to")
         logging.info(f"finish flight_to to s3")
     except Exception as e:
         logging.error(f"Error in data_to_s3: {e}")
+
         raise
 
+# Redshift에 테이블을 생성하는 함수
 def create_redshift_table():
     try:
         redshift_hook = PostgresHook(postgres_conn_id='redshift_connection')
         redshift_conn = redshift_hook.get_conn()
         cursor = redshift_conn.cursor()
 
-        cursor.execute("DROP TABLE IF EXISTS flight.flight_to_test;")
+        cursor.execute("DROP TABLE IF EXISTS flight.flight_to;")
         redshift_conn.commit()
         logging.info("drop table")
         
         cursor.execute("""
-            CREATE TABLE flight.flight_to_test (
+            CREATE TABLE flight.flight_to (
                 airline_code VARCHAR(255),
                 departure VARCHAR(255),
                 departure_at VARCHAR(255),
@@ -245,8 +241,10 @@ def create_redshift_table():
         redshift_conn.close()
     except Exception as e:
         logging.error(f"Error in create_redshift_table: {e}")
+
         raise
 
+# DAG 기본 설정
 default_args = {
     'owner': 'airflow',
     'start_date': datetime(2024, 8, 9, tzinfo=kst),
@@ -254,6 +252,7 @@ default_args = {
     'retry_delay': timedelta(minutes=5),
 }
 
+# DAG 정의
 dag = DAG(
     'flight_to',
     default_args=default_args,
@@ -261,6 +260,7 @@ dag = DAG(
     catchup=False,
 )
 
+# 태스크 정의
 data_to_s3_task = PythonOperator(
     task_id='data_to_s3',
     python_callable=data_to_s3,
@@ -278,13 +278,14 @@ create_redshift_table_task = PythonOperator(
 load_to_redshift_task = S3ToRedshiftOperator(
     task_id='load_to_redshift',
     schema='flight',
-    table='flight_to_test',
+    table='flight_to',
     s3_bucket=Variable.get('s3_bucket_name'),
-    s3_key='source/source_flight/flight_to_test.csv',
+    s3_key='source/source_flight/flight_to.csv',
     copy_options=['IGNOREHEADER 1', 'CSV'],
     aws_conn_id='s3_connection',
     redshift_conn_id='redshift_connection',
     dag=dag,
 )
 
+# 태스크 실행 순서 설정
 data_to_s3_task >> create_redshift_table_task >> load_to_redshift_task
