@@ -1,39 +1,39 @@
 from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
-from airflow.hooks.base import BaseHook
-from airflow.utils.dates import days_ago
-import pandas as pd 
-import boto3
-from bs4 import BeautifulSoup
+from airflow.providers.amazon.aws.transfers.s3_to_redshift import S3ToRedshiftOperator
+from airflow.hooks.postgres_hook import PostgresHook
+from airflow.providers.amazon.aws.hooks.s3 import S3Hook
+from airflow.models import Variable
+from datetime import datetime, timedelta
+import logging
 import requests
-import re
+import pytz
+import pandas as pd
 
-# Airflow Connection에서 S3 연결 정보 가져오기
-def get_s3_connection():
-    connection = BaseHook.get_connection('s3_connection')
-    return connection
+# 한국 시간대 설정
+kst = pytz.timezone('Asia/Seoul')
 
-# Google api 를 통해 공항 위도/경도 가져오기
-def fetch_airport_data():
-
-    # Google api 요청
-    def get_lat_lng(address, api_key):
+# Google Maps API를 사용하여 주소에서 위도와 경도를 가져오는 함수
+def get_lat_lng(address):
         base_url = "https://maps.googleapis.com/maps/api/geocode/json"
         params = {
             "address": address,
-            "key": api_key
+            "key": Variable.get('GOOGLE_API_KEY')
         }
         response = requests.get(base_url, params=params)
+
         if response.status_code == 200:
             results = response.json().get("results", [])
+
             if results:
                 location = results[0]["geometry"]["location"]
+                
                 return location["lat"], location["lng"]
+
         return None
 
-    api_key = "AIzaSyDjHHvstL_C732TlF3eH5giO8XhJrwaCIc"
-
-    # 데이터 처리
+# 공항 데이터를 가져오는 함수
+def fetch_airport_data():
     airport_list = [
         {'airport_code': 'NRT', 'airport_name': '나리타 국제공항', 'airport_location': [], 'country_code': 'JP', 'country_name': '일본'},
         {'airport_code': 'KIX', 'airport_name': '간사이 국제공항', 'airport_location': [], 'country_code': 'JP', 'country_name': '일본'},
@@ -74,46 +74,109 @@ def fetch_airport_data():
 
     for i, v in enumerate(airport_list):
         address = v['airport_name']
-
-        lat, lng = get_lat_lng(address, api_key)
+        lat, lng = get_lat_lng(address)
         airport_list[i]['airport_location'] = [lat, lng]
 
     return pd.DataFrame(airport_list)
 
-# S3에 파일 업로드
-def upload_to_s3(data):
-    s3_conn = get_s3_connection()
-    s3_client = boto3.client(
-        's3',
-        aws_access_key_id=s3_conn.login,
-        aws_secret_access_key=s3_conn.password
-    )
+# S3에 데이터를 업로드하는 함수
+def upload_to_s3(df, filename):
+    csv_filename = f'/tmp/{filename}.csv'
 
-    bucket_name = 'team-hori-2-bucket'
-    s3_client.put_object(Body=data.to_csv(index=False), Bucket=bucket_name, Key="source/source_flight/flight_airport.csv")
+    df.to_csv(csv_filename, index=False, encoding='utf-8-sig')
 
-# DAG 정의
+    s3_hook = S3Hook(aws_conn_id='s3_connection')
+    s3_bucket_name = Variable.get('s3_bucket_name')
+    s3_result_key = f'source/source_flight/{filename}.csv'
+
+    s3_hook.load_file(filename=csv_filename, key=s3_result_key, bucket_name=s3_bucket_name, replace=True)
+
+# 전체 데이터를 S3에 저장하는 함수
+def data_to_s3(macros):
+    logging.info("Starting data_to_s3")
+    
+    try:
+        df = fetch_airport_data()
+        logging.info("finish df")
+
+        upload_to_s3(df, "airport")
+        logging.info("finish airport to s3")
+    except Exception as e:
+        logging.error(f"Error in data_to_s3: {e}")
+
+        raise
+
+# Redshift에 테이블을 생성하는 함수
+def create_redshift_table():
+    try:
+        redshift_hook = PostgresHook(postgres_conn_id='redshift_connection')
+        redshift_conn = redshift_hook.get_conn()
+        cursor = redshift_conn.cursor()
+
+        cursor.execute("DROP TABLE IF EXISTS flight.airport;")
+        redshift_conn.commit()
+        logging.info("drop table")
+        
+        cursor.execute("""
+            CREATE TABLE flight.airport (
+                airport_code VARCHAR(255),
+                airport_name VARCHAR(255),
+                airport_location VARCHAR(255),
+                country_code VARCHAR(255),
+                country_name VARCHAR(255)
+            );
+        """)
+        redshift_conn.commit()
+        logging.info("create table")
+
+        redshift_conn.close()
+    except Exception as e:
+        logging.error(f"Error in create_redshift_table: {e}")
+
+        raise
+
+# DAG 기본 설정
 default_args = {
     'owner': 'airflow',
-    'start_date': days_ago(1),
+    'start_date': datetime(2024, 8, 9, tzinfo=kst),
+    'retries': 1,
+    'retry_delay': timedelta(minutes=5),
 }
 
-with DAG(
-    dag_id='flight_airport',
+# DAG 정의
+dag = DAG(
+    'flight_airport',
     default_args=default_args,
-    schedule_interval='@daily',
-    catchup=False
-) as dag:
+    schedule_interval='0 0 * * *',
+    catchup=False,
+)
 
-    fetch_data_task = PythonOperator(
-        task_id='fetch_airport_data',
-        python_callable=fetch_airport_data
-    )
+# 태스크 정의
+data_to_s3_task = PythonOperator(
+    task_id='data_to_s3',
+    python_callable=data_to_s3,
+    provide_context=True,
+    dag=dag,
+)
 
-    upload_data_task = PythonOperator(
-        task_id='upload_to_s3',
-        python_callable=upload_to_s3,
-        op_args=[fetch_data_task.output]
-    )
+create_redshift_table_task = PythonOperator(
+    task_id='create_redshift_table',
+    python_callable=create_redshift_table,
+    provide_context=True,
+    dag=dag,
+)
 
-    fetch_data_task >> upload_data_task
+load_to_redshift_task = S3ToRedshiftOperator(
+    task_id='load_to_redshift',
+    schema='flight',
+    table='airport',
+    s3_bucket=Variable.get('s3_bucket_name'),
+    s3_key='source/source_flight/airport.csv',
+    copy_options=['IGNOREHEADER 1', 'CSV'],
+    aws_conn_id='s3_connection',
+    redshift_conn_id='redshift_connection',
+    dag=dag,
+)
+
+# 태스크 실행 순서 설정
+data_to_s3_task >> create_redshift_table_task >> load_to_redshift_task

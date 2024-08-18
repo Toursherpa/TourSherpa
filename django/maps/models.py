@@ -51,7 +51,6 @@ class EventsForHotel(models.Model):
 class HotelList(models.Model):
     event_id = models.CharField(max_length=512, primary_key=True)
     google_name = models.CharField(max_length=1000, blank=True, null=True)
-    google_address = models.CharField(max_length=1000, blank=True, null=True)
     google_rating = models.FloatField(blank=True, null=True)
     google_user_ratings_total = models.IntegerField(blank=True, null=True)
     google_place_id = models.CharField(max_length=512, blank=True, null=True)
@@ -83,7 +82,7 @@ class FlightTo(models.Model):
     seats = models.IntegerField()
     price = models.IntegerField()
     airline_name = models.CharField(max_length=100)
-    departure_date = models.CharField(max_length=50)
+    departure_date = models.IntegerField()
     departure_min = models.IntegerField()
 
     class Meta:
@@ -101,22 +100,15 @@ class FlightFrom(models.Model):
     duration = models.CharField(max_length=50)
     seats = models.IntegerField()
     price = models.IntegerField()
+    airline_name = models.CharField(max_length=100)
+    departure_date = models.IntegerField()
+    departure_min = models.IntegerField()
 
     class Meta:
         db_table = 'flight_from'
 
     def __str__(self):
         return self.airline_code or self.departure
-
-class Airline(models.Model):
-    airline_code = models.CharField(max_length=50, primary_key=True)
-    airline_name = models.CharField(max_length=50)
-
-    class Meta:
-        db_table = 'airline'
-
-    def __str__(self):
-        return self.airline_code or self.airline_name
 
 class Airport(models.Model):
     airport_code = models.CharField(max_length=50, primary_key=True)
@@ -145,3 +137,24 @@ class NearestAirport(models.Model):
 
     def __str__(self):
         return self.id or self.airline_code
+    
+
+
+class PlaceforEvent(models.Model):
+    event_id = models.CharField(max_length=256, primary_key=True)  
+    event_title = models.CharField(max_length=256)  
+    place_name = models.CharField(max_length=256)  
+    address = models.CharField(max_length=256)  
+    rating = models.FloatField(null=True)  
+    number_of_reviews = models.IntegerField(null=True)  
+    review = models.TextField(blank=True, null=True) 
+    types = models.CharField(max_length=256, blank=True, null=True)  
+    opening_hours = models.TextField(blank=True, null=True)  
+
+
+    class Meta:
+        db_table = 'events_places_raw'  
+        #unique_together = (('event_id', 'place_name'),)  
+
+    def __str__(self):
+        return self.place_name

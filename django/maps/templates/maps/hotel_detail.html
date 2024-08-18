@@ -1,115 +1,111 @@
 {% extends 'maps/base.html' %}
 {% load static %}
 
+{% load custom_filters %}
 {% block title %}Hotel Detail - {{ hotel.google_name }}{% endblock %}
 
 {% block content %}
 <div class="container-fluid px-4">
-    <div class="card mt-4">
+    <div class="row">
+        <!-- 호텔 정보 -->
+        <div class="col-md-8">
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h2>{{ hotel.google_name }}</h2>
+                </div>
+                <div class="card-body">
+                    <h3>호텔 정보</h3>
+                    {% if hotel.google_rating %}
+                        <p><strong>평점:</strong> {{ hotel.google_rating }} ({{ hotel.google_user_ratings_total }}명) - Google</p>
+                    {% endif %}
+                    {% if hotel.agoda_star_rating %}
+                        <p><strong>등급:</strong> {{ hotel.agoda_star_rating }} - Agoda</p>
+                    {% endif %}
+                    {% if hotel.google_number_of_reviews %}
+                        <p><strong>리뷰 수:</strong> {{ hotel.google_number_of_reviews }}</p>
+                    {% endif %}
+                    {% if hotel.agoda_chain_name %}
+                        <p><strong>체인 이름:</strong> {{ hotel.agoda_chain_name }}</p>
+                    {% endif %}
+                    {% if hotel.agoda_city %}
+                        <p><strong>도시:</strong> {{ hotel.agoda_city }}</p>
+                    {% endif %}
+                    {% if hotel.agoda_checkin and hotel.agoda_checkout %}
+                        <p><strong>체크인/체크아웃:</strong> {{ hotel.agoda_checkin }} / {{ hotel.agoda_checkout }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- 호텔 이미지 -->
+        <div class="col-md-4">
+            <div class="card mt-4">
+                {% if image_url %}
+                    <img src="{{ image_url }}" alt="{{ hotel.google_name }}" class="card-img-top">
+                {% else %}
+                    <img src="/static/default_image.jpg" alt="Default Image" class="card-img-top">
+                {% endif %}
+                <div class="card-body">
+                    <p class="text-muted text-center">호텔 이미지</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mt-4 mb-4">
         <div class="card-header">
-            <h2>{{ hotel.google_name }}</h2>
+            <i class="fas fa-table me-1"></i>
+            행사 목록
         </div>
         <div class="card-body">
-            {% if hotel.google_address %}
-                <p><strong>Address:</strong> {{ hotel.google_address }}</p>
-            {% endif %}
-            {% if hotel.google_rating %}
-                <p><strong>Rating:</strong> {{ hotel.google_rating }}</p>
-            {% endif %}
-            {% if hotel.google_user_ratings_total %}
-                <p><strong>User Ratings Total:</strong> {{ hotel.google_user_ratings_total }}</p>
-            {% endif %}
-            {% if hotel.google_place_id %}
-                <p><strong>Place ID:</strong> {{ hotel.google_place_id }}</p>
-            {% endif %}
-            {% if hotel.google_number_of_reviews %}
-                <p><strong>Number of Reviews:</strong> {{ hotel.google_number_of_reviews }}</p>
-            {% endif %}
-            <hr>
-            <h3>Agoda Information</h3>
-            {% if hotel.agoda_hotel_name %}
-                <p><strong>Hotel Name:</strong> {{ hotel.agoda_hotel_name }}</p>
-            {% endif %}
-            {% if hotel.agoda_chain_name %}
-                <p><strong>Chain Name:</strong> {{ hotel.agoda_chain_name }}</p>
-            {% endif %}
-            {% if hotel.agoda_city %}
-                <p><strong>City:</strong> {{ hotel.agoda_city }}</p>
-            {% endif %}
-            {% if hotel.agoda_star_rating %}
-                <p><strong>Star Rating:</strong> {{ hotel.agoda_star_rating }}</p>
-            {% endif %}
-            {% if hotel.agoda_checkin %}
-                <p><strong>Check-in:</strong> {{ hotel.agoda_checkin }}</p>
-            {% endif %}
-            {% if hotel.agoda_checkout %}
-                <p><strong>Check-out:</strong> {{ hotel.agoda_checkout }}</p>
-            {% endif %}
-            {% if hotel.agoda_longitude %}
-                <p><strong>Longitude:</strong> {{ hotel.agoda_longitude }}</p>
-            {% endif %}
-            {% if hotel.agoda_latitude %}
-                <p><strong>Latitude:</strong> {{ hotel.agoda_latitude }}</p>
-            {% endif %}
+            <table id="datatablesSimple" class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>제목</th>
+                        <th>순위</th>
+                        <th>예상 참석자 수</th>
+                        <th>시작 시간</th>
+                        <th>종료 시간</th>
+                        <th>주소</th>
+                        <th>지역</th>
+                        <th>작업</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for event in event_list %}
+                    <tr>
+                        <td><a class="nav-link" href="{% url 'event_detail' country=event.Country event_id=event.EventID %}">{{ event.Title }}</a></td>
+                        <td>{{ event.Rank }}</td>
+                        <td>{{ event.PhqAttendance }}</td>
+                        <td>{{ event.TimeStart|format_date_str }}</td>
+                        <td>{{ event.TimeEnd|format_date_str }}</td>
+                        <td>{{ event.Address }}</td>
+                        <td>{{ event.Region }}</td>
+                        <td><button class="btn btn-primary" onclick="showEventPopup('{{ event.Title }}', '{{ event.Rank }}', '{{ event.PhqAttendance }}', '{{ event.TimeStart }}', '{{ event.TimeEnd }}', '{{ event.Address }}', '{{ event.Region }}', '{{ hotel.agoda_hotel_id }}')">호텔 예약</button></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
     </div>
-
 </div>
-<div class="card mb-4">
-    <div class="card-header">
-        <i class="fas fa-table me-1"></i>
-        행사 list
-    </div>
-    <div class="card-body">
-        <table id="datatablesSimple" class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Title</th>
-                    <th>Rank</th>
-                    <th>PHQ Attendance</th>
-                    <th>Time Start</th>
-                    <th>Time End</th>
-                    <th>Address</th>
-                    <th>Region</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for event in event_list %}
-                <tr>
-                    <td><a class="nav-link" href="{% url 'event_detail' country=event.Country event_id=event.EventID %}">{{ event.Title }}</a></td>
-                    <td>{{ event.Rank }}</td>
-                    <td>{{ event.PhqAttendance }}</td>
-                    <td>{{ event.TimeStart }}</td>
-                    <td>{{ event.TimeEnd }}</td>
-                    <td>{{ event.Address }}</td>
-                    <td>{{ event.Region }}</td>
-                    <td><button class="btn btn-primary" onclick="showEventPopup('{{ event.Title }}', '{{ event.Rank }}', '{{ event.PhqAttendance }}', '{{ event.TimeStart }}', '{{ event.TimeEnd }}', '{{ event.Address }}', '{{ event.Region }}', '{{ hotel.agoda_hotel_id }}')">Show Details</button></td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
 
-    </div>
-</div>
 <!-- Modal Structure -->
 <div class="modal fade" id="eventModal" tabindex="-1" role="dialog" aria-labelledby="eventModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="eventModalLabel">Event Details</h5>
+                <h5 class="modal-title" id="eventModalLabel">행사 상세 정보</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <p><strong>Title:</strong> <span id="modalTitle"></span></p>
-                <p><strong>Rank:</strong> <span id="modalRank"></span></p>
-                <p><strong>PHQ Attendance:</strong> <span id="modalPhqAttendance"></span></p>
-                <p><strong>Time Start:</strong> <span id="modalTimeStart"></span></p>
-                <p><strong>Time End:</strong> <span id="modalTimeEnd"></span></p>
-                <p><strong>Address:</strong> <span id="modalAddress"></span></p>
-                <p><strong>Region:</strong> <span id="modalRegion"></span></p>
+                <p><strong>제목:</strong> <span id="modalTitle"></span></p>
+                <p><strong>시작 시간:</strong> <span id="modalTimeStart"></span></p>
+                <p><strong>종료 시간:</strong> <span id="modalTimeEnd"></span></p>
+                <p><strong>주소:</strong> <span id="modalAddress"></span></p>
+                <p><strong>지역:</strong> <span id="modalRegion"></span></p>
                 <div id="calendar" style="height: 400px;"></div>
-                <button id="checkAvailabilityBtn" class="btn btn-primary mt-3">Check Availability</button>
+                <button id="checkAvailabilityBtn" class="btn btn-primary mt-3">예약 가능 여부 확인</button>
             </div>
         </div>
     </div>
@@ -132,7 +128,7 @@
         margin: 0 auto;
     }
     .modal-dialog {
-        max-width: none;
+        max-width: 60%;
         width: auto;
     }
     .modal-content {
@@ -149,22 +145,26 @@
 <link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.css" rel="stylesheet">
 <!-- FullCalendar JS -->
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.js"></script>
-<!-- Bootstrap JS (Ensure you have included the Bootstrap JS for modal functionality) -->
+<!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
 
 <script>
     var checkInDate, checkOutDate;
-    function showEventPopup(title, rank, phqAttendance, timeStart, timeEnd, address, region,hotelId) {
+    function showEventPopup(title, rank, phqAttendance, timeStart, timeEnd, address, region, hotelId) {
+        // 포맷팅된 날짜를 변수에 저장
+        var formattedTimeStart = moment(timeStart).format('YYYY-MM-DD HH시 mm분');
+        var formattedTimeEnd = moment(timeEnd).format('YYYY-MM-DD HH시 mm분');
+
+        // HTML 요소에 포맷팅된 날짜를 설정
         document.getElementById('modalTitle').innerText = title;
-        document.getElementById('modalRank').innerText = rank;
-        document.getElementById('modalPhqAttendance').innerText = phqAttendance;
-        document.getElementById('modalTimeStart').innerText = timeStart;
-        document.getElementById('modalTimeEnd').innerText = timeEnd;
+        document.getElementById('modalTimeStart').innerText = formattedTimeStart;
+        document.getElementById('modalTimeEnd').innerText = formattedTimeEnd;
         document.getElementById('modalAddress').innerText = address;
         document.getElementById('modalRegion').innerText = region;
 
         var calendarEl = document.getElementById('calendar');
-        calendarEl.innerHTML = '';  // Clear the previous calendar content
+        calendarEl.innerHTML = '';  // 이전 달력 내용을 지움
 
         var modal = new bootstrap.Modal(document.getElementById('eventModal'));
         modal.show();
@@ -175,11 +175,11 @@
                 initialDate: timeStart,
                 height: 'auto',
                 contentHeight: 'auto',
-                    selectable: true,
-                    select: function(info) {
-                        checkInDate = info.startStr;
-                        checkOutDate = info.endStr;
-                    },
+                selectable: true,
+                select: function(info) {
+                    checkInDate = info.startStr;
+                    checkOutDate = info.endStr;
+                },
                 events: [
                     {
                         title: title,
@@ -196,9 +196,11 @@
             checkHotelAvailability(checkInDate, checkOutDate, hotelId);
         });
     }
+
+
     function checkHotelAvailability(checkInDate, checkOutDate, hotelId) {
         if (!checkInDate || !checkOutDate || !hotelId) {
-            alert('Please select check-in and check-out dates.');
+            alert('체크인 및 체크아웃 날짜를 선택해 주세요.');
             return;
         }
         fetch('/check_availability/', {
@@ -218,12 +220,12 @@
             if (data.landingURL) {
                 window.location.href = data.landingURL;
             } else {
-                alert(`No available rooms found for the specified dates. Hotel ID: ${data.hotelId}, Check-in: ${data.check_in_date}, Check-out: ${data.check_out_date}, Result: ${data.result}`);
+                alert(`지정된 날짜에 사용할 수 있는 방이 없습니다. 호텔 ID: ${data.hotelId}, 체크인: ${data.check_in_date}, 체크아웃: ${data.check_out_date}, 결과: ${data.result}`);
             }
         })
         .catch(error => {
             console.error('Error:', error);
         });
-      }
+    }
 </script>
 {% endblock %}

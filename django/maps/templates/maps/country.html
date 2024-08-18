@@ -1,6 +1,6 @@
 {% extends 'maps/base.html' %}
 {% load static %}
-
+{% load custom_filters %}
 {% block title %}Dashboard{% endblock %}
 
 {% block content %}
@@ -40,24 +40,24 @@
             <table class="table table-striped datatablesSimple">
                 <thead>
                     <tr>
-                        <th>Title</th>
-                        <th>Rank</th>
-                        <th>PHQ Attendance</th>
-                        <th>Time Start</th>
-                        <th>Time End</th>
-                        <th>Address</th>
-                        <th>Region</th>
+                        <th>행사명</th>
+                        <th>유명도</th>
+                        <th>예상 참석자 수</th>
+                        <th>시작 시간</th>
+                        <th>종료 시간</th>
+                        <th>주소</th>
+                        <th>지역</th>
                     </tr>
                 </thead>
                 <tfoot>
                     <tr>
-                        <th>Title</th>
-                        <th>Rank</th>
-                        <th>PHQ Attendance</th>
-                        <th>Time Start</th>
-                        <th>Time End</th>
-                        <th>Address</th>
-                        <th>Region</th>
+                        <th>행사명</th>
+                        <th>유명도</th>
+                        <th>예상 참석자 수</th>
+                        <th>시작 시간</th>
+                        <th>종료 시간</th>
+                        <th>주소</th>
+                        <th>지역</th>
                     </tr>
                 </tfoot>
                 <tbody>
@@ -66,8 +66,8 @@
                         <td><a class="nav-link" href="{% url 'event_detail' country=country event_id=event.EventID %}">{{ event.Title }}</a></td>
                         <td>{{ event.Rank }}</td>
                         <td>{{ event.PhqAttendance }}</td>
-                        <td>{{ event.TimeStart }}</td>
-                        <td>{{ event.TimeEnd }}</td>
+                        <td>{{ event.TimeStart|format_date_str }}</td>
+                        <td>{{ event.TimeEnd|format_date_str }}</td>
                         <td>{{ event.Address }}</td>
                         <td>{{ event.Region }}</td>
                     </tr>
@@ -94,20 +94,22 @@
             datasets: [{
                 label: "행사 수",
                 backgroundColor: [
-                    'rgba(0, 0, 128, 0.8)',      
-                    'rgba(0, 77, 153, 0.8)',     
-                    'rgba(0, 122, 204, 0.8)',    
-                    'rgba(0, 178, 238, 0.8)',    
-                    'rgba(127, 255, 212, 0.8)'   
-                ],
+                    'rgba(255, 159, 64, 0.2)', 
+                    'rgba(54, 162, 235, 0.2)', 
+                    'rgba(255, 206, 86, 0.2)', 
+                    'rgba(75, 192, 192, 0.2)', 
+                    'rgba(153, 102, 255, 0.2)', 
+                    'rgba(255, 99, 132, 0.2)'
+                ],  
                 borderColor: [
-                    'rgba(0, 0, 128, 1)',
-                    'rgba(0, 77, 153, 1)',
-                    'rgba(0, 122, 204, 1)',
-                    'rgba(0, 178, 238, 1)',
-                    'rgba(127, 255, 212, 1)'
-                ],
-                borderWidth: 0.3,
+                    'rgba(255, 159, 64, 1)', 
+                    'rgba(54, 162, 235, 1)', 
+                    'rgba(255, 206, 86, 1)', 
+                    'rgba(75, 192, 192, 1)', 
+                    'rgba(153, 102, 255, 1)', 
+                    'rgba(255, 99, 132, 1)'
+                ],  
+                borderWidth: 1, 
                 data: {{ regions_data.datasets.0.data|safe }},
             }],
         },
@@ -119,7 +121,7 @@
                     }
                 }],
                 yAxes: [{
-                    barThickness: 0.3,
+                    barThickness: 30,  
                     ticks: {
                         min: 0,
                         max: maxTicksLimit,
@@ -127,10 +129,8 @@
                     }
                 }],
             },
-            plugins: {
-                legend: {
-                    display: false
-                }
+            legend: {
+                display: false  
             }
         }
     });
@@ -143,9 +143,26 @@
         datasets: [{
           label: "행사 수",
           data: {{ categories_data.datasets.0.data|safe }},
-          backgroundColor: ['#007bff', '#dc3545', '#ffc107', '#28a745'],
+          backgroundColor: [
+              'rgba(255, 159, 64, 0.2)', 
+              'rgba(54, 162, 235, 0.2)', 
+              'rgba(255, 206, 86, 0.2)', 
+              'rgba(75, 192, 192, 0.2)'
+          ],  
+          borderColor: [
+              'rgba(255, 159, 64, 1)', 
+              'rgba(54, 162, 235, 1)', 
+              'rgba(255, 206, 86, 1)', 
+              'rgba(75, 192, 192, 1)'
+          ], 
+          borderWidth: 1,  
         }],
       },
+      options: {
+          legend: {
+              position: 'top',  
+          }
+      }
     });
 </script>
 {% endblock %}

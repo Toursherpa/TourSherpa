@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import  HotelsForEvent, EventsForHotel, TravelEvent, HotelList, FlightTo, FlightFrom, Airline, Airport, NearestAirport
+from .models import  HotelsForEvent, EventsForHotel, TravelEvent, HotelList, FlightTo, FlightFrom, Airport, NearestAirport, PlaceforEvent 
 
 
 
@@ -31,20 +31,14 @@ class HotelListAdmin(admin.ModelAdmin):
 @admin.register(FlightTo)
 class FlightToAdmin(admin.ModelAdmin):
     list_display = ('airline_code', 'departure', 'departure_at', 'arrival', 'arrival_at', 'duration', 'seats', 'price', 'airline_name', 'departure_date', 'departure_min')
-    search_fields = ('airline_code', 'departure_at', 'arrival', 'airline_name', 'departure_date')
+    search_fields = ('airline_code', 'departure_at', 'arrival', 'airline_name')
     list_filter = ('airline_code', 'arrival')
 
 @admin.register(FlightFrom)
 class FlightFromAdmin(admin.ModelAdmin):
-    list_display = ('airline_code', 'departure', 'departure_at', 'arrival', 'arrival_at', 'duration', 'seats', 'price')
-    search_fields = ('airline_code', 'departure', 'departure_at')
+    list_display = ('airline_code', 'departure', 'departure_at', 'arrival', 'arrival_at', 'duration', 'seats', 'price', 'airline_name', 'departure_date', 'departure_min')
+    search_fields = ('airline_code', 'departure', 'departure_at', 'airline_name')
     list_filter = ('airline_code', 'departure')
-
-@admin.register(Airline)
-class AirlineAdmin(admin.ModelAdmin):
-    list_display = ('airline_code', 'airline_name')
-    search_fields = ('airline_code', 'airline_name')
-    list_filter = ('airline_code', 'airline_name')
 
 @admin.register(Airport)
 class AirportAdmin(admin.ModelAdmin):
@@ -57,3 +51,10 @@ class NearestAirportAdmin(admin.ModelAdmin):
     list_display = ('id', 'title', 'country', 'start_date', 'end_date', 'airport_code', 'airport_name')
     search_fields = ('title', 'country', 'airport_code', 'start_date', 'end_date', 'airport_name')
     list_filter = ('country', 'airport_code')
+
+@admin.register(PlaceforEvent)
+class PlaceforEventAdmin(admin.ModelAdmin):
+    list_display = ('event_id', 'event_title', 'place_name', 'address', 'rating', 'number_of_reviews')
+    search_fields = ('event_id', 'event_title', 'place_name', 'address')
+    list_filter = ('rating', 'number_of_reviews')
+    ordering = ('event_id',)
